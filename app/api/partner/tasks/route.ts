@@ -48,24 +48,24 @@ export async function GET(req: Request) {
   const partnerId =
     partnership.userA === userId ? partnership.userB : partnership.userA;
 
-  // Fetch partner's all tasks (both open and completed)
-  const allTasks = appDb
+  // Fetch partner's active tasks only
+  const activeTasks = appDb
     .prepare(
-      `SELECT id, userId, title, isCompleted, createdAt, completedAt
+      `SELECT id, userId, title, isCompleted, isActive, createdAt, completedAt, addedToActiveAt
        FROM task
-       WHERE userId = ?
+       WHERE userId = ? AND isActive = 1
        ORDER BY isCompleted ASC, createdAt ASC`
     )
     .all(partnerId) as TaskRow[];
 
-  // Compute partner's completed count for the current ET week window
+  // Compute partner's completed count for the current ET week window (active tasks only)
   const weekStart = toSqliteUtc(getCurrentWeekStartEt());
   const nextWeekStart = toSqliteUtc(getNextWeekStartEt());
   const completedThisWeek = appDb
     .prepare(
       `SELECT COUNT(*) as cnt
        FROM task
-       WHERE userId = ? AND isCompleted = 1 AND completedAt >= ? AND completedAt < ?`
+       WHERE userId = ? AND isActive = 1 AND isCompleted = 1 AND completedAt >= ? AND completedAt < ?`
     )
     .get(partnerId, weekStart, nextWeekStart) as { cnt: number };
 
@@ -84,7 +84,7 @@ export async function GET(req: Request) {
       email: partner.email,
       name: partner.name,
     },
-    tasks: allTasks,
+    tasks: activeTasks,
     completedThisWeek: completedThisWeek?.cnt ?? 0,
   });
 }

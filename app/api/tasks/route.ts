@@ -28,33 +28,40 @@ export async function GET(req: Request) {
 
   const userId = session.user.id as string;
 
-  // Fetch all tasks (both open and completed)
+  // Fetch all tasks (both active and master list, open and completed)
   const allTasks = appDb
     .prepare(
-      `SELECT id, userId, title, isCompleted, createdAt, completedAt
+      `SELECT id, userId, title, isCompleted, isActive, createdAt, completedAt, addedToActiveAt
        FROM task
        WHERE userId = ?
-       ORDER BY isCompleted ASC, createdAt ASC`
+       ORDER BY isActive DESC, isCompleted ASC, createdAt ASC`
     )
     .all(userId) as TaskRow[];
 
-  // Compute completed count for the current ET week window
+  // Compute completed count for the current ET week window (active tasks only)
   const weekStart = toSqliteUtc(getCurrentWeekStartEt());
   const nextWeekStart = toSqliteUtc(getNextWeekStartEt());
   const completedThisWeek = appDb
     .prepare(
       `SELECT COUNT(*) as cnt
        FROM task
-       WHERE userId = ? AND isCompleted = 1 AND completedAt >= ? AND completedAt < ?`
+       WHERE userId = ? AND isActive = 1 AND isCompleted = 1 AND completedAt >= ? AND completedAt < ?`
     )
     .get(userId, weekStart, nextWeekStart) as { cnt: number };
 
-  const openTasks = allTasks.filter((task) => task.isCompleted === 0);
-  const needsTopOff = openTasks.length < 3;
+  // Filter tasks for different views
+  const activeTasks = allTasks.filter((task) => task.isActive === 1);
+  const masterTasks = allTasks.filter((task) => task.isActive === 0);
+  const openActiveTasks = activeTasks.filter((task) => task.isCompleted === 0);
+
+  // Check if user needs to top off active tasks (should have 3 active tasks)
+  const needsTopOff = activeTasks.length < 3;
 
   return Response.json({
     tasks: allTasks,
-    open: openTasks,
+    activeTasks: activeTasks,
+    masterTasks: masterTasks,
+    openActiveTasks: openActiveTasks,
     completedThisWeek: completedThisWeek?.cnt ?? 0,
     needsTopOff,
   });
@@ -68,7 +75,7 @@ export async function POST(req: Request) {
 
   const userId = session.user.id as string;
 
-  let body: { title?: string };
+  let body: { title?: string; isActive?: boolean };
   try {
     body = await req.json();
   } catch {
@@ -86,33 +93,41 @@ export async function POST(req: Request) {
     );
   }
 
-  // Enforce maximum of 3 open tasks per user.
-  // We count only tasks with isCompleted = 0. Completed tasks do not count toward the limit.
-  const openCountRow = appDb
-    .prepare(
-      `SELECT COUNT(*) as cnt FROM task WHERE userId = ? AND isCompleted = 0`
-    )
-    .get(userId) as { cnt: number };
-  if ((openCountRow?.cnt ?? 0) >= 3) {
-    return Response.json(
-      { error: "Task limit reached: complete a task before adding another" },
-      { status: 400 }
-    );
+  // Determine if task should be active or master list
+  const isActive = body?.isActive === true;
+
+  // If adding to active list, check the 3-task limit for active tasks
+  if (isActive) {
+    const activeCountRow = appDb
+      .prepare(
+        `SELECT COUNT(*) as cnt FROM task WHERE userId = ? AND isActive = 1`
+      )
+      .get(userId) as { cnt: number };
+    if ((activeCountRow?.cnt ?? 0) >= 3) {
+      return Response.json(
+        {
+          error:
+            "Active task limit reached: you can only have 3 active tasks at a time",
+        },
+        { status: 400 }
+      );
+    }
   }
 
   const id = generateId();
   const now = toSqliteUtc(new Date());
+  const addedToActiveAt = isActive ? now : null;
 
-  // Insert task. We set createdAt explicitly for consistency.
+  // Insert task with active status
   const stmt = appDb.prepare(
-    `INSERT INTO task (id, userId, title, isCompleted, createdAt, completedAt)
-     VALUES (?, ?, ?, 0, ?, NULL)`
+    `INSERT INTO task (id, userId, title, isCompleted, isActive, createdAt, completedAt, addedToActiveAt)
+     VALUES (?, ?, ?, 0, ?, ?, NULL, ?)`
   );
-  stmt.run(id, userId, title, now);
+  stmt.run(id, userId, title, isActive ? 1 : 0, now, addedToActiveAt);
 
   const created = appDb
     .prepare(
-      `SELECT id, userId, title, isCompleted, createdAt, completedAt FROM task WHERE id = ?`
+      `SELECT id, userId, title, isCompleted, isActive, createdAt, completedAt, addedToActiveAt FROM task WHERE id = ?`
     )
     .get(id) as TaskRow;
 

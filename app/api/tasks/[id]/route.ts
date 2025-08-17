@@ -13,7 +13,7 @@ async function requireSession(req: Request) {
 function getTaskForUser(taskId: string, userId: string): TaskRow | undefined {
   return appDb
     .prepare(
-      `SELECT id, userId, title, isCompleted, createdAt, completedAt
+      `SELECT id, userId, title, isCompleted, isActive, createdAt, completedAt, addedToActiveAt
        FROM task WHERE id = ? AND userId = ?`
     )
     .get(taskId, userId) as TaskRow | undefined;
@@ -36,7 +36,12 @@ export async function PATCH(
     return Response.json({ error: "Not found" }, { status: 404 });
   }
 
-  let body: { toggle?: boolean; isCompleted?: boolean; title?: string };
+  let body: {
+    toggle?: boolean;
+    isCompleted?: boolean;
+    title?: string;
+    isActive?: boolean;
+  };
   try {
     body = await req.json();
   } catch {
@@ -48,6 +53,8 @@ export async function PATCH(
   const explicit =
     typeof body?.isCompleted === "boolean" ? body.isCompleted : undefined;
   const title = typeof body?.title === "string" ? body.title.trim() : undefined;
+  const isActive =
+    typeof body?.isActive === "boolean" ? body.isActive : undefined;
 
   // Validate title if provided
   if (title !== undefined) {
@@ -92,12 +99,45 @@ export async function PATCH(
       .run(title, taskId, userId);
   }
 
+  // Handle active status updates
+  if (isActive !== undefined) {
+    // If activating a task, check the 3-task limit for active tasks
+    if (isActive && !task.isActive) {
+      const activeCountRow = appDb
+        .prepare(
+          `SELECT COUNT(*) as cnt FROM task WHERE userId = ? AND isActive = 1`
+        )
+        .get(userId) as { cnt: number };
+      if ((activeCountRow?.cnt ?? 0) >= 3) {
+        return Response.json(
+          {
+            error:
+              "Active task limit reached: you can only have 3 active tasks at a time",
+          },
+          { status: 400 }
+        );
+      }
+    }
+
+    const addedToActiveAt = isActive ? toSqliteUtc(new Date()) : null;
+    appDb
+      .prepare(
+        `UPDATE task SET isActive = ?, addedToActiveAt = ? WHERE id = ? AND userId = ?`
+      )
+      .run(isActive ? 1 : 0, addedToActiveAt, taskId, userId);
+  }
+
   // If no valid update was provided
-  if (title === undefined && !toggle && explicit === undefined) {
+  if (
+    title === undefined &&
+    !toggle &&
+    explicit === undefined &&
+    isActive === undefined
+  ) {
     return Response.json(
       {
         error:
-          "Provide { title: string }, { toggle: true }, or { isCompleted: boolean }",
+          "Provide { title: string }, { toggle: true }, { isCompleted: boolean }, or { isActive: boolean }",
       },
       { status: 400 }
     );

@@ -22,6 +22,7 @@ appDb.pragma("foreign_keys = ON");
  * - partnership: pairs two users; each user can only be in one partnership at a time
  */
 function initializeSchema(): void {
+  // First, create tables with the original schema (without new columns)
   appDb.exec(`
     CREATE TABLE IF NOT EXISTS task (
       id TEXT PRIMARY KEY,
@@ -49,6 +50,49 @@ function initializeSchema(): void {
     CREATE INDEX IF NOT EXISTS idx_partnership_userA ON partnership(userA);
     CREATE INDEX IF NOT EXISTS idx_partnership_userB ON partnership(userB);
   `);
+
+  // Check if isActive column exists, if not add it
+  try {
+    const result = appDb.prepare("PRAGMA table_info(task)").all() as Array<{
+      name: string;
+    }>;
+    const hasIsActive = result.some((col) => col.name === "isActive");
+
+    if (!hasIsActive) {
+      appDb.exec(`ALTER TABLE task ADD COLUMN isActive INTEGER DEFAULT 0;`);
+      appDb.exec(
+        `CREATE INDEX IF NOT EXISTS idx_task_user_isActive ON task(userId, isActive);`
+      );
+    }
+  } catch (error) {
+    console.error("Error checking/adding isActive column:", error);
+  }
+
+  // Check if addedToActiveAt column exists, if not add it
+  try {
+    const result = appDb.prepare("PRAGMA table_info(task)").all() as Array<{
+      name: string;
+    }>;
+    const hasAddedToActiveAt = result.some(
+      (col) => col.name === "addedToActiveAt"
+    );
+
+    if (!hasAddedToActiveAt) {
+      appDb.exec(`ALTER TABLE task ADD COLUMN addedToActiveAt TEXT NULL;`);
+      appDb.exec(
+        `CREATE INDEX IF NOT EXISTS idx_task_addedToActiveAt ON task(addedToActiveAt);`
+      );
+    }
+  } catch (error) {
+    console.error("Error checking/adding addedToActiveAt column:", error);
+  }
+
+  // Migration: Set all existing tasks as active (isActive = 1) to maintain current behavior
+  try {
+    appDb.exec(`UPDATE task SET isActive = 1 WHERE isActive IS NULL;`);
+  } catch (error) {
+    console.error("Error updating existing tasks:", error);
+  }
 }
 
 initializeSchema();
@@ -59,8 +103,10 @@ export type TaskRow = {
   userId: string;
   title: string;
   isCompleted: 0 | 1;
+  isActive: 0 | 1;
   createdAt: string; // UTC timestamp in SQLite format: YYYY-MM-DD HH:MM:SS
   completedAt: string | null; // UTC timestamp or null
+  addedToActiveAt: string | null; // UTC timestamp when task was moved to active list
 };
 
 export type PartnershipRow = {

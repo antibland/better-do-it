@@ -42,7 +42,18 @@ export async function GET(req: Request) {
         WHERE userid = ${userId}
         ORDER BY isactive DESC, iscompleted ASC, createdat ASC
       `;
-      const allTasks = allTasksResult.rows || [];
+      
+      // Transform the data to match frontend expectations (camelCase)
+      const allTasks = (allTasksResult.rows || []).map(task => ({
+        id: task.id,
+        userId: task.userid,
+        title: task.title,
+        isCompleted: task.iscompleted,
+        isActive: task.isactive,
+        createdAt: task.createdat,
+        completedAt: task.completedat,
+        addedToActiveAt: task.addedtoactiveat,
+      }));
 
       // Compute completed count for the current ET week window (active tasks only)
       const weekStart = toSqliteUtc(getCurrentWeekStartEt());
@@ -55,9 +66,9 @@ export async function GET(req: Request) {
       const completedThisWeek = completedThisWeekResult.rows?.[0]?.cnt || 0;
 
       // Filter tasks for different views
-      const activeTasks = allTasks.filter((task) => task.isactive === 1);
-      const masterTasks = allTasks.filter((task) => task.isactive === 0);
-      const openActiveTasks = activeTasks.filter((task) => task.iscompleted === 0);
+      const activeTasks = allTasks.filter((task) => task.isActive === 1);
+      const masterTasks = allTasks.filter((task) => task.isActive === 0);
+      const openActiveTasks = activeTasks.filter((task) => task.isCompleted === 0);
 
       // Check if user needs to top off active tasks (should have 3 active tasks)
       const needsTopOff = activeTasks.length < 3;

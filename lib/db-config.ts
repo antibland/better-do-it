@@ -4,10 +4,26 @@ import Database from 'better-sqlite3';
 // Environment detection
 const isProduction = process.env.NODE_ENV === 'production';
 
+// Database operation interfaces
+export interface DatabaseRow {
+  [key: string]: unknown;
+}
+
+export interface DatabaseResult {
+  rows?: DatabaseRow[];
+  rowCount?: number | null;
+}
+
+export interface PreparedStatement {
+  all: (...params: unknown[]) => DatabaseRow[] | Promise<DatabaseResult>;
+  get: (...params: unknown[]) => DatabaseRow | Promise<DatabaseResult>;
+  run: (...params: unknown[]) => DatabaseResult | Promise<DatabaseResult>;
+}
+
 // Database interface for consistent API
 export interface DatabaseInterface {
   exec(query: string): void | Promise<void>;
-  prepare(query: string): any;
+  prepare(query: string): PreparedStatement;
   close(): void;
 }
 
@@ -25,8 +41,13 @@ class SQLiteWrapper implements DatabaseInterface {
     this.db.exec(query);
   }
 
-  prepare(query: string) {
-    return this.db.prepare(query);
+  prepare(query: string): PreparedStatement {
+    const stmt = this.db.prepare(query);
+    return {
+      all: (...params: unknown[]) => stmt.all(...params) as DatabaseRow[],
+      get: (...params: unknown[]) => stmt.get(...params) as DatabaseRow,
+      run: (...params: unknown[]) => stmt.run(...params) as DatabaseResult
+    };
   }
 
   close() {
@@ -41,11 +62,11 @@ class PostgresWrapper implements DatabaseInterface {
     console.log('Postgres exec:', query);
   }
 
-  prepare(query: string) {
+  prepare(query: string): PreparedStatement {
     return {
-      all: (...params: any[]) => sql.query(query, params),
-      get: (...params: any[]) => sql.query(query, params).then(result => result.rows[0]),
-      run: (...params: any[]) => sql.query(query, params)
+      all: (...params: unknown[]) => sql.query(query, params),
+      get: (...params: unknown[]) => sql.query(query, params).then(result => result.rows[0]),
+      run: (...params: unknown[]) => sql.query(query, params)
     };
   }
 

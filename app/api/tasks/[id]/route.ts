@@ -21,7 +21,7 @@ function getTaskForUser(taskId: string, userId: string): TaskRow | undefined {
 
 export async function PATCH(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await requireSession(req);
   if (!session) {
@@ -29,7 +29,7 @@ export async function PATCH(
   }
 
   const userId = session.user.id as string;
-  const taskId = params.id;
+  const { id: taskId } = await params;
 
   const task = getTaskForUser(taskId, userId);
   if (!task) {
@@ -149,14 +149,14 @@ export async function PATCH(
 
 export async function DELETE(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await requireSession(req);
   if (!session) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
   const userId = session.user.id as string;
-  const taskId = params.id;
+  const { id: taskId } = await params;
 
   const task = getTaskForUser(taskId, userId);
   if (!task) {

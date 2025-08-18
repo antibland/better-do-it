@@ -1,6 +1,5 @@
 import { betterAuth } from "better-auth";
 import Database from "better-sqlite3";
-import { sql } from '@vercel/postgres';
 
 // Environment detection
 const isProduction = process.env.NODE_ENV === 'production';

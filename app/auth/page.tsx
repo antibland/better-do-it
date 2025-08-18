@@ -65,9 +65,10 @@ export default function AuthPage() {
           setError("Unexpected response from server");
         }
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Auth exception:", err);
-      setError(err.message || "Authentication failed");
+      const errorMessage = err instanceof Error ? err.message : "Authentication failed";
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }

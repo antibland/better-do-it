@@ -4,11 +4,11 @@ import { useSession, signOut } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
-  Archive,
   Trash2,
   ArrowUpCircle,
-  CheckCircle,
+  CheckCircle2,
   RotateCcw,
+  ArrowDownCircle,
 } from "lucide-react";
 
 // Types for our API responses
@@ -381,15 +381,6 @@ export default function Dashboard() {
     return null; // Will redirect to auth page
   }
 
-  // Add loading state for tasks data
-  if (!tasks) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-indigo-600"></div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -522,101 +513,100 @@ export default function Dashboard() {
                     {tasks.activeTasks.map((task) => (
                       <div
                         key={task.id}
-                        className="relative flex items-center justify-between p-3 border border-indigo-200 rounded-lg bg-indigo-50"
+                        className="flex items-stretch space-x-2"
                       >
-                        <div
-                          data-task-id={task.id}
-                          contentEditable={
-                            editingTaskId === task.id && task.isCompleted === 0
-                          }
-                          suppressContentEditableWarning={true}
-                          onClick={() =>
-                            task.isCompleted === 0 && handleTaskClick(task.id)
-                          }
-                          onBlur={(e) =>
-                            task.isCompleted === 0 &&
-                            handleTaskBlur(
-                              task.id,
-                              e.currentTarget.textContent || task.title
-                            )
-                          }
-                          onKeyDown={(e) =>
-                            task.isCompleted === 0 &&
-                            handleTaskKeyDown(
-                              e,
-                              task.id,
-                              e.currentTarget.textContent || task.title
-                            )
-                          }
-                          className={`min-w-0 flex-1 ${
-                            task.isCompleted === 1
-                              ? "text-gray-500 line-through"
-                              : "text-gray-900"
-                          } ${
-                            editingTaskId === task.id
-                              ? "outline-none border-b-2 border-indigo-500 bg-yellow-50 px-2 py-1 rounded"
-                              : task.isCompleted === 0
-                              ? "cursor-pointer hover:bg-indigo-100 px-2 py-1 rounded"
-                              : "px-2 py-1 rounded"
-                          }`}
+                        <div className="flex-1 flex items-center justify-between p-3 border border-indigo-200 rounded-lg bg-indigo-50">
+                          <div
+                            data-task-id={task.id}
+                            contentEditable={
+                              editingTaskId === task.id &&
+                              task.isCompleted === 0
+                            }
+                            suppressContentEditableWarning={true}
+                            onClick={() =>
+                              task.isCompleted === 0 && handleTaskClick(task.id)
+                            }
+                            onBlur={(e) =>
+                              task.isCompleted === 0 &&
+                              handleTaskBlur(
+                                task.id,
+                                e.currentTarget.textContent || task.title
+                              )
+                            }
+                            onKeyDown={(e) =>
+                              task.isCompleted === 0 &&
+                              handleTaskKeyDown(
+                                e,
+                                task.id,
+                                e.currentTarget.textContent || task.title
+                              )
+                            }
+                            className={`min-w-0 flex-1 ${
+                              task.isCompleted === 1
+                                ? "text-gray-500 line-through"
+                                : "text-gray-900"
+                            } ${
+                              editingTaskId === task.id
+                                ? "outline-none border-b-2 border-indigo-500 bg-yellow-50 px-2 py-1 rounded"
+                                : task.isCompleted === 0
+                                ? "cursor-pointer hover:bg-indigo-100 px-2 py-1 rounded"
+                                : "px-2 py-1 rounded"
+                            }`}
+                          >
+                            {task.title}
+                          </div>
+                          <div className="flex items-center space-x-2 ml-4">
+                            {task.isCompleted === 0 ? (
+                              <>
+                                <button
+                                  onClick={() => toggleTask(task.id)}
+                                  className="flex items-center justify-center w-10 h-10 text-green-600 hover:text-green-800 rounded-lg transition-colors duration-200"
+                                  aria-label={`Complete task: ${task.title}`}
+                                  title={`Complete task: ${task.title}`}
+                                >
+                                  <CheckCircle2 className="w-6 h-6" />
+                                </button>
+                                <button
+                                  onClick={() =>
+                                    toggleTaskActive(task.id, true)
+                                  }
+                                  className="flex items-center justify-center w-10 h-10 text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 rounded-lg transition-colors duration-200"
+                                  aria-label={`Archive task: ${task.title}`}
+                                  title={`Archive task: ${task.title}`}
+                                >
+                                  <ArrowDownCircle className="w-6 h-6" />
+                                </button>
+                              </>
+                            ) : (
+                              <div className="flex items-center space-x-3">
+                                <button
+                                  onClick={() => toggleTask(task.id)}
+                                  className="flex items-center justify-center w-10 h-10 text-orange-600 hover:text-orange-800 rounded-lg transition-colors duration-200"
+                                  aria-label={`Mark task as incomplete: ${task.title}`}
+                                  title={`Mark task as incomplete: ${task.title}`}
+                                >
+                                  <RotateCcw className="w-5 h-5" />
+                                </button>
+                                <span className="text-green-600 text-lg">
+                                  ✓
+                                </span>
+                                <span className="text-sm text-gray-500">
+                                  {new Date(
+                                    task.completedAt!
+                                  ).toLocaleDateString()}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => deleteTask(task.id)}
+                          className="flex items-center justify-center px-4 text-red-600 hover:text-red-800 hover:bg-red-50 border border-red-200 rounded-lg transition-colors duration-200"
+                          aria-label={`Delete task: ${task.title}`}
+                          title={`Delete task: ${task.title}`}
                         >
-                          {task.title}
-                        </div>
-                        <div className="flex items-center space-x-2 ml-4">
-                          {task.isCompleted === 0 ? (
-                            <>
-                              <button
-                                onClick={() => toggleTaskActive(task.id, true)}
-                                className="flex items-center justify-center w-10 h-10 text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 rounded-lg transition-colors duration-200"
-                                aria-label={`Archive task: ${task.title}`}
-                                title={`Archive task: ${task.title}`}
-                              >
-                                <Archive className="w-5 h-5" />
-                              </button>
-                              <button
-                                onClick={() => toggleTask(task.id)}
-                                className="flex items-center justify-center w-10 h-10 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors duration-200"
-                                aria-label={`Complete task: ${task.title}`}
-                                title={`Complete task: ${task.title}`}
-                              >
-                                <CheckCircle className="w-5 h-5" />
-                              </button>
-                              <button
-                                onClick={() => deleteTask(task.id)}
-                                className="flex items-center justify-center w-10 h-10 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-colors duration-200"
-                                aria-label={`Delete task: ${task.title}`}
-                                title={`Delete task: ${task.title}`}
-                              >
-                                <Trash2 className="w-5 h-5" />
-                              </button>
-                            </>
-                          ) : (
-                            <div className="flex items-center space-x-3">
-                              <button
-                                onClick={() => toggleTask(task.id)}
-                                className="flex items-center justify-center w-10 h-10 bg-orange-600 hover:bg-orange-700 text-white rounded-lg transition-colors duration-200"
-                                aria-label={`Mark task as incomplete: ${task.title}`}
-                                title={`Mark task as incomplete: ${task.title}`}
-                              >
-                                <RotateCcw className="w-5 h-5" />
-                              </button>
-                              <span className="text-green-600 text-lg">✓</span>
-                              <span className="text-sm text-gray-500">
-                                {new Date(
-                                  task.completedAt!
-                                ).toLocaleDateString()}
-                              </span>
-                              <button
-                                onClick={() => deleteTask(task.id)}
-                                className="flex items-center justify-center w-10 h-10 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-colors duration-200"
-                                aria-label={`Delete task: ${task.title}`}
-                                title={`Delete task: ${task.title}`}
-                              >
-                                <Trash2 className="w-5 h-5" />
-                              </button>
-                            </div>
-                          )}
-                        </div>
+                          <Trash2 className="w-5 h-5" />
+                        </button>
                       </div>
                     ))}
                   </>
@@ -639,66 +629,69 @@ export default function Dashboard() {
                     {tasks.masterTasks.map((task) => (
                       <div
                         key={task.id}
-                        className="relative flex items-center justify-between p-3 border border-gray-200 rounded-lg"
+                        className="flex items-stretch space-x-2"
                       >
-                        <div
-                          data-task-id={task.id}
-                          contentEditable={
-                            editingTaskId === task.id && task.isCompleted === 0
-                          }
-                          suppressContentEditableWarning={true}
-                          onClick={() =>
-                            task.isCompleted === 0 && handleTaskClick(task.id)
-                          }
-                          onBlur={(e) =>
-                            task.isCompleted === 0 &&
-                            handleTaskBlur(
-                              task.id,
-                              e.currentTarget.textContent || task.title
-                            )
-                          }
-                          onKeyDown={(e) =>
-                            task.isCompleted === 0 &&
-                            handleTaskKeyDown(
-                              e,
-                              task.id,
-                              e.currentTarget.textContent || task.title
-                            )
-                          }
-                          className={`min-w-0 flex-1 ${
-                            task.isCompleted === 1
-                              ? "text-gray-500 line-through"
-                              : "text-gray-900"
-                          } ${
-                            editingTaskId === task.id
-                              ? "outline-none border-b-2 border-indigo-500 bg-yellow-50 px-2 py-1 rounded"
-                              : task.isCompleted === 0
-                              ? "cursor-pointer hover:bg-gray-50 px-2 py-1 rounded"
-                              : "px-2 py-1 rounded"
-                          }`}
-                        >
-                          {task.title}
-                        </div>
-                        <div className="flex items-center space-x-2 ml-4">
-                          {tasks.activeTasks.length < 3 && (
-                            <button
-                              onClick={() => toggleTaskActive(task.id, false)}
-                              className="flex items-center justify-center w-10 h-10 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors duration-200"
-                              aria-label={`Activate task: ${task.title}`}
-                              title={`Activate task: ${task.title}`}
-                            >
-                              <ArrowUpCircle className="w-5 h-5" />
-                            </button>
-                          )}
-                          <button
-                            onClick={() => deleteTask(task.id)}
-                            className="flex items-center justify-center w-10 h-10 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-colors duration-200"
-                            aria-label={`Delete task: ${task.title}`}
-                            title={`Delete task: ${task.title}`}
+                        <div className="flex-1 flex items-center justify-between p-3 border border-gray-200 rounded-lg">
+                          <div
+                            data-task-id={task.id}
+                            contentEditable={
+                              editingTaskId === task.id &&
+                              task.isCompleted === 0
+                            }
+                            suppressContentEditableWarning={true}
+                            onClick={() =>
+                              task.isCompleted === 0 && handleTaskClick(task.id)
+                            }
+                            onBlur={(e) =>
+                              task.isCompleted === 0 &&
+                              handleTaskBlur(
+                                task.id,
+                                e.currentTarget.textContent || task.title
+                              )
+                            }
+                            onKeyDown={(e) =>
+                              task.isCompleted === 0 &&
+                              handleTaskKeyDown(
+                                e,
+                                task.id,
+                                e.currentTarget.textContent || task.title
+                              )
+                            }
+                            className={`min-w-0 flex-1 ${
+                              task.isCompleted === 1
+                                ? "text-gray-500 line-through"
+                                : "text-gray-900"
+                            } ${
+                              editingTaskId === task.id
+                                ? "outline-none border-b-2 border-indigo-500 bg-yellow-50 px-2 py-1 rounded"
+                                : task.isCompleted === 0
+                                ? "cursor-pointer hover:bg-gray-50 px-2 py-1 rounded"
+                                : "px-2 py-1 rounded"
+                            }`}
                           >
-                            <Trash2 className="w-5 h-5" />
-                          </button>
+                            {task.title}
+                          </div>
+                          <div className="flex items-center space-x-2 ml-4">
+                            {tasks.activeTasks.length < 3 && (
+                              <button
+                                onClick={() => toggleTaskActive(task.id, false)}
+                                className="flex items-center justify-center w-10 h-10 text-indigo-600 hover:text-indigo-800  rounded-lg transition-colors duration-200"
+                                aria-label={`Activate task: ${task.title}`}
+                                title={`Activate task: ${task.title}`}
+                              >
+                                <ArrowUpCircle className="w-6 h-6" />
+                              </button>
+                            )}
+                          </div>
                         </div>
+                        <button
+                          onClick={() => deleteTask(task.id)}
+                          className="flex items-center justify-center px-4 text-red-600 hover:text-red-800 hover:bg-red-50 border border-red-200 rounded-lg transition-colors duration-200"
+                          aria-label={`Delete task: ${task.title}`}
+                          title={`Delete task: ${task.title}`}
+                        >
+                          <Trash2 className="w-5 h-5" />
+                        </button>
                       </div>
                     ))}
                   </>

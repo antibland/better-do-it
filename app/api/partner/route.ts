@@ -27,17 +27,17 @@ function getPartnershipForUser(userId: string): PartnershipRow | undefined {
 
 async function getPartnershipForUserPostgres(userId: string) {
   const result = await sql`
-    SELECT id, user_a, user_b, created_at FROM partnership WHERE user_a = ${userId} OR user_b = ${userId}
+    SELECT id, usera, userb, createdat FROM partnership WHERE usera = ${userId} OR userb = ${userId}
   `;
   const row = result.rows?.[0];
   if (!row) return undefined;
-  
+
   // Transform to match PartnershipRow interface
   return {
     id: row.id,
-    userA: row.user_a,
-    userB: row.user_b,
-    createdAt: row.created_at,
+    userA: row.usera,
+    userB: row.userb,
+    createdAt: row.createdat,
   };
 }
 
@@ -55,7 +55,7 @@ async function getUserByIdPostgres(userId: string) {
   `;
   const row = result.rows?.[0];
   if (!row) return undefined;
-  
+
   return {
     id: row.id,
     email: row.email,
@@ -104,7 +104,10 @@ export async function GET(req: Request) {
     } catch (error) {
       console.error("PostgreSQL partner GET error:", error);
       return Response.json(
-        { error: "Database error", details: error instanceof Error ? error.message : "Unknown error" },
+        {
+          error: "Database error",
+          details: error instanceof Error ? error.message : "Unknown error",
+        },
         { status: 500 }
       );
     }
@@ -194,7 +197,9 @@ export async function POST(req: Request) {
       }
 
       // Check if partner is already in a partnership
-      const partnerExistingPartnership = await getPartnershipForUserPostgres(partner.id);
+      const partnerExistingPartnership = await getPartnershipForUserPostgres(
+        partner.id
+      );
       if (partnerExistingPartnership) {
         return Response.json(
           { error: "Partner is already in a partnership" },
@@ -207,7 +212,7 @@ export async function POST(req: Request) {
       const now = new Date().toISOString();
 
       await sql`
-        INSERT INTO partnership (id, user_a, user_b, created_at) VALUES (${partnershipId}, ${userId}, ${partner.id}, ${now})
+        INSERT INTO partnership (id, usera, userb, createdat) VALUES (${partnershipId}, ${userId}, ${partner.id}, ${now})
       `;
 
       return Response.json({
@@ -222,7 +227,10 @@ export async function POST(req: Request) {
     } catch (error) {
       console.error("PostgreSQL partner POST error:", error);
       return Response.json(
-        { error: "Database error", details: error instanceof Error ? error.message : "Unknown error" },
+        {
+          error: "Database error",
+          details: error instanceof Error ? error.message : "Unknown error",
+        },
         { status: 500 }
       );
     }
@@ -312,7 +320,10 @@ export async function DELETE(req: Request) {
     } catch (error) {
       console.error("PostgreSQL partner DELETE error:", error);
       return Response.json(
-        { error: "Database error", details: error instanceof Error ? error.message : "Unknown error" },
+        {
+          error: "Database error",
+          details: error instanceof Error ? error.message : "Unknown error",
+        },
         { status: 500 }
       );
     }

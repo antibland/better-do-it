@@ -94,64 +94,64 @@ async function initializeSchema(): Promise<void> {
     try {
       await sql`CREATE TABLE IF NOT EXISTS task (
         id TEXT PRIMARY KEY,
-        user_id TEXT NOT NULL,
+        userid TEXT NOT NULL,
         title TEXT NOT NULL,
-        is_completed INTEGER NOT NULL DEFAULT 0 CHECK (is_completed IN (0,1)),
-        created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-        completed_at TIMESTAMP WITH TIME ZONE NULL,
-        is_active INTEGER DEFAULT 0,
-        added_to_active_at TIMESTAMP WITH TIME ZONE NULL
+        iscompleted INTEGER NOT NULL DEFAULT 0 CHECK (iscompleted IN (0,1)),
+        createdat TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+        completedat TIMESTAMP WITH TIME ZONE NULL,
+        isactive INTEGER DEFAULT 0,
+        addedtoactiveat TIMESTAMP WITH TIME ZONE NULL
       )`;
     } catch (error) {
       console.log("Task table creation:", error);
     }
 
     try {
-      await sql`CREATE INDEX IF NOT EXISTS idx_task_user_is_completed ON task(user_id, is_completed)`;
+      await sql`CREATE INDEX IF NOT EXISTS idx_task_user_iscompleted ON task(userid, iscompleted)`;
     } catch (error) {
       console.log("Task index creation:", error);
     }
 
     try {
-      await sql`CREATE INDEX IF NOT EXISTS idx_task_completed_at ON task(completed_at)`;
+      await sql`CREATE INDEX IF NOT EXISTS idx_task_completedat ON task(completedat)`;
     } catch (error) {
-      console.log("Task completed_at index creation:", error);
+      console.log("Task completedat index creation:", error);
     }
 
     try {
-      await sql`CREATE INDEX IF NOT EXISTS idx_task_user_is_active ON task(user_id, is_active)`;
+      await sql`CREATE INDEX IF NOT EXISTS idx_task_user_isactive ON task(userid, isactive)`;
     } catch (error) {
-      console.log("Task is_active index creation:", error);
+      console.log("Task isactive index creation:", error);
     }
 
     try {
-      await sql`CREATE INDEX IF NOT EXISTS idx_task_added_to_active_at ON task(added_to_active_at)`;
+      await sql`CREATE INDEX IF NOT EXISTS idx_task_addedtoactiveat ON task(addedtoactiveat)`;
     } catch (error) {
-      console.log("Task added_to_active_at index creation:", error);
+      console.log("Task addedtoactiveat index creation:", error);
     }
 
     try {
       await sql`CREATE TABLE IF NOT EXISTS partnership (
         id TEXT PRIMARY KEY,
-        user_a TEXT NOT NULL UNIQUE,
-        user_b TEXT NOT NULL UNIQUE,
-        created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-        CHECK (user_a <> user_b)
+        usera TEXT NOT NULL UNIQUE,
+        userb TEXT NOT NULL UNIQUE,
+        createdat TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+        CHECK (usera <> userb)
       )`;
     } catch (error) {
       console.log("Partnership table creation:", error);
     }
 
     try {
-      await sql`CREATE INDEX IF NOT EXISTS idx_partnership_user_a ON partnership(user_a)`;
+      await sql`CREATE INDEX IF NOT EXISTS idx_partnership_usera ON partnership(usera)`;
     } catch (error) {
-      console.log("Partnership user_a index creation:", error);
+      console.log("Partnership usera index creation:", error);
     }
 
     try {
-      await sql`CREATE INDEX IF NOT EXISTS idx_partnership_user_b ON partnership(user_b)`;
+      await sql`CREATE INDEX IF NOT EXISTS idx_partnership_userb ON partnership(userb)`;
     } catch (error) {
-      console.log("Partnership user_b index creation:", error);
+      console.log("Partnership userb index creation:", error);
     }
   }
 }

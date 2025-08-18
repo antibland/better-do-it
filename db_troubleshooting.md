@@ -110,7 +110,7 @@ Error: relation "task" does not exist
 
 3. **Run setup manually**:
    ```bash
-   curl -i -X POST https://your-app.vercel.app/api/setup-db
+   curl -i -X POST https://better-do-it.vercel.app/api/setup-db
    ```
 
 **Prevention:**
@@ -164,7 +164,66 @@ TypeError: m.tasks.map is not a function
 
 ---
 
-### **Issue 5: Environment Variable Configuration**
+### **Issue 5: Partnership Database Error (Column Name Mismatch)**
+
+**Problem:**
+
+```
+Database error when adding partners
+500 Internal Server Error on /api/partner
+```
+
+**Root Cause:**
+
+- Schema mismatch between expected and actual database column names
+- Code expects snake_case (`user_a`, `user_b`, `created_at`)
+- Actual database uses all lowercase (`usera`, `userb`, `createdat`)
+- Partnership table queries fail due to non-existent columns
+
+**Solution:**
+
+1. **Update partner route queries** to use correct column names:
+
+   ```typescript
+   // Before (incorrect)
+   SELECT id, user_a, user_b, created_at FROM partnership WHERE user_a = ${userId}
+
+   // After (correct)
+   SELECT id, usera, userb, createdat FROM partnership WHERE usera = ${userId}
+   ```
+
+2. **Update data transformation** to map from actual database columns:
+
+   ```typescript
+   return {
+     id: row.id,
+     userA: row.usera, // usera → userA
+     userB: row.userb, // userb → userB
+     createdAt: row.createdat, // createdat → createdAt
+   };
+   ```
+
+3. **Update schema initialization** in `lib/db.ts` to match actual database:
+
+   ```sql
+   CREATE TABLE IF NOT EXISTS partnership (
+     id TEXT PRIMARY KEY,
+     usera TEXT NOT NULL UNIQUE,  -- not user_a
+     userb TEXT NOT NULL UNIQUE,  -- not user_b
+     createdat TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),  -- not created_at
+   );
+   ```
+
+**Prevention:**
+
+- Always verify actual database schema before writing queries
+- Use consistent column naming conventions across all tables
+- Test database operations in production-like environments
+- Create schema validation endpoints to catch mismatches early
+
+---
+
+### **Issue 6: Environment Variable Configuration**
 
 **Problem:**
 
@@ -185,14 +244,14 @@ Error: BETTER_AUTH_URL not configured
 
    ```
    BETTER_AUTH_SECRET=your-secret-key
-   BETTER_AUTH_URL=https://your-app.vercel.app
-   NEXT_PUBLIC_BETTER_AUTH_URL=https://your-app.vercel.app
+   BETTER_AUTH_URL=https://better-do-it.vercel.app
+   NEXT_PUBLIC_BETTER_AUTH_URL=https://better-do-it.vercel.app
    POSTGRES_URL=postgresql://user:pass@host:port/db
    ```
 
 2. **Verify configuration**:
    ```bash
-   curl -s https://your-app.vercel.app/api/test-auth | jq
+   curl -s https://better-do-it.vercel.app/api/test-auth | jq
    ```
 
 **Prevention:**
@@ -203,7 +262,7 @@ Error: BETTER_AUTH_URL not configured
 
 ---
 
-### **Issue 6: Authentication Cookie Problems**
+### **Issue 7: Authentication Cookie Problems**
 
 **Problem:**
 
@@ -240,7 +299,7 @@ advanced: {
 
 ---
 
-### **Issue 7: API Endpoint Failures**
+### **Issue 8: API Endpoint Failures**
 
 **Problem:**
 
@@ -294,19 +353,19 @@ Partner API returning incorrect data
 ### **Check Database Connectivity**
 
 ```bash
-curl -s https://your-app.vercel.app/api/test-db | jq
+ curl -s https://better-do-it.vercel.app/api/test-db | jq
 ```
 
 ### **Verify Authentication Setup**
 
 ```bash
-curl -s https://your-app.vercel.app/api/test-auth | jq
+curl -s https://better-do-it.vercel.app/api/test-auth | jq
 ```
 
 ### **Check Database Schema**
 
 ```bash
-curl -s https://your-app.vercel.app/api/check-schema | jq
+curl -s https://better-do-it.vercel.app/api/check-schema | jq
 ```
 
 ### **Test API Endpoints**
@@ -314,14 +373,14 @@ curl -s https://your-app.vercel.app/api/check-schema | jq
 ```bash
 for endpoint in "tasks" "partner" "partner/tasks"; do
   echo "Testing /api/$endpoint..."
-  curl -s https://your-app.vercel.app/api/$endpoint | jq '.error // "OK"'
+  curl -s https://better-do-it.vercel.app/api/$endpoint | jq '.error // "OK"'
 done
 ```
 
 ### **Verify Environment Variables**
 
 ```bash
-curl -s https://your-app.vercel.app/api/test-auth | jq '.environment, .hasSecret, .hasUrl, .hasPostgresUrl'
+curl -s https://better-do-it.vercel.app/api/test-auth | jq '.environment, .hasSecret, .hasUrl, .hasPostgresUrl'
 ```
 
 ---

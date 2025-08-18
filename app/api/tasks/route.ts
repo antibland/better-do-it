@@ -79,7 +79,7 @@ export async function GET(req: Request) {
       const needsTopOff = activeTasks.length < 3;
 
       const response = {
-        tasks: allTasks,
+        tasks: allTasks,  // This is the key - the frontend expects this
         activeTasks: activeTasks,
         masterTasks: masterTasks,
         openActiveTasks: openActiveTasks,

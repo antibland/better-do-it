@@ -1,19 +1,12 @@
-import Database from "better-sqlite3";
+import { db, getDbType, sql } from './db-config';
 
 /**
- * Centralized SQLite database connection for app-specific data (tasks, partnerships).
- *
- * Notes:
- * - Auth uses its own connection via `lib/auth.ts`. Sharing a file across multiple
- *   better-sqlite3 connections is safe, and using WAL mode improves concurrency.
- * - We enable foreign keys so deletions on `user` cascade into our tables.
+ * Centralized database connection for app-specific data (tasks, partnerships).
+ * 
+ * Supports both SQLite (development) and PostgreSQL (production).
+ * Auth uses its own connection via `lib/auth.ts`.
  */
-export const appDb = new Database("./sqlite.db");
-
-// Improve concurrency when multiple connections (auth + app) interact with the same DB file
-appDb.pragma("journal_mode = WAL");
-// Enforce relational integrity
-appDb.pragma("foreign_keys = ON");
+export const appDb = db;
 
 /**
  * Run idempotent schema initialization. Keep this minimal and well-documented.
@@ -21,81 +14,122 @@ appDb.pragma("foreign_keys = ON");
  * - task: per-user tasks with completion metadata
  * - partnership: pairs two users; each user can only be in one partnership at a time
  */
-function initializeSchema(): void {
-  // First, create tables with the original schema (without new columns)
-  appDb.exec(`
-    CREATE TABLE IF NOT EXISTS task (
-      id TEXT PRIMARY KEY,
-      userId TEXT NOT NULL,
-      title TEXT NOT NULL,
-      isCompleted INTEGER NOT NULL DEFAULT 0 CHECK (isCompleted IN (0,1)),
-      createdAt TEXT NOT NULL DEFAULT (datetime('now')),
-      completedAt TEXT NULL,
-      FOREIGN KEY (userId) REFERENCES user(id) ON DELETE CASCADE
-    );
-
-    CREATE INDEX IF NOT EXISTS idx_task_user_isCompleted ON task(userId, isCompleted);
-    CREATE INDEX IF NOT EXISTS idx_task_completedAt ON task(completedAt);
-
-    CREATE TABLE IF NOT EXISTS partnership (
-      id TEXT PRIMARY KEY,
-      userA TEXT NOT NULL UNIQUE,
-      userB TEXT NOT NULL UNIQUE,
-      createdAt TEXT NOT NULL DEFAULT (datetime('now')),
-      CHECK (userA <> userB),
-      FOREIGN KEY (userA) REFERENCES user(id) ON DELETE CASCADE,
-      FOREIGN KEY (userB) REFERENCES user(id) ON DELETE CASCADE
-    );
-
-    CREATE INDEX IF NOT EXISTS idx_partnership_userA ON partnership(userA);
-    CREATE INDEX IF NOT EXISTS idx_partnership_userB ON partnership(userB);
-  `);
-
-  // Check if isActive column exists, if not add it
-  try {
-    const result = appDb.prepare("PRAGMA table_info(task)").all() as Array<{
-      name: string;
-    }>;
-    const hasIsActive = result.some((col) => col.name === "isActive");
-
-    if (!hasIsActive) {
-      appDb.exec(`ALTER TABLE task ADD COLUMN isActive INTEGER DEFAULT 0;`);
-      appDb.exec(
-        `CREATE INDEX IF NOT EXISTS idx_task_user_isActive ON task(userId, isActive);`
+async function initializeSchema(): Promise<void> {
+  const dbType = getDbType();
+  
+  if (dbType === 'sqlite') {
+    // SQLite schema initialization
+    appDb.exec(`
+      CREATE TABLE IF NOT EXISTS task (
+        id TEXT PRIMARY KEY,
+        userId TEXT NOT NULL,
+        title TEXT NOT NULL,
+        isCompleted INTEGER NOT NULL DEFAULT 0 CHECK (isCompleted IN (0,1)),
+        createdAt TEXT NOT NULL DEFAULT (datetime('now')),
+        completedAt TEXT NULL,
+        FOREIGN KEY (userId) REFERENCES user(id) ON DELETE CASCADE
       );
-    }
-  } catch (error) {
-    console.error("Error checking/adding isActive column:", error);
-  }
 
-  // Check if addedToActiveAt column exists, if not add it
-  try {
-    const result = appDb.prepare("PRAGMA table_info(task)").all() as Array<{
-      name: string;
-    }>;
-    const hasAddedToActiveAt = result.some(
-      (col) => col.name === "addedToActiveAt"
-    );
+      CREATE INDEX IF NOT EXISTS idx_task_user_isCompleted ON task(userId, isCompleted);
+      CREATE INDEX IF NOT EXISTS idx_task_completedAt ON task(completedAt);
 
-    if (!hasAddedToActiveAt) {
-      appDb.exec(`ALTER TABLE task ADD COLUMN addedToActiveAt TEXT NULL;`);
-      appDb.exec(
-        `CREATE INDEX IF NOT EXISTS idx_task_addedToActiveAt ON task(addedToActiveAt);`
+      CREATE TABLE IF NOT EXISTS partnership (
+        id TEXT PRIMARY KEY,
+        userA TEXT NOT NULL UNIQUE,
+        userB TEXT NOT NULL UNIQUE,
+        createdAt TEXT NOT NULL DEFAULT (datetime('now')),
+        CHECK (userA <> userB),
+        FOREIGN KEY (userA) REFERENCES user(id) ON DELETE CASCADE,
+        FOREIGN KEY (userB) REFERENCES user(id) ON DELETE CASCADE
       );
-    }
-  } catch (error) {
-    console.error("Error checking/adding addedToActiveAt column:", error);
-  }
 
-  // Migration: Set all existing tasks as active (isActive = 1) to maintain current behavior
-  try {
-    appDb.exec(`UPDATE task SET isActive = 1 WHERE isActive IS NULL;`);
-  } catch (error) {
-    console.error("Error updating existing tasks:", error);
+      CREATE INDEX IF NOT EXISTS idx_partnership_userA ON partnership(userA);
+      CREATE INDEX IF NOT EXISTS idx_partnership_userB ON partnership(userB);
+    `);
+
+    // Check if isActive column exists, if not add it
+    try {
+      const result = appDb.prepare("PRAGMA table_info(task)").all() as Array<{
+        name: string;
+      }>;
+      const hasIsActive = result.some((col) => col.name === "isActive");
+
+      if (!hasIsActive) {
+        appDb.exec(`ALTER TABLE task ADD COLUMN isActive INTEGER DEFAULT 0;`);
+        appDb.exec(
+          `CREATE INDEX IF NOT EXISTS idx_task_user_isActive ON task(userId, isActive);`
+        );
+      }
+    } catch (error) {
+      console.error("Error checking/adding isActive column:", error);
+    }
+
+    // Check if addedToActiveAt column exists, if not add it
+    try {
+      const result = appDb.prepare("PRAGMA table_info(task)").all() as Array<{
+        name: string;
+      }>;
+      const hasAddedToActiveAt = result.some(
+        (col) => col.name === "addedToActiveAt"
+      );
+
+      if (!hasAddedToActiveAt) {
+        appDb.exec(`ALTER TABLE task ADD COLUMN addedToActiveAt TEXT NULL;`);
+        appDb.exec(
+          `CREATE INDEX IF NOT EXISTS idx_task_addedToActiveAt ON task(addedToActiveAt);`
+        );
+      }
+    } catch (error) {
+      console.error("Error checking/adding addedToActiveAt column:", error);
+    }
+
+    // Migration: Set all existing tasks as active (isActive = 1) to maintain current behavior
+    try {
+      appDb.exec(`UPDATE task SET isActive = 1 WHERE isActive IS NULL;`);
+    } catch (error) {
+      console.error("Error updating existing tasks:", error);
+    }
+  } else {
+    // PostgreSQL schema initialization
+    await sql`
+      CREATE TABLE IF NOT EXISTS task (
+        id TEXT PRIMARY KEY,
+        userId TEXT NOT NULL,
+        title TEXT NOT NULL,
+        isCompleted INTEGER NOT NULL DEFAULT 0 CHECK (isCompleted IN (0,1)),
+        createdAt TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+        completedAt TIMESTAMP WITH TIME ZONE NULL,
+        isActive INTEGER DEFAULT 0,
+        addedToActiveAt TIMESTAMP WITH TIME ZONE NULL
+      );
+    `;
+    
+    await sql`
+      CREATE INDEX IF NOT EXISTS idx_task_user_isCompleted ON task(userId, isCompleted);
+      CREATE INDEX IF NOT EXISTS idx_task_completedAt ON task(completedAt);
+      CREATE INDEX IF NOT EXISTS idx_task_user_isActive ON task(userId, isActive);
+      CREATE INDEX IF NOT EXISTS idx_task_addedToActiveAt ON task(addedToActiveAt);
+    `;
+
+    await sql`
+      CREATE TABLE IF NOT EXISTS partnership (
+        id TEXT PRIMARY KEY,
+        userA TEXT NOT NULL UNIQUE,
+        userB TEXT NOT NULL UNIQUE,
+        createdAt TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+        CHECK (userA <> userB)
+      );
+    `;
+
+    await sql`
+      CREATE INDEX IF NOT EXISTS idx_partnership_userA ON partnership(userA);
+      CREATE INDEX IF NOT EXISTS idx_partnership_userB ON partnership(userB);
+    `;
   }
 }
 
-initializeSchema();
+// Initialize schema on module load
+initializeSchema().catch(console.error);
 
 // Types representing rows in our app tables
 export type TaskRow = {

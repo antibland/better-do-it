@@ -1,5 +1,6 @@
 import { auth } from "@/lib/auth";
 import { appDb, TaskRow } from "@/lib/db";
+import { sql } from "@vercel/postgres";
 import {
   getCurrentWeekStartEt,
   getNextWeekStartEt,
@@ -38,53 +39,127 @@ export async function GET(req: Request) {
   }
 
   const userId = session.user.id as string;
-  const partnership = getPartnershipForUser(userId);
+  const isProduction = process.env.NODE_ENV === "production";
 
-  if (!partnership) {
-    return Response.json({ error: "No partnership found" }, { status: 404 });
+  if (isProduction) {
+    // PostgreSQL implementation for production
+    try {
+      // Get partnership
+      const partnershipResult = await sql`
+        SELECT id, user_a, user_b FROM partnership WHERE user_a = ${userId} OR user_b = ${userId}
+      `;
+      const partnership = partnershipResult.rows?.[0];
+
+      if (!partnership) {
+        return Response.json({ error: "No partnership found" }, { status: 404 });
+      }
+
+      // Determine which user is the partner
+      const partnerId = partnership.user_a === userId ? partnership.user_b : partnership.user_a;
+
+      // Fetch partner's active tasks only
+      const activeTasksResult = await sql`
+        SELECT id, userid, title, iscompleted, isactive, createdat, completedat, addedtoactiveat
+        FROM task
+        WHERE userid = ${partnerId} AND isactive = 1
+        ORDER BY iscompleted ASC, createdat ASC
+      `;
+
+      // Transform the data to match frontend expectations (camelCase)
+      const activeTasks = (activeTasksResult.rows || []).map(task => ({
+        id: task.id,
+        userId: task.userid,
+        title: task.title,
+        isCompleted: task.iscompleted,
+        isActive: task.isactive,
+        createdAt: task.createdat,
+        completedAt: task.completedat,
+        addedToActiveAt: task.addedtoactiveat,
+      }));
+
+      // Compute partner's completed count for the current ET week window (active tasks only)
+      const weekStart = toSqliteUtc(getCurrentWeekStartEt());
+      const nextWeekStart = toSqliteUtc(getNextWeekStartEt());
+      const completedThisWeekResult = await sql`
+        SELECT COUNT(*) as cnt
+        FROM task
+        WHERE userid = ${partnerId} AND isactive = 1 AND iscompleted = 1 AND completedat >= ${weekStart} AND completedat < ${nextWeekStart}
+      `;
+      const completedThisWeek = completedThisWeekResult.rows?.[0]?.cnt || 0;
+
+      // Get partner's user info
+      const partnerResult = await sql`
+        SELECT id, email, name FROM "user" WHERE id = ${partnerId}
+      `;
+      const partner = partnerResult.rows?.[0];
+
+      if (!partner) {
+        return Response.json({ error: "Partner not found" }, { status: 404 });
+      }
+
+      return Response.json({
+        partner: {
+          id: partner.id,
+          email: partner.email,
+          name: partner.name,
+        },
+        tasks: activeTasks,
+        completedThisWeek: completedThisWeek,
+      });
+    } catch (error) {
+      console.error("Partner tasks API error:", error);
+      return Response.json({ error: "Internal server error" }, { status: 500 });
+    }
+  } else {
+    // SQLite implementation for development
+    const partnership = getPartnershipForUser(userId);
+
+    if (!partnership) {
+      return Response.json({ error: "No partnership found" }, { status: 404 });
+    }
+
+    // Determine which user is the partner
+    const partnerId =
+      partnership.userA === userId ? partnership.userB : partnership.userA;
+
+    // Fetch partner's active tasks only
+    const activeTasks = appDb
+      .prepare(
+        `SELECT id, userId, title, isCompleted, isActive, createdAt, completedAt, addedToActiveAt
+         FROM task
+         WHERE userId = ? AND isActive = 1
+         ORDER BY isCompleted ASC, createdAt ASC`
+      )
+      .all(partnerId) as TaskRow[];
+
+    // Compute partner's completed count for the current ET week window (active tasks only)
+    const weekStart = toSqliteUtc(getCurrentWeekStartEt());
+    const nextWeekStart = toSqliteUtc(getNextWeekStartEt());
+    const completedThisWeek = appDb
+      .prepare(
+        `SELECT COUNT(*) as cnt
+         FROM task
+         WHERE userId = ? AND isActive = 1 AND isCompleted = 1 AND completedAt >= ? AND completedAt < ?`
+      )
+      .get(partnerId, weekStart, nextWeekStart) as { cnt: number };
+
+    // Get partner's user info
+    const partner = appDb
+      .prepare(`SELECT id, email, name FROM user WHERE id = ?`)
+      .get(partnerId) as { id: string; email: string; name: string } | undefined;
+
+    if (!partner) {
+      return Response.json({ error: "Partner not found" }, { status: 404 });
+    }
+
+    return Response.json({
+      partner: {
+        id: partner.id,
+        email: partner.email,
+        name: partner.name,
+      },
+      tasks: activeTasks,
+      completedThisWeek: completedThisWeek?.cnt ?? 0,
+    });
   }
-
-  // Determine which user is the partner
-  const partnerId =
-    partnership.userA === userId ? partnership.userB : partnership.userA;
-
-  // Fetch partner's active tasks only
-  const activeTasks = appDb
-    .prepare(
-      `SELECT id, userId, title, isCompleted, isActive, createdAt, completedAt, addedToActiveAt
-       FROM task
-       WHERE userId = ? AND isActive = 1
-       ORDER BY isCompleted ASC, createdAt ASC`
-    )
-    .all(partnerId) as TaskRow[];
-
-  // Compute partner's completed count for the current ET week window (active tasks only)
-  const weekStart = toSqliteUtc(getCurrentWeekStartEt());
-  const nextWeekStart = toSqliteUtc(getNextWeekStartEt());
-  const completedThisWeek = appDb
-    .prepare(
-      `SELECT COUNT(*) as cnt
-       FROM task
-       WHERE userId = ? AND isActive = 1 AND isCompleted = 1 AND completedAt >= ? AND completedAt < ?`
-    )
-    .get(partnerId, weekStart, nextWeekStart) as { cnt: number };
-
-  // Get partner's user info
-  const partner = appDb
-    .prepare(`SELECT id, email, name FROM user WHERE id = ?`)
-    .get(partnerId) as { id: string; email: string; name: string } | undefined;
-
-  if (!partner) {
-    return Response.json({ error: "Partner not found" }, { status: 404 });
-  }
-
-  return Response.json({
-    partner: {
-      id: partner.id,
-      email: partner.email,
-      name: partner.name,
-    },
-    tasks: activeTasks,
-    completedThisWeek: completedThisWeek?.cnt ?? 0,
-  });
 }

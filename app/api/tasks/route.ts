@@ -94,6 +94,21 @@ export async function GET(req: Request) {
         return Response.json(response);
       } catch (dbError) {
         console.error("Tasks API: Database error:", dbError);
+        
+        // If it's a table doesn't exist error, return empty arrays
+        if (dbError instanceof Error && dbError.message.includes("does not exist")) {
+          const emptyResponse = {
+            tasks: [],
+            activeTasks: [],
+            masterTasks: [],
+            openActiveTasks: [],
+            completedThisWeek: 0,
+            needsTopOff: true,
+          };
+          console.log("Tasks API: Returning empty response due to missing table");
+          return Response.json(emptyResponse);
+        }
+        
         return Response.json(
           { 
             error: "Database error",

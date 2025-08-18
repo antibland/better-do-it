@@ -1,6 +1,6 @@
-# Useful SQLite Commands for Better Do It
+# Useful Commands for Better Do It (SQLite & PostgreSQL)
 
-This file contains helpful SQLite commands for managing your Better Auth database during development.
+This file contains helpful commands for managing your Better Auth database during development and production debugging.
 
 ## 🔍 **Viewing Data**
 
@@ -50,6 +50,32 @@ sqlite3 sqlite.db "SELECT identifier, value, expiresAt, createdAt FROM verificat
 sqlite3 sqlite.db "SELECT * FROM verification WHERE expiresAt > datetime('now');"
 ```
 
+### View Tasks (App-specific)
+
+```bash
+# All tasks for a user
+sqlite3 sqlite.db "SELECT id, userId, title, isCompleted, isActive, createdAt, completedAt, addedToActiveAt FROM task WHERE userId = 'USER_ID_HERE' ORDER BY isActive DESC, isCompleted ASC, createdAt ASC;"
+
+# Active tasks only
+sqlite3 sqlite.db "SELECT * FROM task WHERE userId = 'USER_ID_HERE' AND isActive = 1;"
+
+# Master list tasks only
+sqlite3 sqlite.db "SELECT * FROM task WHERE userId = 'USER_ID_HERE' AND isActive = 0;"
+
+# Completed tasks this week
+sqlite3 sqlite.db "SELECT COUNT(*) FROM task WHERE userId = 'USER_ID_HERE' AND isActive = 1 AND isCompleted = 1 AND completedAt >= datetime('now', 'weekday 3', '-6 days', '18:00:00') AND completedAt < datetime('now', 'weekday 3', '18:00:00');"
+```
+
+### View Partnerships (App-specific)
+
+```bash
+# All partnerships
+sqlite3 sqlite.db "SELECT * FROM partnership;"
+
+# Partnership for specific user
+sqlite3 sqlite.db "SELECT * FROM partnership WHERE user_a = 'USER_ID_HERE' OR user_b = 'USER_ID_HERE';"
+```
+
 ## 🗑️ **Cleaning Data**
 
 ### Delete Specific User
@@ -61,6 +87,8 @@ BEGIN TRANSACTION;
 DELETE FROM session WHERE userId = 'USER_ID_HERE';
 DELETE FROM account WHERE userId = 'USER_ID_HERE';
 DELETE FROM verification WHERE identifier = 'USER_EMAIL_HERE';
+DELETE FROM task WHERE userId = 'USER_ID_HERE';
+DELETE FROM partnership WHERE user_a = 'USER_ID_HERE' OR user_b = 'USER_ID_HERE';
 DELETE FROM user WHERE id = 'USER_ID_HERE';
 COMMIT;
 "
@@ -75,6 +103,8 @@ BEGIN TRANSACTION;
 DELETE FROM verification;
 DELETE FROM session;
 DELETE FROM account;
+DELETE FROM task;
+DELETE FROM partnership;
 DELETE FROM user;
 COMMIT;
 "
@@ -92,6 +122,16 @@ sqlite3 sqlite.db "DELETE FROM session WHERE expiresAt < datetime('now');"
 sqlite3 sqlite.db "DELETE FROM verification WHERE expiresAt < datetime('now');"
 ```
 
+### Clear All Tasks
+
+```bash
+# Clear all tasks for a specific user
+sqlite3 sqlite.db "DELETE FROM task WHERE userId = 'USER_ID_HERE';"
+
+# Clear all tasks (nuclear option)
+sqlite3 sqlite.db "DELETE FROM task;"
+```
+
 ## 📊 **Database Schema & Structure**
 
 ### View All Tables
@@ -106,6 +146,12 @@ sqlite3 sqlite.db ".tables"
 # View user table structure
 sqlite3 sqlite.db ".schema user"
 
+# View task table structure
+sqlite3 sqlite.db ".schema task"
+
+# View partnership table structure
+sqlite3 sqlite.db ".schema partnership"
+
 # View all table schemas
 sqlite3 sqlite.db ".schema"
 ```
@@ -115,6 +161,12 @@ sqlite3 sqlite.db ".schema"
 ```bash
 # Detailed info about user table
 sqlite3 sqlite.db "PRAGMA table_info(user);"
+
+# Detailed info about task table
+sqlite3 sqlite.db "PRAGMA table_info(task);"
+
+# Detailed info about partnership table
+sqlite3 sqlite.db "PRAGMA table_info(partnership);"
 ```
 
 ## 🔧 **Development Helpers**
@@ -138,6 +190,9 @@ sqlite3 sqlite.db
 ```bash
 # Export all users to CSV
 sqlite3 sqlite.db -header -csv "SELECT * FROM user;" > users_backup.csv
+
+# Export all tasks to CSV
+sqlite3 sqlite.db -header -csv "SELECT * FROM task;" > tasks_backup.csv
 
 # Export database structure
 sqlite3 sqlite.db ".dump" > database_backup.sql
@@ -163,7 +218,11 @@ SELECT 'sessions', COUNT(*) FROM session
 UNION ALL
 SELECT 'accounts', COUNT(*) FROM account
 UNION ALL
-SELECT 'verifications', COUNT(*) FROM verification;
+SELECT 'verifications', COUNT(*) FROM verification
+UNION ALL
+SELECT 'tasks', COUNT(*) FROM task
+UNION ALL
+SELECT 'partnerships', COUNT(*) FROM partnership;
 "
 ```
 
@@ -198,6 +257,138 @@ HAVING COUNT(*) > 1;
 "
 ```
 
+### Check Task Data Integrity
+
+```bash
+# Find tasks with invalid user references
+sqlite3 sqlite.db "
+SELECT t.id, t.userId, t.title
+FROM task t
+LEFT JOIN user u ON t.userId = u.id
+WHERE u.id IS NULL;
+"
+
+# Find partnerships with invalid user references
+sqlite3 sqlite.db "
+SELECT p.id, p.user_a, p.user_b
+FROM partnership p
+LEFT JOIN user u1 ON p.user_a = u1.id
+LEFT JOIN user u2 ON p.user_b = u2.id
+WHERE u1.id IS NULL OR u2.id IS NULL;
+"
+```
+
+## 🌐 **Production Debugging (PostgreSQL)**
+
+### Test Database Connectivity
+
+```bash
+# Test PostgreSQL connection
+curl -s https://better-do-it.vercel.app/api/test-db | jq
+
+# Expected: {"success":true,"timestamp":"2024-01-01T12:00:00.000Z"}
+```
+
+### Test Authentication Setup
+
+```bash
+# Test better-auth instance
+curl -s https://better-do-it.vercel.app/api/test-auth | jq
+
+# Expected: {"success":true,"authStatus":"working"}
+```
+
+### Check Database Schema
+
+```bash
+# View actual table and column names in PostgreSQL
+curl -s https://better-do-it.vercel.app/api/check-schema | jq
+
+# Expected: Shows tables: user, session, account, verification, task, partnership
+```
+
+### Setup Database Tables
+
+```bash
+# Create all required tables (run once after deployment)
+curl -i -X POST https://better-do-it.vercel.app/api/setup-db
+```
+
+### Test API Endpoints
+
+```bash
+# Test all endpoints for errors
+for endpoint in "tasks" "partner" "partner/tasks"; do
+  echo "Testing /api/$endpoint..."
+  curl -s https://better-do-it.vercel.app/api/$endpoint | jq '.error // "OK"'
+done
+```
+
+### Verify Environment Variables
+
+```bash
+# Check if auth is properly configured
+curl -s https://better-do-it.vercel.app/api/test-auth | jq '.environment, .hasSecret, .hasUrl, .hasPostgresUrl'
+```
+
+### Test Data Transformation
+
+```bash
+# Verify column name mapping (lowercase DB → camelCase frontend)
+curl -s https://better-do-it.vercel.app/api/tasks | jq '.activeTasks[0] | keys'
+# Should show: ["id", "userId", "title", "isCompleted", "isActive", "createdAt", "completedAt", "addedToActiveAt"]
+```
+
+## 🚀 **Deployment Commands**
+
+### Build and Test
+
+```bash
+# Build the application
+npm run build
+
+# Run linting
+npm run lint
+
+# Start development server
+npm run dev
+
+# Start production server
+npm start
+```
+
+### Database Migration
+
+```bash
+# Generate better-auth migration
+npx @better-auth/cli generate
+
+# Run better-auth migration
+npx @better-auth/cli migrate
+
+# Setup database tables manually (if needed)
+curl -i -X POST https://better-do-it.vercel.app/api/setup-db
+```
+
+### Git Operations
+
+```bash
+# Check status
+git status
+
+# Add changes
+git add .
+
+# Commit changes
+git commit -m "Description of changes"
+
+# Push to remote
+git push
+
+# Check deployment status
+git log --oneline -5
+```
+
 ## 📝 **Quick Reference**
 
 ### Common SQLite Data Types in Better Auth
@@ -220,7 +411,21 @@ strftime('%Y-%m-%d %H:%M:%S', createdAt)
 # Date comparisons
 WHERE createdAt > datetime('now', '-1 day')
 WHERE expiresAt < datetime('now')
+
+# Week boundary (Wednesday 6 PM ET)
+WHERE completedAt >= datetime('now', 'weekday 3', '-6 days', '18:00:00')
+AND completedAt < datetime('now', 'weekday 3', '18:00:00')
 ```
+
+### PostgreSQL vs SQLite Differences
+
+| Feature           | SQLite (Local) | PostgreSQL (Production) |
+| ----------------- | -------------- | ----------------------- |
+| Column Names      | camelCase      | lowercase               |
+| Parameter Binding | `?`            | `${value}`              |
+| Operations        | Synchronous    | Asynchronous            |
+| Connection        | File-based     | Connection string       |
+| Data Types        | Dynamic        | Strict                  |
 
 ## 🔐 **Security Notes**
 
@@ -228,14 +433,18 @@ WHERE expiresAt < datetime('now')
 - **User passwords are hashed** - you can't see plain text passwords
 - **Session tokens are sensitive** - don't log them in production
 - **Always use transactions** for multi-table operations
+- **Environment variables** are sensitive - don't commit them to git
 
 ## 💡 **Pro Tips**
 
-1. **Use `.headers on` and `.mode column`** for readable output
+1. **Use `.headers on` and `.mode column`** for readable SQLite output
 2. **Always backup before bulk operations**: `cp sqlite.db sqlite.db.backup`
 3. **Use LIMIT** for large datasets: `SELECT * FROM user LIMIT 10;`
 4. **Use transactions** for data consistency
 5. **Check foreign key constraints**: `PRAGMA foreign_keys = ON;`
+6. **Test both environments** - local SQLite and production PostgreSQL
+7. **Monitor API responses** for data transformation issues
+8. **Use jq for JSON parsing** in curl commands: `curl ... | jq`
 
 ---
 

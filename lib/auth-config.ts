@@ -52,6 +52,11 @@ export const auth = betterAuth({
     crossSubDomainCookies: {
       enabled: false,
     },
+    // Production cookie settings
+    ...(isProduction && {
+      cookieSecure: true,
+      cookieSameSite: "lax",
+    }),
   },
 
   // Add the nextCookies plugin for Next.js 15 compatibility

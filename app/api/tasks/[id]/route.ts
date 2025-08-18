@@ -27,7 +27,7 @@ async function getTaskForUserPostgres(taskId: string, userId: string) {
   `;
   const row = result.rows?.[0];
   if (!row) return undefined;
-  
+
   // Transform to match TaskRow interface
   return {
     id: row.id,
@@ -55,10 +55,10 @@ export async function PATCH(
   const isProduction = process.env.NODE_ENV === "production";
 
   // Get the task
-  const task = isProduction 
+  const task = isProduction
     ? await getTaskForUserPostgres(taskId, userId)
     : getTaskForUser(taskId, userId);
-    
+
   if (!task) {
     return Response.json({ error: "Not found" }, { status: 404 });
   }
@@ -113,7 +113,8 @@ export async function PATCH(
           );
         }
 
-        const completedAt = nextCompleted === 1 ? toSqliteUtc(new Date()) : null;
+        const completedAt =
+          nextCompleted === 1 ? toSqliteUtc(new Date()) : null;
 
         await sql`
           UPDATE task SET iscompleted = ${nextCompleted}, completedat = ${completedAt} 
@@ -149,7 +150,9 @@ export async function PATCH(
 
         const addedToActiveAt = isActive ? toSqliteUtc(new Date()) : null;
         await sql`
-          UPDATE task SET isactive = ${isActive ? 1 : 0}, addedtoactiveat = ${addedToActiveAt} 
+          UPDATE task SET isactive = ${
+            isActive ? 1 : 0
+          }, addedtoactiveat = ${addedToActiveAt} 
           WHERE id = ${taskId} AND userid = ${userId}
         `;
       }
@@ -175,7 +178,10 @@ export async function PATCH(
     } catch (error) {
       console.error("PostgreSQL PATCH error:", error);
       return Response.json(
-        { error: "Database error", details: error instanceof Error ? error.message : "Unknown error" },
+        {
+          error: "Database error",
+          details: error instanceof Error ? error.message : "Unknown error",
+        },
         { status: 500 }
       );
     }
@@ -287,7 +293,10 @@ export async function DELETE(
     } catch (error) {
       console.error("PostgreSQL DELETE error:", error);
       return Response.json(
-        { error: "Database error", details: error instanceof Error ? error.message : "Unknown error" },
+        {
+          error: "Database error",
+          details: error instanceof Error ? error.message : "Unknown error",
+        },
         { status: 500 }
       );
     }

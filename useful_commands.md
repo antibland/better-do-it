@@ -296,6 +296,11 @@ curl -s https://better-do-it.vercel.app/api/test-db | jq
 curl -s https://better-do-it.vercel.app/api/test-auth | jq
 
 # Expected: {"success":true,"authStatus":"working"}
+
+# Test login process
+curl -i -X POST https://better-do-it.vercel.app/api/test-login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"your-email@example.com","password":"your-password"}'
 ```
 
 ### Check Database Schema

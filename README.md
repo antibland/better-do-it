@@ -1,36 +1,163 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Better Do It - Todo App for Partners
 
-## Getting Started
+A collaborative task management app built with Next.js 15, Better Auth, and dual database support (SQLite for development, PostgreSQL for production).
 
-First, run the development server:
+## 🚀 **Live Demo**
+
+- **Production**: [https://better-do-it.vercel.app](https://better-do-it.vercel.app)
+- **Local Development**: [http://localhost:3000](http://localhost:3000)
+
+## ✨ **Features**
+
+- **Task Management**: Create, complete, archive, and organize tasks
+- **Partner Collaboration**: Pair with another user to see their active tasks
+- **Weekly Goals**: Track completion within Wednesday 6 PM ET week boundaries
+- **Active Task Limits**: Maximum 3 active tasks per user
+- **Dual Environment**: Works seamlessly in local development and production
+
+## 🛠 **Tech Stack**
+
+- **Framework**: Next.js 15 (App Router)
+- **Authentication**: Better Auth
+- **Database**:
+  - **Local**: SQLite with better-sqlite3
+  - **Production**: PostgreSQL (Neon) with @vercel/postgres
+- **Styling**: Tailwind CSS
+- **Icons**: Lucide React
+- **Deployment**: Vercel
+
+## 🚀 **Quick Start**
+
+### Prerequisites
+
+- Node.js 18+
+- npm, yarn, or pnpm
+
+### Local Development
 
 ```bash
+# Clone the repository
+git clone https://github.com/antibland/better-do-it.git
+cd better-do-it
+
+# Install dependencies
+npm install
+
+# Start development server
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) to see the app.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Environment Variables
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Create a `.env.local` file for local development:
 
-## Learn More
+```env
+BETTER_AUTH_SECRET=your-secret-key-here
+BETTER_AUTH_URL=http://localhost:3000
+NEXT_PUBLIC_BETTER_AUTH_URL=http://localhost:3000
+```
 
-To learn more about Next.js, take a look at the following resources:
+## 📖 **Documentation**
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- **[Task API Commands](curl_tasks.md)** - Complete cURL cookbook for task operations
+- **[Partner API Commands](curl_partners.md)** - Partnership management commands
+- **[Useful Commands](useful_commands.md)** - Database, deployment, and debugging commands
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## 🔧 **Development Commands**
 
-## Deploy on Vercel
+```bash
+# Development
+npm run dev          # Start development server
+npm run build        # Build for production
+npm run start        # Start production server
+npm run lint         # Run ESLint
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+# Database
+npx @better-auth/cli generate  # Generate auth migrations
+npx @better-auth/cli migrate   # Run auth migrations
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 🌐 **Production Deployment**
+
+The app is automatically deployed to Vercel on push to main branch.
+
+### Environment Variables (Production)
+
+- `BETTER_AUTH_SECRET` - Secret key for authentication
+- `BETTER_AUTH_URL` - Production auth URL
+- `NEXT_PUBLIC_BETTER_AUTH_URL` - Client-side auth URL
+- `POSTGRES_URL` - Neon database connection string
+
+## 🗄 **Database Schema**
+
+### Core Tables
+
+- **user** - User accounts and profiles
+- **session** - Authentication sessions
+- **task** - User tasks with active/master status
+- **partnership** - User partnerships for collaboration
+
+### Key Features
+
+- **Dual Database Support**: SQLite (local) ↔ PostgreSQL (production)
+- **Data Transformation**: Automatic column name mapping (lowercase ↔ camelCase)
+- **Week Boundaries**: Wednesday 6 PM ET completion tracking
+- **Active Task Limits**: Maximum 3 active tasks per user
+
+## 🐛 **Troubleshooting**
+
+### Common Issues
+
+1. **Authentication Problems**: Check environment variables and cookie settings
+2. **Database Issues**: Verify PostgreSQL connection and table schema
+3. **API Errors**: Use the debugging endpoints in the documentation
+
+### Debugging Commands
+
+```bash
+# Test database connectivity
+curl -s https://better-do-it.vercel.app/api/test-db | jq
+
+# Check authentication setup
+curl -s https://better-do-it.vercel.app/api/test-auth | jq
+
+# Verify database schema
+curl -s https://better-do-it.vercel.app/api/check-schema | jq
+```
+
+## 📝 **API Reference**
+
+### Core Endpoints
+
+- `GET /api/tasks` - List user's tasks
+- `POST /api/tasks` - Create new task
+- `PATCH /api/tasks/[id]` - Update task (complete, archive, title)
+- `DELETE /api/tasks/[id]` - Delete task
+- `GET /api/partner` - Get current partner
+- `POST /api/partner` - Pair with user by email
+- `DELETE /api/partner` - Unpair from current partnership
+
+### Debugging Endpoints
+
+- `GET /api/test-db` - Test database connectivity
+- `GET /api/test-auth` - Test authentication setup
+- `GET /api/check-schema` - View database schema
+- `POST /api/setup-db` - Create database tables
+
+## 🤝 **Contributing**
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Test thoroughly (local + production)
+5. Submit a pull request
+
+## 📄 **License**
+
+This project is open source and available under the [MIT License](LICENSE).
+
+---
+
+**Built with ❤️ for better task management and collaboration**

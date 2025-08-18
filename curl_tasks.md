@@ -194,6 +194,15 @@ curl -i -X POST "$BASE/api/test-signup" \
   -d '{"email":"test@example.com","password":"password123","name":"Test User"}'
 ```
 
+### Test login process
+
+```bash
+# Test user authentication
+curl -i -X POST "$BASE/api/test-login" \
+  -H "Content-Type: application/json" \
+  -d '{"email":"your-email@example.com","password":"your-password"}'
+```
+
 ### Check database schema
 
 ```bash

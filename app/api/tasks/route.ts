@@ -22,88 +22,108 @@ async function requireSession(req: Request) {
 }
 
 export async function GET(req: Request) {
-  const session = await requireSession(req);
-  if (!session) {
-    return Response.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  try {
+    const session = await requireSession(req);
+    if (!session) {
+      console.log("Tasks API: Unauthorized - no session");
+      return Response.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
-  const userId = session.user.id as string;
-  const isProduction = process.env.NODE_ENV === "production";
+    const userId = session.user.id as string;
+    const isProduction = process.env.NODE_ENV === "production";
+    
+    console.log(`Tasks API: Processing request for user ${userId} in ${isProduction ? 'production' : 'development'}`);
 
-  if (isProduction) {
-    // PostgreSQL implementation for production
-    const allTasksResult = await sql`
-      SELECT id, userId, title, isCompleted, isActive, createdAt, completedAt, addedToActiveAt
-      FROM task
-      WHERE userId = ${userId}
-      ORDER BY isActive DESC, isCompleted ASC, createdAt ASC
-    `;
-    const allTasks = allTasksResult.rows || [];
+    if (isProduction) {
+      // PostgreSQL implementation for production
+      const allTasksResult = await sql`
+        SELECT id, userId, title, isCompleted, isActive, createdAt, completedAt, addedToActiveAt
+        FROM task
+        WHERE userId = ${userId}
+        ORDER BY isActive DESC, isCompleted ASC, createdAt ASC
+      `;
+      const allTasks = allTasksResult.rows || [];
 
-    // Compute completed count for the current ET week window (active tasks only)
-    const weekStart = toSqliteUtc(getCurrentWeekStartEt());
-    const nextWeekStart = toSqliteUtc(getNextWeekStartEt());
-    const completedThisWeekResult = await sql`
-      SELECT COUNT(*) as cnt
-      FROM task
-      WHERE userId = ${userId} AND isActive = 1 AND isCompleted = 1 AND completedAt >= ${weekStart} AND completedAt < ${nextWeekStart}
-    `;
-    const completedThisWeek = completedThisWeekResult.rows?.[0]?.cnt || 0;
+      // Compute completed count for the current ET week window (active tasks only)
+      const weekStart = toSqliteUtc(getCurrentWeekStartEt());
+      const nextWeekStart = toSqliteUtc(getNextWeekStartEt());
+      const completedThisWeekResult = await sql`
+        SELECT COUNT(*) as cnt
+        FROM task
+        WHERE userId = ${userId} AND isActive = 1 AND isCompleted = 1 AND completedAt >= ${weekStart} AND completedAt < ${nextWeekStart}
+      `;
+      const completedThisWeek = completedThisWeekResult.rows?.[0]?.cnt || 0;
 
-    // Filter tasks for different views
-    const activeTasks = allTasks.filter((task) => task.isActive === 1);
-    const masterTasks = allTasks.filter((task) => task.isActive === 0);
-    const openActiveTasks = activeTasks.filter((task) => task.isCompleted === 0);
+      // Filter tasks for different views
+      const activeTasks = allTasks.filter((task) => task.isActive === 1);
+      const masterTasks = allTasks.filter((task) => task.isActive === 0);
+      const openActiveTasks = activeTasks.filter((task) => task.isCompleted === 0);
 
-    // Check if user needs to top off active tasks (should have 3 active tasks)
-    const needsTopOff = activeTasks.length < 3;
+      // Check if user needs to top off active tasks (should have 3 active tasks)
+      const needsTopOff = activeTasks.length < 3;
 
-    return Response.json({
-      tasks: allTasks,
-      activeTasks: activeTasks,
-      masterTasks: masterTasks,
-      openActiveTasks: openActiveTasks,
-      completedThisWeek: completedThisWeek,
-      needsTopOff,
-    });
-  } else {
-    // SQLite implementation for development
-    const allTasks = appDb
-      .prepare(
-        `SELECT id, userId, title, isCompleted, isActive, createdAt, completedAt, addedToActiveAt
-         FROM task
-         WHERE userId = ?
-         ORDER BY isActive DESC, isCompleted ASC, createdAt ASC`
-      )
-      .all(userId) as TaskRow[];
+      const response = {
+        tasks: allTasks,
+        activeTasks: activeTasks,
+        masterTasks: masterTasks,
+        openActiveTasks: openActiveTasks,
+        completedThisWeek: completedThisWeek,
+        needsTopOff,
+      };
 
-    // Compute completed count for the current ET week window (active tasks only)
-    const weekStart = toSqliteUtc(getCurrentWeekStartEt());
-    const nextWeekStart = toSqliteUtc(getNextWeekStartEt());
-    const completedThisWeek = appDb
-      .prepare(
-        `SELECT COUNT(*) as cnt
-         FROM task
-         WHERE userId = ? AND isActive = 1 AND isCompleted = 1 AND completedAt >= ? AND completedAt < ?`
-      )
-      .get(userId, weekStart, nextWeekStart) as { cnt: number };
+      console.log(`Tasks API: Production response - ${allTasks.length} total tasks, ${activeTasks.length} active, ${completedThisWeek} completed this week`);
+      return Response.json(response);
+    } else {
+      // SQLite implementation for development
+      const allTasks = appDb
+        .prepare(
+          `SELECT id, userId, title, isCompleted, isActive, createdAt, completedAt, addedToActiveAt
+           FROM task
+           WHERE userId = ?
+           ORDER BY isActive DESC, isCompleted ASC, createdAt ASC`
+        )
+        .all(userId) as TaskRow[];
 
-    // Filter tasks for different views
-    const activeTasks = allTasks.filter((task) => task.isActive === 1);
-    const masterTasks = allTasks.filter((task) => task.isActive === 0);
-    const openActiveTasks = activeTasks.filter((task) => task.isCompleted === 0);
+      // Compute completed count for the current ET week window (active tasks only)
+      const weekStart = toSqliteUtc(getCurrentWeekStartEt());
+      const nextWeekStart = toSqliteUtc(getNextWeekStartEt());
+      const completedThisWeek = appDb
+        .prepare(
+          `SELECT COUNT(*) as cnt
+           FROM task
+           WHERE userId = ? AND isActive = 1 AND isCompleted = 1 AND completedAt >= ? AND completedAt < ?`
+        )
+        .get(userId, weekStart, nextWeekStart) as { cnt: number };
 
-    // Check if user needs to top off active tasks (should have 3 active tasks)
-    const needsTopOff = activeTasks.length < 3;
+      // Filter tasks for different views
+      const activeTasks = allTasks.filter((task) => task.isActive === 1);
+      const masterTasks = allTasks.filter((task) => task.isActive === 0);
+      const openActiveTasks = activeTasks.filter((task) => task.isCompleted === 0);
 
-    return Response.json({
-      tasks: allTasks,
-      activeTasks: activeTasks,
-      masterTasks: masterTasks,
-      openActiveTasks: openActiveTasks,
-      completedThisWeek: completedThisWeek?.cnt ?? 0,
-      needsTopOff,
-    });
+      // Check if user needs to top off active tasks (should have 3 active tasks)
+      const needsTopOff = activeTasks.length < 3;
+
+      const response = {
+        tasks: allTasks,
+        activeTasks: activeTasks,
+        masterTasks: masterTasks,
+        openActiveTasks: openActiveTasks,
+        completedThisWeek: completedThisWeek?.cnt ?? 0,
+        needsTopOff,
+      };
+
+      console.log(`Tasks API: Development response - ${allTasks.length} total tasks, ${activeTasks.length} active, ${completedThisWeek?.cnt ?? 0} completed this week`);
+      return Response.json(response);
+    }
+  } catch (error) {
+    console.error("Tasks API: Error processing request:", error);
+    return Response.json(
+      { 
+        error: "Internal server error",
+        details: error instanceof Error ? error.message : "Unknown error"
+      }, 
+      { status: 500 }
+    );
   }
 }
 

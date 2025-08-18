@@ -46,7 +46,7 @@ export async function GET(req: Request) {
     try {
       // Get partnership
       const partnershipResult = await sql`
-        SELECT id, user_a, user_b FROM partnership WHERE user_a = ${userId} OR user_b = ${userId}
+        SELECT id, usera, userb FROM partnership WHERE usera = ${userId} OR userb = ${userId}
       `;
       const partnership = partnershipResult.rows?.[0];
 
@@ -60,7 +60,8 @@ export async function GET(req: Request) {
       }
 
       // Determine which user is the partner
-      const partnerId = partnership.user_a === userId ? partnership.user_b : partnership.user_a;
+      const partnerId =
+        partnership.usera === userId ? partnership.userb : partnership.usera;
 
       // Fetch partner's active tasks only
       const activeTasksResult = await sql`
@@ -71,7 +72,7 @@ export async function GET(req: Request) {
       `;
 
       // Transform the data to match frontend expectations (camelCase)
-      const activeTasks = (activeTasksResult.rows || []).map(task => ({
+      const activeTasks = (activeTasksResult.rows || []).map((task) => ({
         id: task.id,
         userId: task.userid,
         title: task.title,
@@ -113,7 +114,7 @@ export async function GET(req: Request) {
       });
     } catch (error) {
       console.error("Partner tasks API error:", error);
-      
+
       // If it's a table doesn't exist error, return empty response
       if (error instanceof Error && error.message.includes("does not exist")) {
         return Response.json({
@@ -122,7 +123,7 @@ export async function GET(req: Request) {
           completedThisWeek: 0,
         });
       }
-      
+
       return Response.json({ error: "Internal server error" }, { status: 500 });
     }
   } else {
@@ -161,7 +162,9 @@ export async function GET(req: Request) {
     // Get partner's user info
     const partner = appDb
       .prepare(`SELECT id, email, name FROM user WHERE id = ?`)
-      .get(partnerId) as { id: string; email: string; name: string } | undefined;
+      .get(partnerId) as
+      | { id: string; email: string; name: string }
+      | undefined;
 
     if (!partner) {
       return Response.json({ error: "Partner not found" }, { status: 404 });

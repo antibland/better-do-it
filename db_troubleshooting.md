@@ -179,6 +179,7 @@ Database error when adding partners
 - Code expects snake_case (`user_a`, `user_b`, `created_at`)
 - Actual database uses all lowercase (`usera`, `userb`, `createdat`)
 - Partnership table queries fail due to non-existent columns
+- **Affects both partnership creation and partner tasks retrieval**
 
 **Solution:**
 
@@ -192,7 +193,17 @@ Database error when adding partners
    SELECT id, usera, userb, createdat FROM partnership WHERE usera = ${userId}
    ```
 
-2. **Update data transformation** to map from actual database columns:
+2. **Update partner tasks route** to use correct column names:
+
+   ```typescript
+   // Before (incorrect)
+   SELECT id, user_a, user_b FROM partnership WHERE user_a = ${userId} OR user_b = ${userId}
+
+   // After (correct)
+   SELECT id, usera, userb FROM partnership WHERE usera = ${userId} OR userb = ${userId}
+   ```
+
+3. **Update data transformation** to map from actual database columns:
 
    ```typescript
    return {
@@ -203,7 +214,7 @@ Database error when adding partners
    };
    ```
 
-3. **Update schema initialization** in `lib/db.ts` to match actual database:
+4. **Update schema initialization** in `lib/db.ts` to match actual database:
 
    ```sql
    CREATE TABLE IF NOT EXISTS partnership (

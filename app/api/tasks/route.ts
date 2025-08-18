@@ -37,59 +37,71 @@ export async function GET(req: Request) {
     if (isProduction) {
       // PostgreSQL implementation for production - using actual column names from database
       console.log("Tasks API: Executing PostgreSQL query...");
-      const allTasksResult = await sql`
-        SELECT id, userid, title, iscompleted, isactive, createdat, completedat, addedtoactiveat
-        FROM task
-        WHERE userid = ${userId}
-        ORDER BY isactive DESC, iscompleted ASC, createdat ASC
-      `;
       
-      console.log("Tasks API: Raw database result:", JSON.stringify(allTasksResult.rows, null, 2));
-      
-      // Transform the data to match frontend expectations (camelCase)
-      const allTasks = (allTasksResult.rows || []).map(task => ({
-        id: task.id,
-        userId: task.userid,
-        title: task.title,
-        isCompleted: task.iscompleted,
-        isActive: task.isactive,
-        createdAt: task.createdat,
-        completedAt: task.completedat,
-        addedToActiveAt: task.addedtoactiveat,
-      }));
+      try {
+        const allTasksResult = await sql`
+          SELECT id, userid, title, iscompleted, isactive, createdat, completedat, addedtoactiveat
+          FROM task
+          WHERE userid = ${userId}
+          ORDER BY isactive DESC, iscompleted ASC, createdat ASC
+        `;
+        
+        console.log("Tasks API: Raw database result:", JSON.stringify(allTasksResult.rows, null, 2));
+        
+        // Transform the data to match frontend expectations (camelCase)
+        const allTasks = (allTasksResult.rows || []).map(task => ({
+          id: task.id,
+          userId: task.userid,
+          title: task.title,
+          isCompleted: task.iscompleted,
+          isActive: task.isactive,
+          createdAt: task.createdat,
+          completedAt: task.completedat,
+          addedToActiveAt: task.addedtoactiveat,
+        }));
 
-      console.log("Tasks API: Transformed tasks:", JSON.stringify(allTasks, null, 2));
+        console.log("Tasks API: Transformed tasks:", JSON.stringify(allTasks, null, 2));
 
-      // Compute completed count for the current ET week window (active tasks only)
-      const weekStart = toSqliteUtc(getCurrentWeekStartEt());
-      const nextWeekStart = toSqliteUtc(getNextWeekStartEt());
-      const completedThisWeekResult = await sql`
-        SELECT COUNT(*) as cnt
-        FROM task
-        WHERE userid = ${userId} AND isactive = 1 AND iscompleted = 1 AND completedat >= ${weekStart} AND completedat < ${nextWeekStart}
-      `;
-      const completedThisWeek = completedThisWeekResult.rows?.[0]?.cnt || 0;
+        // Compute completed count for the current ET week window (active tasks only)
+        const weekStart = toSqliteUtc(getCurrentWeekStartEt());
+        const nextWeekStart = toSqliteUtc(getNextWeekStartEt());
+        const completedThisWeekResult = await sql`
+          SELECT COUNT(*) as cnt
+          FROM task
+          WHERE userid = ${userId} AND isactive = 1 AND iscompleted = 1 AND completedat >= ${weekStart} AND completedat < ${nextWeekStart}
+        `;
+        const completedThisWeek = completedThisWeekResult.rows?.[0]?.cnt || 0;
 
-      // Filter tasks for different views
-      const activeTasks = allTasks.filter((task) => task.isActive === 1);
-      const masterTasks = allTasks.filter((task) => task.isActive === 0);
-      const openActiveTasks = activeTasks.filter((task) => task.isCompleted === 0);
+        // Filter tasks for different views
+        const activeTasks = allTasks.filter((task) => task.isActive === 1);
+        const masterTasks = allTasks.filter((task) => task.isActive === 0);
+        const openActiveTasks = activeTasks.filter((task) => task.isCompleted === 0);
 
-      // Check if user needs to top off active tasks (should have 3 active tasks)
-      const needsTopOff = activeTasks.length < 3;
+        // Check if user needs to top off active tasks (should have 3 active tasks)
+        const needsTopOff = activeTasks.length < 3;
 
-      const response = {
-        tasks: allTasks,  // This is the key - the frontend expects this
-        activeTasks: activeTasks,
-        masterTasks: masterTasks,
-        openActiveTasks: openActiveTasks,
-        completedThisWeek: completedThisWeek,
-        needsTopOff,
-      };
+        const response = {
+          tasks: allTasks,  // This is the key - the frontend expects this
+          activeTasks: activeTasks,
+          masterTasks: masterTasks,
+          openActiveTasks: openActiveTasks,
+          completedThisWeek: completedThisWeek,
+          needsTopOff,
+        };
 
-      console.log("Tasks API: Final response:", JSON.stringify(response, null, 2));
-      console.log(`Tasks API: Production response - ${allTasks.length} total tasks, ${activeTasks.length} active, ${completedThisWeek} completed this week`);
-      return Response.json(response);
+        console.log("Tasks API: Final response:", JSON.stringify(response, null, 2));
+        console.log(`Tasks API: Production response - ${allTasks.length} total tasks, ${activeTasks.length} active, ${completedThisWeek} completed this week`);
+        return Response.json(response);
+      } catch (dbError) {
+        console.error("Tasks API: Database error:", dbError);
+        return Response.json(
+          { 
+            error: "Database error",
+            details: dbError instanceof Error ? dbError.message : "Unknown database error"
+          }, 
+          { status: 500 }
+        );
+      }
     } else {
       // SQLite implementation for development
       const allTasks = appDb

@@ -1,47 +1,47 @@
 -- Better Auth Database Schema
--- Based on the documentation, these are the required tables
+-- Based on the documentation, these are the required tables with snake_case column names
 
 -- User table
 CREATE TABLE IF NOT EXISTS "user" (
     "id" TEXT PRIMARY KEY,
     "name" TEXT NOT NULL,
     "email" TEXT NOT NULL UNIQUE,
-    "emailVerified" BOOLEAN NOT NULL DEFAULT FALSE,
+    "email_verified" BOOLEAN NOT NULL DEFAULT FALSE,
     "image" TEXT,
     "role" TEXT DEFAULT 'user',
-    "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-    "updatedAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+    "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    "updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
 );
 
 -- Session table
 CREATE TABLE IF NOT EXISTS "session" (
     "id" TEXT PRIMARY KEY,
-    "userId" TEXT NOT NULL,
+    "user_id" TEXT NOT NULL,
     "token" TEXT NOT NULL UNIQUE,
-    "expiresAt" TIMESTAMP WITH TIME ZONE NOT NULL,
-    "ipAddress" TEXT,
-    "userAgent" TEXT,
-    "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-    "updatedAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-    FOREIGN KEY ("userId") REFERENCES "user"("id") ON DELETE CASCADE
+    "expires_at" TIMESTAMP WITH TIME ZONE NOT NULL,
+    "ip_address" TEXT,
+    "user_agent" TEXT,
+    "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    "updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    FOREIGN KEY ("user_id") REFERENCES "user"("id") ON DELETE CASCADE
 );
 
 -- Account table
 CREATE TABLE IF NOT EXISTS "account" (
     "id" TEXT PRIMARY KEY,
-    "userId" TEXT NOT NULL,
-    "accountId" TEXT NOT NULL,
-    "providerId" TEXT NOT NULL,
-    "accessToken" TEXT,
-    "refreshToken" TEXT,
-    "accessTokenExpiresAt" TIMESTAMP WITH TIME ZONE,
-    "refreshTokenExpiresAt" TIMESTAMP WITH TIME ZONE,
+    "user_id" TEXT NOT NULL,
+    "account_id" TEXT NOT NULL,
+    "provider_id" TEXT NOT NULL,
+    "access_token" TEXT,
+    "refresh_token" TEXT,
+    "access_token_expires_at" TIMESTAMP WITH TIME ZONE,
+    "refresh_token_expires_at" TIMESTAMP WITH TIME ZONE,
     "scope" TEXT,
-    "idToken" TEXT,
+    "id_token" TEXT,
     "password" TEXT,
-    "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-    "updatedAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-    FOREIGN KEY ("userId") REFERENCES "user"("id") ON DELETE CASCADE
+    "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    "updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    FOREIGN KEY ("user_id") REFERENCES "user"("id") ON DELETE CASCADE
 );
 
 -- Verification table
@@ -49,46 +49,46 @@ CREATE TABLE IF NOT EXISTS "verification" (
     "id" TEXT PRIMARY KEY,
     "identifier" TEXT NOT NULL,
     "value" TEXT NOT NULL,
-    "expiresAt" TIMESTAMP WITH TIME ZONE NOT NULL,
-    "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-    "updatedAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+    "expires_at" TIMESTAMP WITH TIME ZONE NOT NULL,
+    "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    "updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
 );
 
--- Task table (for the app functionality)
+-- Task table (for the app functionality) - using snake_case to match Better Auth convention
 CREATE TABLE IF NOT EXISTS "task" (
     "id" TEXT PRIMARY KEY,
-    "userId" TEXT NOT NULL,
+    "user_id" TEXT NOT NULL,
     "title" TEXT NOT NULL,
-    "isCompleted" INTEGER NOT NULL DEFAULT 0 CHECK ("isCompleted" IN (0,1)),
-    "isActive" INTEGER DEFAULT 0,
-    "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-    "completedAt" TIMESTAMP WITH TIME ZONE NULL,
-    "addedToActiveAt" TIMESTAMP WITH TIME ZONE NULL,
-    FOREIGN KEY ("userId") REFERENCES "user"("id") ON DELETE CASCADE
+    "is_completed" INTEGER NOT NULL DEFAULT 0 CHECK ("is_completed" IN (0,1)),
+    "is_active" INTEGER DEFAULT 0,
+    "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    "completed_at" TIMESTAMP WITH TIME ZONE NULL,
+    "added_to_active_at" TIMESTAMP WITH TIME ZONE NULL,
+    FOREIGN KEY ("user_id") REFERENCES "user"("id") ON DELETE CASCADE
 );
 
--- Partnership table (for the app functionality)
+-- Partnership table (for the app functionality) - using snake_case to match Better Auth convention
 CREATE TABLE IF NOT EXISTS "partnership" (
     "id" TEXT PRIMARY KEY,
-    "userA" TEXT NOT NULL UNIQUE,
-    "userB" TEXT NOT NULL UNIQUE,
-    "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-    CHECK ("userA" <> "userB"),
-    FOREIGN KEY ("userA") REFERENCES "user"("id") ON DELETE CASCADE,
-    FOREIGN KEY ("userB") REFERENCES "user"("id") ON DELETE CASCADE
+    "user_a" TEXT NOT NULL UNIQUE,
+    "user_b" TEXT NOT NULL UNIQUE,
+    "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    CHECK ("user_a" <> "user_b"),
+    FOREIGN KEY ("user_a") REFERENCES "user"("id") ON DELETE CASCADE,
+    FOREIGN KEY ("user_b") REFERENCES "user"("id") ON DELETE CASCADE
 );
 
 -- Create indexes for better-auth tables
-CREATE INDEX IF NOT EXISTS "idx_session_userId" ON "session"("userId");
+CREATE INDEX IF NOT EXISTS "idx_session_user_id" ON "session"("user_id");
 CREATE INDEX IF NOT EXISTS "idx_session_token" ON "session"("token");
-CREATE INDEX IF NOT EXISTS "idx_account_userId" ON "account"("userId");
-CREATE INDEX IF NOT EXISTS "idx_account_providerId" ON "account"("providerId");
+CREATE INDEX IF NOT EXISTS "idx_account_user_id" ON "account"("user_id");
+CREATE INDEX IF NOT EXISTS "idx_account_provider_id" ON "account"("provider_id");
 CREATE INDEX IF NOT EXISTS "idx_verification_identifier" ON "verification"("identifier");
 
 -- Create indexes for app tables
-CREATE INDEX IF NOT EXISTS "idx_task_user_isCompleted" ON "task"("userId", "isCompleted");
-CREATE INDEX IF NOT EXISTS "idx_task_completedAt" ON "task"("completedAt");
-CREATE INDEX IF NOT EXISTS "idx_task_user_isActive" ON "task"("userId", "isActive");
-CREATE INDEX IF NOT EXISTS "idx_task_addedToActiveAt" ON "task"("addedToActiveAt");
-CREATE INDEX IF NOT EXISTS "idx_partnership_userA" ON "partnership"("userA");
-CREATE INDEX IF NOT EXISTS "idx_partnership_userB" ON "partnership"("userB");
+CREATE INDEX IF NOT EXISTS "idx_task_user_is_completed" ON "task"("user_id", "is_completed");
+CREATE INDEX IF NOT EXISTS "idx_task_completed_at" ON "task"("completed_at");
+CREATE INDEX IF NOT EXISTS "idx_task_user_is_active" ON "task"("user_id", "is_active");
+CREATE INDEX IF NOT EXISTS "idx_task_added_to_active_at" ON "task"("added_to_active_at");
+CREATE INDEX IF NOT EXISTS "idx_partnership_user_a" ON "partnership"("user_a");
+CREATE INDEX IF NOT EXISTS "idx_partnership_user_b" ON "partnership"("user_b");

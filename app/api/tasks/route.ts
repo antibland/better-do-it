@@ -1,5 +1,6 @@
 import { auth } from "@/lib/auth";
-import { appDb, generateId, TaskRow } from "@/lib/db";
+import { sql } from "@vercel/postgres";
+import { generateId } from "@/lib/db";
 import {
   getCurrentWeekStartEt,
   getNextWeekStartEt,
@@ -29,25 +30,23 @@ export async function GET(req: Request) {
   const userId = session.user.id as string;
 
   // Fetch all tasks (both active and master list, open and completed)
-  const allTasks = appDb
-    .prepare(
-      `SELECT id, userId, title, isCompleted, isActive, createdAt, completedAt, addedToActiveAt
-       FROM task
-       WHERE userId = ?
-       ORDER BY isActive DESC, isCompleted ASC, createdAt ASC`
-    )
-    .all(userId) as TaskRow[];
+  const allTasksResult = await sql`
+    SELECT id, userId, title, isCompleted, isActive, createdAt, completedAt, addedToActiveAt
+    FROM task
+    WHERE userId = ${userId}
+    ORDER BY isActive DESC, isCompleted ASC, createdAt ASC
+  `;
+  const allTasks = allTasksResult.rows || [];
 
   // Compute completed count for the current ET week window (active tasks only)
   const weekStart = toSqliteUtc(getCurrentWeekStartEt());
   const nextWeekStart = toSqliteUtc(getNextWeekStartEt());
-  const completedThisWeek = appDb
-    .prepare(
-      `SELECT COUNT(*) as cnt
-       FROM task
-       WHERE userId = ? AND isActive = 1 AND isCompleted = 1 AND completedAt >= ? AND completedAt < ?`
-    )
-    .get(userId, weekStart, nextWeekStart) as { cnt: number };
+  const completedThisWeekResult = await sql`
+    SELECT COUNT(*) as cnt
+    FROM task
+    WHERE userId = ${userId} AND isActive = 1 AND isCompleted = 1 AND completedAt >= ${weekStart} AND completedAt < ${nextWeekStart}
+  `;
+  const completedThisWeek = completedThisWeekResult.rows?.[0]?.cnt || 0;
 
   // Filter tasks for different views
   const activeTasks = allTasks.filter((task) => task.isActive === 1);
@@ -62,7 +61,7 @@ export async function GET(req: Request) {
     activeTasks: activeTasks,
     masterTasks: masterTasks,
     openActiveTasks: openActiveTasks,
-    completedThisWeek: completedThisWeek?.cnt ?? 0,
+    completedThisWeek: completedThisWeek,
     needsTopOff,
   });
 }
@@ -98,12 +97,11 @@ export async function POST(req: Request) {
 
   // If adding to active list, check the 3-task limit for active tasks
   if (isActive) {
-    const activeCountRow = appDb
-      .prepare(
-        `SELECT COUNT(*) as cnt FROM task WHERE userId = ? AND isActive = 1`
-      )
-      .get(userId) as { cnt: number };
-    if ((activeCountRow?.cnt ?? 0) >= 3) {
+    const activeCountResult = await sql`
+      SELECT COUNT(*) as cnt FROM task WHERE userId = ${userId} AND isActive = 1
+    `;
+    const activeCount = activeCountResult.rows?.[0]?.cnt || 0;
+    if (activeCount >= 3) {
       return Response.json(
         {
           error:
@@ -115,21 +113,20 @@ export async function POST(req: Request) {
   }
 
   const id = generateId();
-  const now = toSqliteUtc(new Date());
+  const now = new Date().toISOString();
   const addedToActiveAt = isActive ? now : null;
 
   // Insert task with active status
-  const stmt = appDb.prepare(
-    `INSERT INTO task (id, userId, title, isCompleted, isActive, createdAt, completedAt, addedToActiveAt)
-     VALUES (?, ?, ?, 0, ?, ?, NULL, ?)`
-  );
-  stmt.run(id, userId, title, isActive ? 1 : 0, now, addedToActiveAt);
+  await sql`
+    INSERT INTO task (id, userId, title, isCompleted, isActive, createdAt, completedAt, addedToActiveAt)
+    VALUES (${id}, ${userId}, ${title}, 0, ${isActive ? 1 : 0}, ${now}, NULL, ${addedToActiveAt})
+  `;
 
-  const created = appDb
-    .prepare(
-      `SELECT id, userId, title, isCompleted, isActive, createdAt, completedAt, addedToActiveAt FROM task WHERE id = ?`
-    )
-    .get(id) as TaskRow;
+  const createdResult = await sql`
+    SELECT id, userId, title, isCompleted, isActive, createdAt, completedAt, addedToActiveAt 
+    FROM task WHERE id = ${id}
+  `;
+  const created = createdResult.rows?.[0];
 
   return Response.json({ task: created }, { status: 201 });
 }
@@ -143,7 +140,7 @@ export async function DELETE(req: Request) {
   const userId = session.user.id as string;
 
   // Delete all tasks for the user (both open and completed)
-  appDb.prepare(`DELETE FROM task WHERE userId = ?`).run(userId);
+  await sql`DELETE FROM task WHERE userId = ${userId}`;
 
   return Response.json({ ok: true });
 }

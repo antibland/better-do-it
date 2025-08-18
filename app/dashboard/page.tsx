@@ -10,6 +10,7 @@ import {
   RotateCcw,
   ArrowDownCircle,
 } from "lucide-react";
+import DashboardSkeleton from "../components/DashboardSkeleton";
 
 // Types for our API responses
 type Task = {
@@ -370,11 +371,7 @@ export default function Dashboard() {
   };
 
   if (isPending) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-indigo-600"></div>
-      </div>
-    );
+    return <DashboardSkeleton />;
   }
 
   if (!session) {

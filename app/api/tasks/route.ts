@@ -31,24 +31,23 @@ export async function GET(req: Request) {
 
     const userId = session.user.id as string;
     const isProduction = process.env.NODE_ENV === "production";
-
-    console.log(
-      `Tasks API: Processing request for user ${userId} in ${
-        isProduction ? "production" : "development"
-      }`
-    );
+    
+    console.log(`Tasks API: Processing request for user ${userId} in ${isProduction ? 'production' : 'development'}`);
 
     if (isProduction) {
       // PostgreSQL implementation for production - using actual column names from database
+      console.log("Tasks API: Executing PostgreSQL query...");
       const allTasksResult = await sql`
         SELECT id, userid, title, iscompleted, isactive, createdat, completedat, addedtoactiveat
         FROM task
         WHERE userid = ${userId}
         ORDER BY isactive DESC, iscompleted ASC, createdat ASC
       `;
-
+      
+      console.log("Tasks API: Raw database result:", JSON.stringify(allTasksResult.rows, null, 2));
+      
       // Transform the data to match frontend expectations (camelCase)
-      const allTasks = (allTasksResult.rows || []).map((task) => ({
+      const allTasks = (allTasksResult.rows || []).map(task => ({
         id: task.id,
         userId: task.userid,
         title: task.title,
@@ -58,6 +57,8 @@ export async function GET(req: Request) {
         completedAt: task.completedat,
         addedToActiveAt: task.addedtoactiveat,
       }));
+
+      console.log("Tasks API: Transformed tasks:", JSON.stringify(allTasks, null, 2));
 
       // Compute completed count for the current ET week window (active tasks only)
       const weekStart = toSqliteUtc(getCurrentWeekStartEt());
@@ -72,9 +73,7 @@ export async function GET(req: Request) {
       // Filter tasks for different views
       const activeTasks = allTasks.filter((task) => task.isActive === 1);
       const masterTasks = allTasks.filter((task) => task.isActive === 0);
-      const openActiveTasks = activeTasks.filter(
-        (task) => task.isCompleted === 0
-      );
+      const openActiveTasks = activeTasks.filter((task) => task.isCompleted === 0);
 
       // Check if user needs to top off active tasks (should have 3 active tasks)
       const needsTopOff = activeTasks.length < 3;
@@ -88,9 +87,8 @@ export async function GET(req: Request) {
         needsTopOff,
       };
 
-      console.log(
-        `Tasks API: Production response - ${allTasks.length} total tasks, ${activeTasks.length} active, ${completedThisWeek} completed this week`
-      );
+      console.log("Tasks API: Final response:", JSON.stringify(response, null, 2));
+      console.log(`Tasks API: Production response - ${allTasks.length} total tasks, ${activeTasks.length} active, ${completedThisWeek} completed this week`);
       return Response.json(response);
     } else {
       // SQLite implementation for development
@@ -117,9 +115,7 @@ export async function GET(req: Request) {
       // Filter tasks for different views
       const activeTasks = allTasks.filter((task) => task.isActive === 1);
       const masterTasks = allTasks.filter((task) => task.isActive === 0);
-      const openActiveTasks = activeTasks.filter(
-        (task) => task.isCompleted === 0
-      );
+      const openActiveTasks = activeTasks.filter((task) => task.isCompleted === 0);
 
       // Check if user needs to top off active tasks (should have 3 active tasks)
       const needsTopOff = activeTasks.length < 3;
@@ -133,20 +129,16 @@ export async function GET(req: Request) {
         needsTopOff,
       };
 
-      console.log(
-        `Tasks API: Development response - ${allTasks.length} total tasks, ${
-          activeTasks.length
-        } active, ${completedThisWeek?.cnt ?? 0} completed this week`
-      );
+      console.log(`Tasks API: Development response - ${allTasks.length} total tasks, ${activeTasks.length} active, ${completedThisWeek?.cnt ?? 0} completed this week`);
       return Response.json(response);
     }
   } catch (error) {
     console.error("Tasks API: Error processing request:", error);
     return Response.json(
-      {
+      { 
         error: "Internal server error",
-        details: error instanceof Error ? error.message : "Unknown error",
-      },
+        details: error instanceof Error ? error.message : "Unknown error"
+      }, 
       { status: 500 }
     );
   }

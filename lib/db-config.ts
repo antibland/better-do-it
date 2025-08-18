@@ -1,8 +1,8 @@
-import { sql } from '@vercel/postgres';
-import Database from 'better-sqlite3';
+import { sql } from "@vercel/postgres";
+import Database from "better-sqlite3";
 
 // Environment detection
-const isProduction = process.env.NODE_ENV === 'production';
+const isProduction = process.env.NODE_ENV === "production";
 
 // Database operation interfaces
 export interface DatabaseRow {
@@ -32,9 +32,9 @@ class SQLiteWrapper implements DatabaseInterface {
   private db: Database.Database;
 
   constructor() {
-    this.db = new Database('./sqlite.db');
-    this.db.pragma('journal_mode = WAL');
-    this.db.pragma('foreign_keys = ON');
+    this.db = new Database("./sqlite.db");
+    this.db.pragma("journal_mode = WAL");
+    this.db.pragma("foreign_keys = ON");
   }
 
   exec(query: string) {
@@ -46,7 +46,7 @@ class SQLiteWrapper implements DatabaseInterface {
     return {
       all: (...params: unknown[]) => stmt.all(...params) as DatabaseRow[],
       get: (...params: unknown[]) => stmt.get(...params) as DatabaseRow,
-      run: (...params: unknown[]) => stmt.run(...params) as DatabaseResult
+      run: (...params: unknown[]) => stmt.run(...params) as DatabaseResult,
     };
   }
 
@@ -59,14 +59,15 @@ class SQLiteWrapper implements DatabaseInterface {
 class PostgresWrapper implements DatabaseInterface {
   async exec(query: string) {
     // For schema initialization, we'll handle this differently
-    console.log('Postgres exec:', query);
+    console.log("Postgres exec:", query);
   }
 
   prepare(query: string): PreparedStatement {
     return {
       all: (...params: unknown[]) => sql.query(query, params),
-      get: (...params: unknown[]) => sql.query(query, params).then(result => result.rows[0]),
-      run: (...params: unknown[]) => sql.query(query, params)
+      get: (...params: unknown[]) =>
+        sql.query(query, params).then((result) => result.rows[0]),
+      run: (...params: unknown[]) => sql.query(query, params),
     };
   }
 
@@ -76,12 +77,12 @@ class PostgresWrapper implements DatabaseInterface {
 }
 
 // Export the appropriate database instance
-export const db: DatabaseInterface = isProduction 
+export const db: DatabaseInterface = isProduction
   ? new PostgresWrapper()
   : new SQLiteWrapper();
 
 // Helper function to get database type
-export const getDbType = () => isProduction ? 'postgres' : 'sqlite';
+export const getDbType = () => (isProduction ? "postgres" : "sqlite");
 
 // Export sql for direct use when needed
 export { sql };

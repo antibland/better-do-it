@@ -64,6 +64,7 @@ NEXT_PUBLIC_BETTER_AUTH_URL=http://localhost:3000
 - **[Task API Commands](curl_tasks.md)** - Complete cURL cookbook for task operations
 - **[Partner API Commands](curl_partners.md)** - Partnership management commands
 - **[Useful Commands](useful_commands.md)** - Database, deployment, and debugging commands
+- **[Database Troubleshooting](db_troubleshooting.md)** - Common database issues and solutions
 
 ## 🔧 **Development Commands**
 

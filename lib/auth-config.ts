@@ -1,7 +1,6 @@
 import { betterAuth } from "better-auth";
 import { nextCookies } from "better-auth/next-js";
 import Database from "better-sqlite3";
-import { sql } from "@vercel/postgres";
 
 // Environment detection
 const isProduction = process.env.NODE_ENV === "production";
@@ -9,8 +8,12 @@ const isProduction = process.env.NODE_ENV === "production";
 // Create database connection based on environment
 const createAuthDatabase = () => {
   if (isProduction) {
-    // In production, use PostgreSQL for better-auth
-    return sql;
+    // In production, use PostgreSQL configuration
+    return {
+      dialect: "postgres",
+      type: "postgres",
+      url: process.env.POSTGRES_URL,
+    };
   } else {
     // Development uses SQLite
     return new Database("./sqlite.db");

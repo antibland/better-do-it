@@ -1,6 +1,5 @@
 import { betterAuth } from "better-auth";
 import Database from "better-sqlite3";
-import { sql } from '@vercel/postgres';
 
 // Environment detection
 const isProduction = process.env.NODE_ENV === 'production';
@@ -8,10 +7,17 @@ const isProduction = process.env.NODE_ENV === 'production';
 // Create database connection based on environment
 const createAuthDatabase = () => {
   if (isProduction) {
-    // For production, we'll use a custom database adapter for PostgreSQL
-    // This is a simplified approach - in a real production app, you might want
-    // to use a more robust PostgreSQL adapter for better-auth
-    return new Database("./sqlite.db"); // Fallback to SQLite for now
+    // In production, we need to handle the fact that Vercel has a read-only filesystem
+    // For now, we'll use a temporary approach - in a real production app,
+    // you'd want to use a proper PostgreSQL adapter for better-auth
+    try {
+      // Try to create a database in /tmp which is writable on Vercel
+      return new Database("/tmp/auth.db");
+    } catch (error) {
+      console.error("Failed to create auth database:", error);
+      // Fallback to a basic in-memory approach (not persistent)
+      throw new Error("Auth database not available in production. Consider using a PostgreSQL adapter for better-auth.");
+    }
   } else {
     // Development uses SQLite
     return new Database("./sqlite.db");
@@ -19,8 +25,7 @@ const createAuthDatabase = () => {
 };
 
 export const auth = betterAuth({
-  // Database configuration using SQLite for now
-  // TODO: Update to support PostgreSQL in production
+  // Database configuration
   database: createAuthDatabase(),
 
   // Base URL for the authentication API

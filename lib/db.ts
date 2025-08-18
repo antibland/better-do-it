@@ -1,8 +1,8 @@
-import { db, getDbType, sql } from './db-config';
+import { db, getDbType, sql } from "./db-config";
 
 /**
  * Centralized database connection for app-specific data (tasks, partnerships).
- * 
+ *
  * Supports both SQLite (development) and PostgreSQL (production).
  * Auth uses its own connection via `lib/auth.ts`.
  */
@@ -16,8 +16,8 @@ export const appDb = db;
  */
 async function initializeSchema(): Promise<void> {
   const dbType = getDbType();
-  
-  if (dbType === 'sqlite') {
+
+  if (dbType === "sqlite") {
     // SQLite schema initialization
     appDb.exec(`
       CREATE TABLE IF NOT EXISTS task (
@@ -94,64 +94,64 @@ async function initializeSchema(): Promise<void> {
     try {
       await sql`CREATE TABLE IF NOT EXISTS task (
         id TEXT PRIMARY KEY,
-        userId TEXT NOT NULL,
+        user_id TEXT NOT NULL,
         title TEXT NOT NULL,
-        isCompleted INTEGER NOT NULL DEFAULT 0 CHECK (isCompleted IN (0,1)),
-        createdAt TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-        completedAt TIMESTAMP WITH TIME ZONE NULL,
-        isActive INTEGER DEFAULT 0,
-        addedToActiveAt TIMESTAMP WITH TIME ZONE NULL
+        is_completed INTEGER NOT NULL DEFAULT 0 CHECK (is_completed IN (0,1)),
+        created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+        completed_at TIMESTAMP WITH TIME ZONE NULL,
+        is_active INTEGER DEFAULT 0,
+        added_to_active_at TIMESTAMP WITH TIME ZONE NULL
       )`;
     } catch (error) {
       console.log("Task table creation:", error);
     }
-    
+
     try {
-      await sql`CREATE INDEX IF NOT EXISTS idx_task_user_isCompleted ON task(userId, isCompleted)`;
+      await sql`CREATE INDEX IF NOT EXISTS idx_task_user_is_completed ON task(user_id, is_completed)`;
     } catch (error) {
       console.log("Task index creation:", error);
     }
 
     try {
-      await sql`CREATE INDEX IF NOT EXISTS idx_task_completedAt ON task(completedAt)`;
+      await sql`CREATE INDEX IF NOT EXISTS idx_task_completed_at ON task(completed_at)`;
     } catch (error) {
-      console.log("Task completedAt index creation:", error);
+      console.log("Task completed_at index creation:", error);
     }
 
     try {
-      await sql`CREATE INDEX IF NOT EXISTS idx_task_user_isActive ON task(userId, isActive)`;
+      await sql`CREATE INDEX IF NOT EXISTS idx_task_user_is_active ON task(user_id, is_active)`;
     } catch (error) {
-      console.log("Task isActive index creation:", error);
+      console.log("Task is_active index creation:", error);
     }
 
     try {
-      await sql`CREATE INDEX IF NOT EXISTS idx_task_addedToActiveAt ON task(addedToActiveAt)`;
+      await sql`CREATE INDEX IF NOT EXISTS idx_task_added_to_active_at ON task(added_to_active_at)`;
     } catch (error) {
-      console.log("Task addedToActiveAt index creation:", error);
+      console.log("Task added_to_active_at index creation:", error);
     }
 
     try {
       await sql`CREATE TABLE IF NOT EXISTS partnership (
         id TEXT PRIMARY KEY,
-        userA TEXT NOT NULL UNIQUE,
-        userB TEXT NOT NULL UNIQUE,
-        createdAt TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-        CHECK (userA <> userB)
+        user_a TEXT NOT NULL UNIQUE,
+        user_b TEXT NOT NULL UNIQUE,
+        created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+        CHECK (user_a <> user_b)
       )`;
     } catch (error) {
       console.log("Partnership table creation:", error);
     }
 
     try {
-      await sql`CREATE INDEX IF NOT EXISTS idx_partnership_userA ON partnership(userA)`;
+      await sql`CREATE INDEX IF NOT EXISTS idx_partnership_user_a ON partnership(user_a)`;
     } catch (error) {
-      console.log("Partnership userA index creation:", error);
+      console.log("Partnership user_a index creation:", error);
     }
 
     try {
-      await sql`CREATE INDEX IF NOT EXISTS idx_partnership_userB ON partnership(userB)`;
+      await sql`CREATE INDEX IF NOT EXISTS idx_partnership_user_b ON partnership(user_b)`;
     } catch (error) {
-      console.log("Partnership userB index creation:", error);
+      console.log("Partnership user_b index creation:", error);
     }
   }
 }

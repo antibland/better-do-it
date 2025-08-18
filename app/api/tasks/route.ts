@@ -35,12 +35,12 @@ export async function GET(req: Request) {
     console.log(`Tasks API: Processing request for user ${userId} in ${isProduction ? 'production' : 'development'}`);
 
     if (isProduction) {
-      // PostgreSQL implementation for production
+      // PostgreSQL implementation for production - using actual column names from database
       const allTasksResult = await sql`
-        SELECT id, user_id, title, is_completed, is_active, created_at, completed_at, added_to_active_at
+        SELECT id, userid, title, iscompleted, isactive, createdat, completedat, addedtoactiveat
         FROM task
-        WHERE user_id = ${userId}
-        ORDER BY is_active DESC, is_completed ASC, created_at ASC
+        WHERE userid = ${userId}
+        ORDER BY isactive DESC, iscompleted ASC, createdat ASC
       `;
       const allTasks = allTasksResult.rows || [];
 
@@ -50,14 +50,14 @@ export async function GET(req: Request) {
       const completedThisWeekResult = await sql`
         SELECT COUNT(*) as cnt
         FROM task
-        WHERE user_id = ${userId} AND is_active = 1 AND is_completed = 1 AND completed_at >= ${weekStart} AND completed_at < ${nextWeekStart}
+        WHERE userid = ${userId} AND isactive = 1 AND iscompleted = 1 AND completedat >= ${weekStart} AND completedat < ${nextWeekStart}
       `;
       const completedThisWeek = completedThisWeekResult.rows?.[0]?.cnt || 0;
 
       // Filter tasks for different views
-      const activeTasks = allTasks.filter((task) => task.is_active === 1);
-      const masterTasks = allTasks.filter((task) => task.is_active === 0);
-      const openActiveTasks = activeTasks.filter((task) => task.is_completed === 0);
+      const activeTasks = allTasks.filter((task) => task.isactive === 1);
+      const masterTasks = allTasks.filter((task) => task.isactive === 0);
+      const openActiveTasks = activeTasks.filter((task) => task.iscompleted === 0);
 
       // Check if user needs to top off active tasks (should have 3 active tasks)
       const needsTopOff = activeTasks.length < 3;
@@ -162,7 +162,7 @@ export async function POST(req: Request) {
     // If adding to active list, check the 3-task limit for active tasks
     if (isActive) {
       const activeCountResult = await sql`
-        SELECT COUNT(*) as cnt FROM task WHERE user_id = ${userId} AND is_active = 1
+        SELECT COUNT(*) as cnt FROM task WHERE userid = ${userId} AND isactive = 1
       `;
       const activeCount = activeCountResult.rows?.[0]?.cnt || 0;
       if (activeCount >= 3) {
@@ -182,12 +182,12 @@ export async function POST(req: Request) {
 
     // Insert task with active status
     await sql`
-      INSERT INTO task (id, user_id, title, is_completed, is_active, created_at, completed_at, added_to_active_at)
+      INSERT INTO task (id, userid, title, iscompleted, isactive, createdat, completedat, addedtoactiveat)
       VALUES (${id}, ${userId}, ${title}, 0, ${isActive ? 1 : 0}, ${now}, NULL, ${addedToActiveAt})
     `;
 
     const createdResult = await sql`
-      SELECT id, user_id, title, is_completed, is_active, created_at, completed_at, added_to_active_at 
+      SELECT id, userid, title, iscompleted, isactive, createdat, completedat, addedtoactiveat 
       FROM task WHERE id = ${id}
     `;
     const created = createdResult.rows?.[0];
@@ -245,7 +245,7 @@ export async function DELETE(req: Request) {
 
   if (isProduction) {
     // PostgreSQL implementation for production
-    await sql`DELETE FROM task WHERE user_id = ${userId}`;
+    await sql`DELETE FROM task WHERE userid = ${userId}`;
   } else {
     // SQLite implementation for development
     appDb.prepare(`DELETE FROM task WHERE userId = ?`).run(userId);

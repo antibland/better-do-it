@@ -2,7 +2,7 @@ import { createAuthClient } from "better-auth/react";
 
 // Create the client-side auth instance
 export const authClient = createAuthClient({
-  baseURL: process.env.NEXT_PUBLIC_BETTER_AUTH_URL || "http://localhost:3000", // Use environment variable or fallback
+  baseURL: process.env.NEXT_PUBLIC_BETTER_AUTH_URL || (typeof window !== 'undefined' && window.location.hostname !== 'localhost' ? window.location.origin : "http://localhost:3000"), // Use environment variable or fallback
   fetchOptions: {
     onError: async (context) => {
       // Log error details without consuming the response body

@@ -24,7 +24,7 @@ export const auth = betterAuth({
   database: createAuthDatabase(),
 
   // Base URL for the authentication API
-  baseURL: process.env.BETTER_AUTH_URL || "http://localhost:3000",
+  baseURL: process.env.BETTER_AUTH_URL || (isProduction ? "https://better-do-it.vercel.app" : "http://localhost:3000"),
 
   // Secret key for encryption and token signing
   secret: process.env.BETTER_AUTH_SECRET!,

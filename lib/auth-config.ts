@@ -5,24 +5,16 @@ import Database from "better-sqlite3";
 // Environment detection
 const isProduction = process.env.NODE_ENV === "production";
 
-// Create database connection based on environment
-const createAuthDatabase = () => {
-  if (isProduction) {
-    // In production, use PostgreSQL configuration
-    return {
-      dialect: "postgres",
-      type: "postgres",
-      url: process.env.POSTGRES_URL,
-    };
-  } else {
-    // Development uses SQLite
-    return new Database("./sqlite.db");
-  }
-};
-
 export const auth = betterAuth({
   // Database configuration
-  database: createAuthDatabase(),
+  database: isProduction 
+    ? {
+        // In production, use PostgreSQL
+        dialect: "postgres",
+        type: "postgres",
+        url: process.env.POSTGRES_URL!,
+      }
+    : new Database("./sqlite.db"),
 
   // Base URL for the authentication API
   baseURL:

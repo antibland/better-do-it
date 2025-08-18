@@ -201,14 +201,7 @@ export default function AuthPage() {
           </div>
         </form>
 
-        {/* Instructions for testing */}
-        <div className="mt-8 p-4 bg-blue-50 border border-blue-200 rounded-md">
-          <p className="text-sm text-blue-800">
-            <strong>For testing:</strong> You can create an account with any
-            email address and password. Email verification is disabled for
-            development.
-          </p>
-        </div>
+
       </div>
     </div>
   );

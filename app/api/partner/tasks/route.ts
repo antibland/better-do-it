@@ -51,7 +51,12 @@ export async function GET(req: Request) {
       const partnership = partnershipResult.rows?.[0];
 
       if (!partnership) {
-        return Response.json({ error: "No partnership found" }, { status: 404 });
+        // Return empty response instead of 404 error
+        return Response.json({
+          partner: null,
+          tasks: [],
+          completedThisWeek: 0,
+        });
       }
 
       // Determine which user is the partner
@@ -108,6 +113,16 @@ export async function GET(req: Request) {
       });
     } catch (error) {
       console.error("Partner tasks API error:", error);
+      
+      // If it's a table doesn't exist error, return empty response
+      if (error instanceof Error && error.message.includes("does not exist")) {
+        return Response.json({
+          partner: null,
+          tasks: [],
+          completedThisWeek: 0,
+        });
+      }
+      
       return Response.json({ error: "Internal server error" }, { status: 500 });
     }
   } else {

@@ -296,30 +296,8 @@ export default function Dashboard() {
     }
   };
 
-  const clearAllTasks = async () => {
-    if (
-      !confirm(
-        "Are you sure you want to delete ALL tasks? This cannot be undone."
-      )
-    ) {
-      return;
-    }
-
-    try {
-      const response = await fetch("/api/tasks", {
-        method: "DELETE",
-      });
-
-      if (response.ok) {
-        await loadTasks();
-        setError(""); // Clear any existing errors
-      } else {
-        setError("Failed to clear all tasks");
-      }
-    } catch {
-      setError("Failed to clear all tasks");
-    }
-  };
+  // Removed clearAllTasks function - no longer needed as we removed the "Clear All" functionality
+  // This prevents accidental deletion of all user tasks
 
   const pairWithPartner = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -466,15 +444,8 @@ export default function Dashboard() {
                       </span>
                     )}
                   </div>
-                  {tasks && tasks.tasks.length > 0 && (
-                    <button
-                      onClick={clearAllTasks}
-                      className="text-red-600 hover:text-red-800 text-sm font-medium"
-                      title="Delete all tasks (open and completed)"
-                    >
-                      Clear All
-                    </button>
-                  )}
+                  {/* Removed "Clear All" button to prevent accidental deletion of all tasks */}
+                  {/* Users can still delete individual tasks using the delete button on each task */}
                 </div>
               </div>
 

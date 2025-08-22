@@ -31,13 +31,17 @@ export async function GET(req: Request) {
 
     const userId = session.user.id as string;
     const isProduction = process.env.NODE_ENV === "production";
-    
-    console.log(`Tasks API: Processing request for user ${userId} in ${isProduction ? 'production' : 'development'}`);
+
+    console.log(
+      `Tasks API: Processing request for user ${userId} in ${
+        isProduction ? "production" : "development"
+      }`
+    );
 
     if (isProduction) {
       // PostgreSQL implementation for production - using actual column names from database
       console.log("Tasks API: Executing PostgreSQL query...");
-      
+
       try {
         const allTasksResult = await sql`
           SELECT id, userid, title, iscompleted, isactive, createdat, completedat, addedtoactiveat
@@ -45,11 +49,14 @@ export async function GET(req: Request) {
           WHERE userid = ${userId}
           ORDER BY isactive DESC, iscompleted ASC, createdat ASC
         `;
-        
-        console.log("Tasks API: Raw database result:", JSON.stringify(allTasksResult.rows, null, 2));
-        
+
+        console.log(
+          "Tasks API: Raw database result:",
+          JSON.stringify(allTasksResult.rows, null, 2)
+        );
+
         // Transform the data to match frontend expectations (camelCase)
-        const allTasks = (allTasksResult.rows || []).map(task => ({
+        const allTasks = (allTasksResult.rows || []).map((task) => ({
           id: task.id,
           userId: task.userid,
           title: task.title,
@@ -60,7 +67,10 @@ export async function GET(req: Request) {
           addedToActiveAt: task.addedtoactiveat,
         }));
 
-        console.log("Tasks API: Transformed tasks:", JSON.stringify(allTasks, null, 2));
+        console.log(
+          "Tasks API: Transformed tasks:",
+          JSON.stringify(allTasks, null, 2)
+        );
 
         // Compute completed count for the current ET week window (active tasks only)
         const weekStart = toSqliteUtc(getCurrentWeekStartEt());
@@ -75,13 +85,15 @@ export async function GET(req: Request) {
         // Filter tasks for different views
         const activeTasks = allTasks.filter((task) => task.isActive === 1);
         const masterTasks = allTasks.filter((task) => task.isActive === 0);
-        const openActiveTasks = activeTasks.filter((task) => task.isCompleted === 0);
+        const openActiveTasks = activeTasks.filter(
+          (task) => task.isCompleted === 0
+        );
 
         // Check if user needs to top off active tasks (should have 3 active tasks)
         const needsTopOff = activeTasks.length < 3;
 
         const response = {
-          tasks: allTasks,  // This is the key - the frontend expects this
+          tasks: allTasks, // This is the key - the frontend expects this
           activeTasks: activeTasks,
           masterTasks: masterTasks,
           openActiveTasks: openActiveTasks,
@@ -89,14 +101,22 @@ export async function GET(req: Request) {
           needsTopOff,
         };
 
-        console.log("Tasks API: Final response:", JSON.stringify(response, null, 2));
-        console.log(`Tasks API: Production response - ${allTasks.length} total tasks, ${activeTasks.length} active, ${completedThisWeek} completed this week`);
+        console.log(
+          "Tasks API: Final response:",
+          JSON.stringify(response, null, 2)
+        );
+        console.log(
+          `Tasks API: Production response - ${allTasks.length} total tasks, ${activeTasks.length} active, ${completedThisWeek} completed this week`
+        );
         return Response.json(response);
       } catch (dbError) {
         console.error("Tasks API: Database error:", dbError);
-        
+
         // If it's a table doesn't exist error, return empty arrays
-        if (dbError instanceof Error && dbError.message.includes("does not exist")) {
+        if (
+          dbError instanceof Error &&
+          dbError.message.includes("does not exist")
+        ) {
           const emptyResponse = {
             tasks: [],
             activeTasks: [],
@@ -105,15 +125,20 @@ export async function GET(req: Request) {
             completedThisWeek: 0,
             needsTopOff: true,
           };
-          console.log("Tasks API: Returning empty response due to missing table");
+          console.log(
+            "Tasks API: Returning empty response due to missing table"
+          );
           return Response.json(emptyResponse);
         }
-        
+
         return Response.json(
-          { 
+          {
             error: "Database error",
-            details: dbError instanceof Error ? dbError.message : "Unknown database error"
-          }, 
+            details:
+              dbError instanceof Error
+                ? dbError.message
+                : "Unknown database error",
+          },
           { status: 500 }
         );
       }
@@ -142,7 +167,9 @@ export async function GET(req: Request) {
       // Filter tasks for different views
       const activeTasks = allTasks.filter((task) => task.isActive === 1);
       const masterTasks = allTasks.filter((task) => task.isActive === 0);
-      const openActiveTasks = activeTasks.filter((task) => task.isCompleted === 0);
+      const openActiveTasks = activeTasks.filter(
+        (task) => task.isCompleted === 0
+      );
 
       // Check if user needs to top off active tasks (should have 3 active tasks)
       const needsTopOff = activeTasks.length < 3;
@@ -156,16 +183,20 @@ export async function GET(req: Request) {
         needsTopOff,
       };
 
-      console.log(`Tasks API: Development response - ${allTasks.length} total tasks, ${activeTasks.length} active, ${completedThisWeek?.cnt ?? 0} completed this week`);
+      console.log(
+        `Tasks API: Development response - ${allTasks.length} total tasks, ${
+          activeTasks.length
+        } active, ${completedThisWeek?.cnt ?? 0} completed this week`
+      );
       return Response.json(response);
     }
   } catch (error) {
     console.error("Tasks API: Error processing request:", error);
     return Response.json(
-      { 
+      {
         error: "Internal server error",
-        details: error instanceof Error ? error.message : "Unknown error"
-      }, 
+        details: error instanceof Error ? error.message : "Unknown error",
+      },
       { status: 500 }
     );
   }
@@ -280,22 +311,6 @@ export async function POST(req: Request) {
   }
 }
 
-export async function DELETE(req: Request) {
-  const session = await requireSession(req);
-  if (!session) {
-    return Response.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  const userId = session.user.id as string;
-  const isProduction = process.env.NODE_ENV === "production";
-
-  if (isProduction) {
-    // PostgreSQL implementation for production
-    await sql`DELETE FROM task WHERE userid = ${userId}`;
-  } else {
-    // SQLite implementation for development
-    appDb.prepare(`DELETE FROM task WHERE userId = ?`).run(userId);
-  }
-
-  return Response.json({ ok: true });
-}
+// Removed DELETE endpoint for clearing all tasks - no longer needed
+// This prevents accidental deletion of all user tasks
+// Individual task deletion is still available via DELETE /api/tasks/[id]

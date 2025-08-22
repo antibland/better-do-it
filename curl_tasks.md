@@ -159,11 +159,9 @@ curl -i -X DELETE "$BASE/api/tasks/$TASK_ID" -H "Cookie: $COOKIE"
 
 ## 7) Clear all tasks (nuclear option)
 
-```bash
-curl -i -X DELETE "$BASE/api/tasks" -H "Cookie: $COOKIE"
-```
+**⚠️ REMOVED**: The "clear all tasks" functionality has been removed to prevent accidental data loss. Users can still delete individual tasks using the delete endpoint above.
 
-⚠️ **Warning**: This deletes ALL tasks (active and master) for the current user. Cannot be undone!
+If you need to clear all tasks, you can use the database commands in `useful_commands.md` (for development only).
 
 ## 8) Production Debugging Commands
 

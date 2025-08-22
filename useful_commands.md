@@ -124,6 +124,8 @@ sqlite3 sqlite.db "DELETE FROM verification WHERE expiresAt < datetime('now');"
 
 ### Clear All Tasks
 
+**⚠️ NOTE**: The "Clear All" button has been removed from the UI to prevent accidental data loss. These commands are for development/debugging only.
+
 ```bash
 # Clear all tasks for a specific user
 sqlite3 sqlite.db "DELETE FROM task WHERE userId = 'USER_ID_HERE';"

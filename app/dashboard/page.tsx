@@ -76,7 +76,8 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (!isPending && !session) {
-      router.push("/auth");
+      // iOS Safari fix: Use replace instead of push
+      router.replace("/auth");
     }
   }, [session, isPending, router]);
 
@@ -345,7 +346,8 @@ export default function Dashboard() {
 
   const handleSignOut = async () => {
     await signOut();
-    router.push("/");
+    // iOS Safari fix: Use replace instead of push
+    router.replace("/");
   };
 
   if (isPending) {
@@ -457,8 +459,9 @@ export default function Dashboard() {
                     value={newTaskTitle}
                     onChange={(e) => setNewTaskTitle(e.target.value)}
                     placeholder="Add a new task..."
-                    className="flex-1 border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="flex-1 border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-base text-gray-900 placeholder-gray-500"
                     disabled={loading}
+                    style={{ fontSize: "16px" }} // Prevents zoom on iOS
                   />
                   <button
                     type="submit"

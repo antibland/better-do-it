@@ -52,10 +52,12 @@ export const auth = betterAuth({
     crossSubDomainCookies: {
       enabled: false,
     },
-    // Production cookie settings
+    // Production cookie settings - iOS Safari compatible
     ...(isProduction && {
       cookieSecure: true,
       cookieSameSite: "lax",
+      // iOS Safari fix: Ensure cookies work properly
+      cookieHttpOnly: false, // Allow JavaScript access
     }),
   },
 

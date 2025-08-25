@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
-import { signIn, signUp } from "@/lib/auth-client";
+import { useState, useEffect } from "react";
+import { signIn, signUp, useSession } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
 
 export default function AuthPage() {
+  const { data: session, isPending } = useSession();
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -12,6 +13,16 @@ export default function AuthPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const router = useRouter();
+
+  useEffect(() => {
+    const redirectAuthenticatedUsers = () => {
+      if (!isPending && session) {
+        router.replace("/dashboard");
+      }
+    };
+
+    redirectAuthenticatedUsers();
+  }, [session, isPending, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,7 +43,8 @@ export default function AuthPage() {
 
         if (result.data) {
           console.log("Signup successful, redirecting...");
-          router.push("/dashboard");
+          // Force a page reload to ensure session state is properly updated
+          window.location.href = "/dashboard";
         } else if (result.error) {
           console.error("Signup error:", result.error);
           setError(
@@ -54,7 +66,8 @@ export default function AuthPage() {
 
         if (result.data) {
           console.log("Signin successful, redirecting...");
-          router.push("/dashboard");
+          // Force a page reload to ensure session state is properly updated
+          window.location.href = "/dashboard";
         } else if (result.error) {
           console.error("Signin error:", result.error);
           setError(
@@ -67,12 +80,27 @@ export default function AuthPage() {
       }
     } catch (err: unknown) {
       console.error("Auth exception:", err);
-      const errorMessage = err instanceof Error ? err.message : "Authentication failed";
+      const errorMessage =
+        err instanceof Error ? err.message : "Authentication failed";
       setError(errorMessage);
     } finally {
       setLoading(false);
     }
   };
+
+  // Show loading state while checking session
+  if (isPending) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+      </div>
+    );
+  }
+
+  // Don't render auth form if user is already authenticated
+  if (session) {
+    return null; // Will redirect to dashboard
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
@@ -102,6 +130,7 @@ export default function AuthPage() {
                   placeholder="Full name"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
+                  style={{ fontSize: "16px" }} // Prevents zoom on iOS
                 />
               </div>
             )}
@@ -121,6 +150,7 @@ export default function AuthPage() {
                 placeholder="Email address"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                style={{ fontSize: "16px" }} // Prevents zoom on iOS
               />
             </div>
             <div>
@@ -137,6 +167,7 @@ export default function AuthPage() {
                 placeholder="Password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                style={{ fontSize: "16px" }} // Prevents zoom on iOS
               />
             </div>
           </div>
@@ -200,8 +231,6 @@ export default function AuthPage() {
             </button>
           </div>
         </form>
-
-
       </div>
     </div>
   );

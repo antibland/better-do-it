@@ -8,6 +8,9 @@ export const authClient = createAuthClient({
       ? window.location.origin
       : "http://localhost:3000"), // Use environment variable or fallback
   fetchOptions: {
+    // iOS Safari fix: Add credentials and cache settings
+    credentials: "include",
+    cache: "no-store",
     onError: async (context) => {
       // Log error details without consuming the response body
       console.error("Auth client error:", {

@@ -28,3 +28,53 @@ body {
 button {
   cursor: pointer;
 }
+
+/* Mobile input text readability improvements */
+input[type="text"],
+input[type="email"],
+input[type="password"] {
+  /* Ensure consistent text rendering across mobile browsers */
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  /* Prevent iOS zoom on input focus */
+  font-size: 16px !important;
+  /* Improve text contrast and readability */
+  color: #111827 !important; /* text-gray-900 equivalent */
+  background-color: #ffffff !important;
+}
+
+/* Ensure placeholder text is visible on mobile */
+input::placeholder {
+  color: #6b7280 !important; /* text-gray-500 equivalent */
+  opacity: 1; /* Firefox requires this */
+}
+
+/* Improve focus states for mobile */
+input:focus {
+  outline: none;
+  border-color: #6366f1 !important; /* ring-indigo-500 equivalent */
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2) !important;
+}
+
+/* iOS Safari specific fixes */
+@supports (-webkit-touch-callout: none) {
+  /* iOS Safari specific styles */
+  body {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Ensure proper touch handling */
+  button,
+  input,
+  select,
+  textarea {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Fix for iOS Safari viewport issues */
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+}

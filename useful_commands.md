@@ -483,7 +483,6 @@ Response includes:
 
 - `open`: array of your open tasks
 - `completedThisWeek`: number of tasks you completed in the current ET week
-- `needsTopOff`: true if you have fewer than 3 open tasks (time to top off)
 
 ### Toggle Completion for a Task
 

@@ -35,7 +35,6 @@ curl -s "$BASE/api/tasks" -H "Cookie: $COOKIE" | jq
   - `masterTasks`: array of master list tasks (isActive = 0)
   - `openActiveTasks`: array of open active tasks (isActive = 1, isCompleted = 0)
   - `completedThisWeek`: number of tasks completed in the current ET week (Wed 6 PM ET boundary)
-  - `needsTopOff`: true if you currently have fewer than 3 active tasks
 
 Only active tasks:
 
@@ -46,7 +45,7 @@ curl -s "$BASE/api/tasks" -H "Cookie: $COOKIE" | jq '.activeTasks'
 Quick summary:
 
 ```bash
-curl -s "$BASE/api/tasks" -H "Cookie: $COOKIE" | jq '{activeCount: (.activeTasks|length), masterCount: (.masterTasks|length), completedThisWeek, needsTopOff}'
+curl -s "$BASE/api/tasks" -H "Cookie: $COOKIE" | jq '{activeCount: (.activeTasks|length), masterCount: (.masterTasks|length), completedThisWeek}'
 ```
 
 ## 2) Create tasks

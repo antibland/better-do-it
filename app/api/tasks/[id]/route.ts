@@ -1,5 +1,6 @@
 import { auth } from "@/lib/auth";
-import { appDb, TaskRow } from "@/lib/db";
+import { appDb } from "@/lib/db";
+import { Task } from "@/types";
 import { sql } from "@vercel/postgres";
 import { toSqliteUtc } from "@/lib/week";
 
@@ -11,13 +12,13 @@ async function requireSession(req: Request) {
   return session;
 }
 
-function getTaskForUser(taskId: string, userId: string): TaskRow | undefined {
+function getTaskForUser(taskId: string, userId: string): Task | undefined {
   return appDb
     .prepare(
       `SELECT id, userId, title, isCompleted, isActive, createdAt, completedAt, addedToActiveAt
        FROM task WHERE id = ? AND userId = ?`
     )
-    .get(taskId, userId) as TaskRow | undefined;
+    .get(taskId, userId) as Task | undefined;
 }
 
 async function getTaskForUserPostgres(taskId: string, userId: string) {
@@ -28,7 +29,7 @@ async function getTaskForUserPostgres(taskId: string, userId: string) {
   const row = result.rows?.[0];
   if (!row) return undefined;
 
-  // Transform to match TaskRow interface
+  // Transform to match Task interface
   return {
     id: row.id,
     userId: row.userid,
@@ -131,10 +132,10 @@ export async function PATCH(
 
       // Handle active status updates
       if (isActive !== undefined) {
-        // If activating a task, check the 3-task limit for active tasks
+        // If activating a task, check the 3-task limit for open active tasks
         if (isActive && !task.isActive) {
           const activeCountResult = await sql`
-            SELECT COUNT(*) as cnt FROM task WHERE userid = ${userId} AND isactive = 1
+            SELECT COUNT(*) as cnt FROM task WHERE userid = ${userId} AND isactive = 1 AND iscompleted = 0
           `;
           const activeCount = parseInt(activeCountResult.rows?.[0]?.cnt || "0");
           if (activeCount >= 3) {
@@ -219,11 +220,11 @@ export async function PATCH(
 
     // Handle active status updates
     if (isActive !== undefined) {
-      // If activating a task, check the 3-task limit for active tasks
+      // If activating a task, check the 3-task limit for open active tasks
       if (isActive && !task.isActive) {
         const activeCountRow = appDb
           .prepare(
-            `SELECT COUNT(*) as cnt FROM task WHERE userId = ? AND isActive = 1`
+            `SELECT COUNT(*) as cnt FROM task WHERE userId = ? AND isActive = 1 AND isCompleted = 0`
           )
           .get(userId) as { cnt: number };
         if ((activeCountRow?.cnt ?? 0) >= 3) {

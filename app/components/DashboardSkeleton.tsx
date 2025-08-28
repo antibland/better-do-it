@@ -1,7 +1,7 @@
 import Skeleton from "react-loading-skeleton";
 import "react-loading-skeleton/dist/skeleton.css";
 
-export default function DashboardSkeleton() {
+export function DashboardSkeleton() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header Skeleton */}
@@ -52,7 +52,7 @@ export default function DashboardSkeleton() {
               </div>
 
               {/* Task Items */}
-              <div className="space-y-3">
+              <div className="space-y-2">
                 {/* Active Tasks Section */}
                 <div className="mb-4">
                   <Skeleton width={120} height={16} className="mb-2" />

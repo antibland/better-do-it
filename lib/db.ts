@@ -1,4 +1,5 @@
 import { db, getDbType, sql } from "./db-config";
+import { Task } from "@/types";
 
 /**
  * Centralized database connection for app-specific data (tasks, partnerships).
@@ -159,17 +160,8 @@ async function initializeSchema(): Promise<void> {
 // Initialize schema on module load
 initializeSchema().catch(console.error);
 
-// Types representing rows in our app tables
-export type TaskRow = {
-  id: string;
-  userId: string;
-  title: string;
-  isCompleted: 0 | 1;
-  isActive: 0 | 1;
-  createdAt: string; // UTC timestamp in SQLite format: YYYY-MM-DD HH:MM:SS
-  completedAt: string | null; // UTC timestamp or null
-  addedToActiveAt: string | null; // UTC timestamp when task was moved to active list
-};
+// Re-export Task type for backward compatibility
+export type TaskRow = Task;
 
 export type PartnershipRow = {
   id: string;

@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth";
 import { sql } from "@vercel/postgres";
-import { appDb, generateId, TaskRow } from "@/lib/db";
+import { appDb, generateId } from "@/lib/db";
+import { Task } from "@/types";
 import {
   getCurrentWeekStartEt,
   getNextWeekStartEt,
@@ -9,7 +10,7 @@ import {
 
 /**
  * Tasks collection route
- * - GET: return current user's open tasks, completed count for this week, and needsTopOff flag
+ * - GET: return current user's open tasks and completed count for this week
  * - POST: create a new task for current user
  */
 
@@ -47,7 +48,7 @@ export async function GET(req: Request) {
           SELECT id, userid, title, iscompleted, isactive, createdat, completedat, addedtoactiveat
           FROM task
           WHERE userid = ${userId}
-          ORDER BY isactive DESC, iscompleted ASC, createdat ASC
+          ORDER BY isactive DESC, iscompleted ASC, createdat DESC
         `;
 
         console.log(
@@ -89,16 +90,12 @@ export async function GET(req: Request) {
           (task) => task.isCompleted === 0
         );
 
-        // Check if user needs to top off active tasks (should have 3 active tasks)
-        const needsTopOff = activeTasks.length < 3;
-
         const response = {
           tasks: allTasks, // This is the key - the frontend expects this
           activeTasks: activeTasks,
           masterTasks: masterTasks,
           openActiveTasks: openActiveTasks,
           completedThisWeek: completedThisWeek,
-          needsTopOff,
         };
 
         console.log(
@@ -123,7 +120,6 @@ export async function GET(req: Request) {
             masterTasks: [],
             openActiveTasks: [],
             completedThisWeek: 0,
-            needsTopOff: true,
           };
           console.log(
             "Tasks API: Returning empty response due to missing table"
@@ -149,9 +145,9 @@ export async function GET(req: Request) {
           `SELECT id, userId, title, isCompleted, isActive, createdAt, completedAt, addedToActiveAt
            FROM task
            WHERE userId = ?
-           ORDER BY isActive DESC, isCompleted ASC, createdAt ASC`
+           ORDER BY isActive DESC, isCompleted ASC, createdAt DESC`
         )
-        .all(userId) as TaskRow[];
+        .all(userId) as Task[];
 
       // Compute completed count for the current ET week window (active tasks only)
       const weekStart = toSqliteUtc(getCurrentWeekStartEt());
@@ -171,16 +167,12 @@ export async function GET(req: Request) {
         (task) => task.isCompleted === 0
       );
 
-      // Check if user needs to top off active tasks (should have 3 active tasks)
-      const needsTopOff = activeTasks.length < 3;
-
       const response = {
         tasks: allTasks,
         activeTasks: activeTasks,
         masterTasks: masterTasks,
         openActiveTasks: openActiveTasks,
         completedThisWeek: completedThisWeek?.cnt ?? 0,
-        needsTopOff,
       };
 
       console.log(
@@ -234,10 +226,10 @@ export async function POST(req: Request) {
 
   if (isProduction) {
     // PostgreSQL implementation for production
-    // If adding to active list, check the 3-task limit for active tasks
+    // If adding to active list, check the 3-task limit for open active tasks
     if (isActive) {
       const activeCountResult = await sql`
-        SELECT COUNT(*) as cnt FROM task WHERE userid = ${userId} AND isactive = 1
+        SELECT COUNT(*) as cnt FROM task WHERE userid = ${userId} AND isactive = 1 AND iscompleted = 0
       `;
       const activeCount = activeCountResult.rows?.[0]?.cnt || 0;
       if (activeCount >= 3) {
@@ -272,11 +264,11 @@ export async function POST(req: Request) {
     return Response.json({ task: created }, { status: 201 });
   } else {
     // SQLite implementation for development
-    // If adding to active list, check the 3-task limit for active tasks
+    // If adding to active list, check the 3-task limit for open active tasks
     if (isActive) {
       const activeCountRow = appDb
         .prepare(
-          `SELECT COUNT(*) as cnt FROM task WHERE userId = ? AND isActive = 1`
+          `SELECT COUNT(*) as cnt FROM task WHERE userId = ? AND isActive = 1 AND isCompleted = 0`
         )
         .get(userId) as { cnt: number };
       if ((activeCountRow?.cnt ?? 0) >= 3) {
@@ -305,7 +297,7 @@ export async function POST(req: Request) {
       .prepare(
         `SELECT id, userId, title, isCompleted, isActive, createdAt, completedAt, addedToActiveAt FROM task WHERE id = ?`
       )
-      .get(id) as TaskRow;
+      .get(id) as Task;
 
     return Response.json({ task: created }, { status: 201 });
   }

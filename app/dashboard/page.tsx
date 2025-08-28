@@ -3,6 +3,7 @@
 import { useSession, signOut } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import {
   Trash2,
   ArrowUpCircle,
@@ -10,50 +11,18 @@ import {
   RotateCcw,
   ArrowDownCircle,
 } from "lucide-react";
-import DashboardSkeleton from "../components/DashboardSkeleton";
-
-// Types for our API responses
-type Task = {
-  id: string;
-  userId: string;
-  title: string;
-  isCompleted: 0 | 1;
-  isActive: 0 | 1;
-  createdAt: string;
-  completedAt: string | null;
-  addedToActiveAt: string | null;
-};
-
-type Partner = {
-  id: string;
-  email: string;
-  name: string;
-  partnershipId: string;
-  createdAt: string;
-};
-
-type TasksResponse = {
-  tasks: Task[];
-  activeTasks: Task[];
-  masterTasks: Task[];
-  openActiveTasks: Task[];
-  completedThisWeek: number;
-  needsTopOff: boolean;
-};
-
-type PartnerResponse = {
-  partner: Partner | null;
-};
-
-type PartnerTasksResponse = {
-  partner: {
-    id: string;
-    email: string;
-    name: string;
-  };
-  tasks: Task[];
-  completedThisWeek: number;
-};
+import { motion } from "motion/react";
+import { DashboardSkeleton } from "@/app/components/DashboardSkeleton";
+import { TaskCompletionProgress } from "@/app/components/TaskCompletionProgress";
+import { DashboardHeader } from "@/app/components/DashboardHeader";
+import { ErrorDisplay } from "@/app/components/ErrorDisplay";
+import { AddTaskForm } from "@/app/components/AddTaskForm";
+import {
+  TasksResponse,
+  Partner,
+  PartnerResponse,
+  PartnerTasksResponse,
+} from "@/types";
 
 export default function Dashboard() {
   const { data: session, isPending } = useSession();
@@ -71,17 +40,18 @@ export default function Dashboard() {
   // Form states
   const [newTaskTitle, setNewTaskTitle] = useState("");
   const [partnerEmail, setPartnerEmail] = useState("");
-  const [isPunished, setIsPunished] = useState(false);
+
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
+
+  // Task completion animation states
+  const [completingTaskId, setCompletingTaskId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isPending && !session) {
-      // iOS Safari fix: Use replace instead of push
       router.replace("/auth");
     }
   }, [session, isPending, router]);
 
-  // Load data on mount and when session changes
   useEffect(() => {
     if (session) {
       loadTasks();
@@ -89,7 +59,6 @@ export default function Dashboard() {
     }
   }, [session]);
 
-  // Load partner tasks when partner changes
   useEffect(() => {
     if (partner) {
       loadPartnerTasks();
@@ -97,16 +66,6 @@ export default function Dashboard() {
       setPartnerTasks(null);
     }
   }, [partner]);
-
-  // Check punishment status when tasks change
-  useEffect(() => {
-    if (tasks) {
-      // User is punished if they completed 0 tasks this week and have open active tasks
-      setIsPunished(
-        tasks.completedThisWeek === 0 && tasks.openActiveTasks.length > 0
-      );
-    }
-  }, [tasks]);
 
   const loadTasks = async () => {
     try {
@@ -153,7 +112,7 @@ export default function Dashboard() {
     setLoading(true);
     try {
       // Check if we should add to active list (if user has less than 3 active tasks)
-      const shouldAddToActive = tasks && tasks.activeTasks.length < 3;
+      const shouldAddToActive = tasks && tasks.openActiveTasks.length < 3;
 
       const response = await fetch("/api/tasks", {
         method: "POST",
@@ -175,6 +134,41 @@ export default function Dashboard() {
       setError("Failed to create task");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const startTaskCompletion = (taskId: string) => {
+    // Start the completion animation process
+    setCompletingTaskId(taskId);
+  };
+
+  const undoTaskCompletion = (taskId: string) => {
+    // User clicked the progress bar to undo - cancel the completion
+    setCompletingTaskId(null);
+  };
+
+  const finalizeTaskCompletion = async (taskId: string) => {
+    // Animation completed - actually mark the task as completed
+    try {
+      const response = await fetch(`/api/tasks/${taskId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isCompleted: true }),
+      });
+
+      if (response.ok) {
+        setCompletingTaskId(null);
+        await loadTasks();
+        if (partner) {
+          await loadPartnerTasks();
+        }
+      } else {
+        setError("Failed to complete task");
+        setCompletingTaskId(null);
+      }
+    } catch {
+      setError("Failed to complete task");
+      setCompletingTaskId(null);
     }
   };
 
@@ -346,7 +340,6 @@ export default function Dashboard() {
 
   const handleSignOut = async () => {
     await signOut();
-    // iOS Safari fix: Use replace instead of push
     router.replace("/");
   };
 
@@ -355,79 +348,18 @@ export default function Dashboard() {
   }
 
   if (!session) {
-    return null; // Will redirect to auth page
+    return null;
   }
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
-            <div className="flex items-center">
-              <h1 className="text-3xl font-bold text-gray-900">Better Do It</h1>
-            </div>
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2">
-                {isPunished && (
-                  <span
-                    className="text-4xl"
-                    title="You're marked for punishment! Complete a task this week to remove this."
-                  >
-                    🏓
-                  </span>
-                )}
-                {session.user.image && (
-                  <img
-                    className="h-8 w-8 rounded-full"
-                    src={session.user.image}
-                    alt={session.user.name || "User avatar"}
-                  />
-                )}
-                <span className="text-gray-700">
-                  Welcome, {session.user.name || session.user.email}!
-                </span>
-              </div>
-              <button
-                onClick={handleSignOut}
-                className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md text-sm font-medium"
-              >
-                Sign Out
-              </button>
-            </div>
-          </div>
-        </div>
-      </header>
+      <DashboardHeader onSignOut={handleSignOut} />
 
-      {/* Error Display */}
-      {error && (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
-          <div className="bg-red-50 border border-red-200 rounded-md p-4">
-            <div className="flex">
-              <div className="flex-shrink-0">
-                <span className="text-red-400">⚠️</span>
-              </div>
-              <div className="ml-3">
-                <p className="text-sm text-red-800">{error}</p>
-              </div>
-              <div className="ml-auto pl-3">
-                <button
-                  onClick={() => setError("")}
-                  className="text-red-400 hover:text-red-600"
-                >
-                  ×
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      <ErrorDisplay error={error} onClear={() => setError("")} />
 
-      {/* Main Content */}
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* My Tasks Section */}
             <div className="bg-white rounded-lg shadow p-6">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-semibold text-gray-900">
@@ -436,250 +368,258 @@ export default function Dashboard() {
                 <div className="flex items-center space-x-4">
                   <div className="text-sm text-gray-500">
                     {tasks && (
-                      <span>
-                        {tasks.completedThisWeek} completed this week
-                        {tasks.needsTopOff && (
-                          <span className="ml-2 text-orange-600 font-medium">
-                            • Top off needed!
-                          </span>
-                        )}
-                      </span>
+                      <span>{tasks.completedThisWeek} completed this week</span>
                     )}
                   </div>
-                  {/* Removed "Clear All" button to prevent accidental deletion of all tasks */}
-                  {/* Users can still delete individual tasks using the delete button on each task */}
                 </div>
               </div>
 
-              {/* Add Task Form - Moved to top */}
-              <form onSubmit={createTask} className="mb-6">
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={newTaskTitle}
-                    onChange={(e) => setNewTaskTitle(e.target.value)}
-                    placeholder="Add a new task..."
-                    className="flex-1 border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-base text-gray-900 placeholder-gray-500"
-                    disabled={loading}
-                    style={{ fontSize: "16px" }} // Prevents zoom on iOS
-                  />
-                  <button
-                    type="submit"
-                    disabled={loading || !newTaskTitle.trim()}
-                    className="bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-400 text-white px-4 py-2 rounded-md text-sm font-medium"
-                  >
-                    {loading ? "Adding..." : "Add"}
-                  </button>
-                </div>
-              </form>
+              <AddTaskForm
+                newTaskTitle={newTaskTitle}
+                loading={loading}
+                onTitleChange={setNewTaskTitle}
+                onSubmit={createTask}
+              />
 
-              {/* Unified Tasks List */}
-              <div className="space-y-3">
-                {/* Active Tasks Section */}
-                {tasks?.activeTasks && tasks.activeTasks.length > 0 && (
-                  <>
-                    <div className="text-sm font-medium text-indigo-700 mb-2">
-                      Active Tasks ({tasks.activeTasks.length}/3)
-                    </div>
-                    {tasks.activeTasks.map((task) => (
-                      <div
-                        key={task.id}
-                        className="flex items-stretch space-x-2"
-                      >
-                        <div className="flex-1 flex items-center justify-between p-3 border border-indigo-200 rounded-lg bg-indigo-50">
-                          <div
-                            data-task-id={task.id}
-                            contentEditable={
-                              editingTaskId === task.id &&
-                              task.isCompleted === 0
-                            }
-                            suppressContentEditableWarning={true}
-                            onClick={() =>
-                              task.isCompleted === 0 && handleTaskClick(task.id)
-                            }
-                            onBlur={(e) =>
-                              task.isCompleted === 0 &&
-                              handleTaskBlur(
-                                task.id,
-                                e.currentTarget.textContent || task.title
-                              )
-                            }
-                            onKeyDown={(e) =>
-                              task.isCompleted === 0 &&
-                              handleTaskKeyDown(
-                                e,
-                                task.id,
-                                e.currentTarget.textContent || task.title
-                              )
-                            }
-                            className={`min-w-0 flex-1 ${
-                              task.isCompleted === 1
-                                ? "text-gray-500 line-through"
-                                : "text-gray-900"
-                            } ${
-                              editingTaskId === task.id
-                                ? "outline-none border-b-2 border-indigo-500 bg-yellow-50 px-2 py-1 rounded"
-                                : task.isCompleted === 0
-                                ? "cursor-pointer hover:bg-indigo-100 px-2 py-1 rounded"
-                                : "px-2 py-1 rounded"
-                            }`}
+              <div className="space-y-4">
+                <div>
+                  <div className="text-sm font-medium text-indigo-700 mb-2">
+                    Active Tasks ({tasks?.openActiveTasks?.length || 0}/3)
+                  </div>
+                  {tasks?.openActiveTasks &&
+                  tasks.openActiveTasks.length > 0 ? (
+                    <div className="space-y-2">
+                      {tasks.openActiveTasks.map((task) => {
+                        if (completingTaskId === task.id) {
+                          return (
+                            <TaskCompletionProgress
+                              key={task.id}
+                              taskId={task.id}
+                              taskTitle={task.title}
+                              onUndo={undoTaskCompletion}
+                              onComplete={finalizeTaskCompletion}
+                            />
+                          );
+                        }
+
+                        return (
+                          <motion.div
+                            key={task.id}
+                            layout
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -20 }}
+                            className="flex items-stretch space-x-2"
                           >
-                            {task.title}
-                          </div>
-                          <div className="flex items-center space-x-2 ml-4">
-                            {task.isCompleted === 0 ? (
-                              <>
-                                <button
-                                  onClick={() => toggleTask(task.id)}
-                                  className="flex items-center justify-center w-10 h-10 text-green-600 hover:text-green-800 rounded-lg transition-colors duration-200"
-                                  aria-label={`Complete task: ${task.title}`}
-                                  title={`Complete task: ${task.title}`}
-                                >
-                                  <CheckCircle2 className="w-6 h-6" />
-                                </button>
-                                <button
-                                  onClick={() =>
-                                    toggleTaskActive(task.id, true)
-                                  }
-                                  className="flex items-center justify-center w-10 h-10 text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 rounded-lg transition-colors duration-200"
-                                  aria-label={`Archive task: ${task.title}`}
-                                  title={`Archive task: ${task.title}`}
-                                >
-                                  <ArrowDownCircle className="w-6 h-6" />
-                                </button>
-                              </>
-                            ) : (
-                              <div className="flex items-center space-x-3">
-                                <button
-                                  onClick={() => toggleTask(task.id)}
-                                  className="flex items-center justify-center w-10 h-10 text-orange-600 hover:text-orange-800 rounded-lg transition-colors duration-200"
-                                  aria-label={`Mark task as incomplete: ${task.title}`}
-                                  title={`Mark task as incomplete: ${task.title}`}
-                                >
-                                  <RotateCcw className="w-5 h-5" />
-                                </button>
-                                <span className="text-green-600 text-lg">
-                                  ✓
-                                </span>
-                                <span className="text-sm text-gray-500">
-                                  {new Date(
-                                    task.completedAt!
-                                  ).toLocaleDateString()}
-                                </span>
+                            <div className="flex-1 flex items-center justify-between p-3 border border-indigo-200 rounded-lg bg-indigo-50">
+                              <div
+                                data-task-id={task.id}
+                                contentEditable={
+                                  editingTaskId === task.id &&
+                                  task.isCompleted === 0
+                                }
+                                suppressContentEditableWarning={true}
+                                onClick={() =>
+                                  task.isCompleted === 0 &&
+                                  handleTaskClick(task.id)
+                                }
+                                onBlur={(e) =>
+                                  task.isCompleted === 0 &&
+                                  handleTaskBlur(
+                                    task.id,
+                                    e.currentTarget.textContent || task.title
+                                  )
+                                }
+                                onKeyDown={(e) =>
+                                  task.isCompleted === 0 &&
+                                  handleTaskKeyDown(
+                                    e,
+                                    task.id,
+                                    e.currentTarget.textContent || task.title
+                                  )
+                                }
+                                className={`min-w-0 flex-1 ${
+                                  task.isCompleted === 1
+                                    ? "text-gray-500 line-through"
+                                    : "text-gray-900"
+                                } ${
+                                  editingTaskId === task.id
+                                    ? "outline-none border-b-2 border-indigo-500 bg-yellow-50 px-2 py-1 rounded"
+                                    : task.isCompleted === 0
+                                    ? "cursor-pointer hover:bg-indigo-100 px-2 py-1 rounded"
+                                    : "px-2 py-1 rounded"
+                                }`}
+                              >
+                                {task.title}
                               </div>
-                            )}
-                          </div>
-                        </div>
-                        <button
-                          onClick={() => deleteTask(task.id)}
-                          className="flex items-center justify-center px-4 text-red-600 hover:text-red-800 hover:bg-red-50 border border-red-200 rounded-lg transition-colors duration-200"
-                          aria-label={`Delete task: ${task.title}`}
-                          title={`Delete task: ${task.title}`}
-                        >
-                          <Trash2 className="w-5 h-5" />
-                        </button>
-                      </div>
-                    ))}
-                  </>
-                )}
+                              <div className="flex items-center space-x-2 ml-4">
+                                {task.isCompleted === 0 ? (
+                                  <>
+                                    <button
+                                      onClick={() =>
+                                        startTaskCompletion(task.id)
+                                      }
+                                      className="flex items-center justify-center w-10 h-10 text-green-600 hover:text-green-800 rounded-lg transition-colors duration-200"
+                                      aria-label={`Complete task: ${task.title}`}
+                                      title={`Complete task: ${task.title}`}
+                                    >
+                                      <CheckCircle2 className="w-6 h-6" />
+                                    </button>
+                                    <button
+                                      onClick={() =>
+                                        toggleTaskActive(task.id, true)
+                                      }
+                                      className="flex items-center justify-center w-10 h-10 text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 rounded-lg transition-colors duration-200"
+                                      aria-label={`Archive task: ${task.title}`}
+                                      title={`Archive task: ${task.title}`}
+                                    >
+                                      <ArrowDownCircle className="w-6 h-6" />
+                                    </button>
+                                  </>
+                                ) : (
+                                  <div className="flex items-center space-x-3">
+                                    <button
+                                      onClick={() => toggleTask(task.id)}
+                                      className="flex items-center justify-center w-10 h-10 text-orange-600 hover:text-orange-800 rounded-lg transition-colors duration-200"
+                                      aria-label={`Mark task as incomplete: ${task.title}`}
+                                      title={`Mark task as incomplete: ${task.title}`}
+                                    >
+                                      <RotateCcw className="w-5 h-5" />
+                                    </button>
+                                    <span className="text-green-600 text-lg">
+                                      ✓
+                                    </span>
+                                    <span className="text-sm text-gray-500">
+                                      {new Date(
+                                        task.completedAt!
+                                      ).toLocaleDateString()}
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                            <button
+                              onClick={() => deleteTask(task.id)}
+                              className="flex items-center justify-center px-4 text-red-600 hover:text-red-800 hover:bg-red-50 border border-red-200 rounded-lg transition-colors duration-200"
+                              aria-label={`Delete task: ${task.title}`}
+                              title={`Delete task: ${task.title}`}
+                            >
+                              <Trash2 className="w-5 h-5" />
+                            </button>
+                          </motion.div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <p className="text-gray-500 text-center py-4">
+                      No active tasks yet.
+                    </p>
+                  )}
+                </div>
 
-                {/* Visual Separator */}
-                {tasks?.activeTasks &&
-                  tasks.activeTasks.length > 0 &&
+                {tasks?.openActiveTasks &&
+                  tasks.openActiveTasks.length > 0 &&
                   tasks?.masterTasks &&
                   tasks.masterTasks.length > 0 && (
                     <div className="border-t border-gray-300 my-4"></div>
                   )}
 
-                {/* Master Tasks Section */}
-                {tasks?.masterTasks && tasks.masterTasks.length > 0 && (
-                  <>
-                    <div className="text-sm font-medium text-gray-700 mb-2">
-                      Master List ({tasks.masterTasks.length} tasks)
-                    </div>
-                    {tasks.masterTasks.map((task) => (
-                      <div
-                        key={task.id}
-                        className="flex items-stretch space-x-2"
-                      >
-                        <div className="flex-1 flex items-center justify-between p-3 border border-gray-200 rounded-lg">
-                          <div
-                            data-task-id={task.id}
-                            contentEditable={
-                              editingTaskId === task.id &&
-                              task.isCompleted === 0
-                            }
-                            suppressContentEditableWarning={true}
-                            onClick={() =>
-                              task.isCompleted === 0 && handleTaskClick(task.id)
-                            }
-                            onBlur={(e) =>
-                              task.isCompleted === 0 &&
-                              handleTaskBlur(
-                                task.id,
-                                e.currentTarget.textContent || task.title
-                              )
-                            }
-                            onKeyDown={(e) =>
-                              task.isCompleted === 0 &&
-                              handleTaskKeyDown(
-                                e,
-                                task.id,
-                                e.currentTarget.textContent || task.title
-                              )
-                            }
-                            className={`min-w-0 flex-1 ${
-                              task.isCompleted === 1
-                                ? "text-gray-500 line-through"
-                                : "text-gray-900"
-                            } ${
-                              editingTaskId === task.id
-                                ? "outline-none border-b-2 border-indigo-500 bg-yellow-50 px-2 py-1 rounded"
-                                : task.isCompleted === 0
-                                ? "cursor-pointer hover:bg-gray-50 px-2 py-1 rounded"
-                                : "px-2 py-1 rounded"
-                            }`}
-                          >
-                            {task.title}
-                          </div>
-                          <div className="flex items-center space-x-2 ml-4">
-                            {tasks.activeTasks.length < 3 && (
-                              <button
-                                onClick={() => toggleTaskActive(task.id, false)}
-                                className="flex items-center justify-center w-10 h-10 text-indigo-600 hover:text-indigo-800  rounded-lg transition-colors duration-200"
-                                aria-label={`Activate task: ${task.title}`}
-                                title={`Activate task: ${task.title}`}
-                              >
-                                <ArrowUpCircle className="w-6 h-6" />
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                        <button
-                          onClick={() => deleteTask(task.id)}
-                          className="flex items-center justify-center px-4 text-red-600 hover:text-red-800 hover:bg-red-50 border border-red-200 rounded-lg transition-colors duration-200"
-                          aria-label={`Delete task: ${task.title}`}
-                          title={`Delete task: ${task.title}`}
+                <div>
+                  <div className="text-sm font-medium text-gray-700 mb-2">
+                    Master List ({tasks?.masterTasks?.length || 0} tasks)
+                  </div>
+                  {tasks?.masterTasks && tasks.masterTasks.length > 0 ? (
+                    <div className="space-y-2">
+                      {tasks.masterTasks.map((task) => (
+                        <div
+                          key={task.id}
+                          className="flex items-stretch space-x-2"
                         >
-                          <Trash2 className="w-5 h-5" />
-                        </button>
-                      </div>
-                    ))}
-                  </>
-                )}
+                          <div className="flex-1 flex items-center justify-between p-3 border border-gray-200 rounded-lg">
+                            <div
+                              data-task-id={task.id}
+                              contentEditable={
+                                editingTaskId === task.id &&
+                                task.isCompleted === 0
+                              }
+                              suppressContentEditableWarning={true}
+                              onClick={() =>
+                                task.isCompleted === 0 &&
+                                handleTaskClick(task.id)
+                              }
+                              onBlur={(e) =>
+                                task.isCompleted === 0 &&
+                                handleTaskBlur(
+                                  task.id,
+                                  e.currentTarget.textContent || task.title
+                                )
+                              }
+                              onKeyDown={(e) =>
+                                task.isCompleted === 0 &&
+                                handleTaskKeyDown(
+                                  e,
+                                  task.id,
+                                  e.currentTarget.textContent || task.title
+                                )
+                              }
+                              className={`min-w-0 flex-1 ${
+                                task.isCompleted === 1
+                                  ? "text-gray-500 line-through"
+                                  : "text-gray-900"
+                              } ${
+                                editingTaskId === task.id
+                                  ? "outline-none border-b-2 border-indigo-500 bg-yellow-50 px-2 py-1 rounded"
+                                  : task.isCompleted === 0
+                                  ? "cursor-pointer hover:bg-gray-50 px-2 py-1 rounded"
+                                  : "px-2 py-1 rounded"
+                              }`}
+                            >
+                              {task.title}
+                            </div>
+                            <div className="flex items-center space-x-2 ml-4">
+                              {tasks.openActiveTasks.length < 3 && (
+                                <button
+                                  onClick={() =>
+                                    toggleTaskActive(task.id, false)
+                                  }
+                                  className="flex items-center justify-center w-10 h-10 text-indigo-600 hover:text-indigo-800  rounded-lg transition-colors duration-200"
+                                  aria-label={`Activate task: ${task.title}`}
+                                  title={`Activate task: ${task.title}`}
+                                >
+                                  <ArrowUpCircle className="w-6 h-6" />
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => deleteTask(task.id)}
+                            className="flex items-center justify-center px-4 text-red-600 hover:text-red-800 hover:bg-red-50 border border-red-200 rounded-lg transition-colors duration-200"
+                            aria-label={`Delete task: ${task.title}`}
+                            title={`Delete task: ${task.title}`}
+                          >
+                            <Trash2 className="w-5 h-5" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-gray-500 text-center py-4">
+                      No master tasks yet.
+                    </p>
+                  )}
+                </div>
+              </div>
 
-                {/* Empty State */}
-                {(!tasks ||
-                  (tasks.activeTasks.length === 0 &&
-                    tasks.masterTasks.length === 0)) && (
-                  <p className="text-gray-500 text-center py-4">
-                    No tasks yet. Add your first task above!
-                  </p>
-                )}
+              <div className="mt-6 pt-4 border-t border-gray-200">
+                <Link
+                  href="/completed-tasks"
+                  className="inline-flex items-center text-indigo-600 hover:text-indigo-800 font-medium transition-colors duration-200"
+                >
+                  View completed tasks
+                </Link>
               </div>
             </div>
 
-            {/* Partner Section */}
             <div className="bg-white rounded-lg shadow p-6">
               <h2 className="text-xl font-semibold text-gray-900 mb-6">
                 Partner
@@ -687,7 +627,6 @@ export default function Dashboard() {
 
               {partner ? (
                 <div>
-                  {/* Current Partner Info */}
                   <div className="mb-6 p-4 bg-indigo-50 rounded-lg">
                     <h3 className="font-medium text-indigo-900 mb-2">
                       Partnered with: {partner.name} ({partner.email})
@@ -703,7 +642,6 @@ export default function Dashboard() {
                     </button>
                   </div>
 
-                  {/* Partner's Weekly Info - Moved above tasks */}
                   <div className="mb-4 p-3 bg-gray-50 rounded-lg">
                     <div className="text-sm text-gray-700">
                       <span className="font-medium">Partner&apos;s Week:</span>{" "}
@@ -711,12 +649,11 @@ export default function Dashboard() {
                     </div>
                   </div>
 
-                  {/* Partner's Active Tasks Only */}
                   <div>
                     <h3 className="font-medium text-gray-900 mb-3">
                       Partner&apos;s Active Tasks
                     </h3>
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                       {partnerTasks?.tasks.map((task) => (
                         <div
                           key={task.id}

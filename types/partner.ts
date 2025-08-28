@@ -1,0 +1,23 @@
+// Shared Partner types used across the application
+
+export type Partner = {
+  id: string;
+  email: string;
+  name: string;
+  partnershipId: string;
+  createdAt: string;
+};
+
+export type PartnerResponse = {
+  partner: Partner | null;
+};
+
+export type PartnerTasksResponse = {
+  partner: {
+    id: string;
+    email: string;
+    name: string;
+  };
+  tasks: import("./task").Task[];
+  completedThisWeek: number;
+};

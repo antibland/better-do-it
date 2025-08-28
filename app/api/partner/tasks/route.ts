@@ -1,5 +1,6 @@
 import { auth } from "@/lib/auth";
-import { appDb, TaskRow } from "@/lib/db";
+import { appDb } from "@/lib/db";
+import { Task } from "@/types";
 import { sql } from "@vercel/postgres";
 import {
   getCurrentWeekStartEt,
@@ -68,7 +69,7 @@ export async function GET(req: Request) {
         SELECT id, userid, title, iscompleted, isactive, createdat, completedat, addedtoactiveat
         FROM task
         WHERE userid = ${partnerId} AND isactive = 1
-        ORDER BY iscompleted ASC, createdat ASC
+        ORDER BY iscompleted ASC, createdat DESC
       `;
 
       // Transform the data to match frontend expectations (camelCase)
@@ -144,9 +145,9 @@ export async function GET(req: Request) {
         `SELECT id, userId, title, isCompleted, isActive, createdAt, completedAt, addedToActiveAt
          FROM task
          WHERE userId = ? AND isActive = 1
-         ORDER BY isCompleted ASC, createdAt ASC`
+         ORDER BY isCompleted ASC, createdAt DESC`
       )
-      .all(partnerId) as TaskRow[];
+      .all(partnerId) as Task[];
 
     // Compute partner's completed count for the current ET week window (active tasks only)
     const weekStart = toSqliteUtc(getCurrentWeekStartEt());

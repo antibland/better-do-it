@@ -11,7 +11,7 @@ export async function GET() {
         createdAt: new Date().toISOString(),
         completedAt: null,
         addedToActiveAt: new Date().toISOString(),
-      }
+      },
     ],
     activeTasks: [
       {
@@ -23,7 +23,7 @@ export async function GET() {
         createdAt: new Date().toISOString(),
         completedAt: null,
         addedToActiveAt: new Date().toISOString(),
-      }
+      },
     ],
     masterTasks: [],
     openActiveTasks: [
@@ -36,10 +36,9 @@ export async function GET() {
         createdAt: new Date().toISOString(),
         completedAt: null,
         addedToActiveAt: new Date().toISOString(),
-      }
+      },
     ],
     completedThisWeek: 0,
-    needsTopOff: false,
   };
 
   return Response.json(testResponse);

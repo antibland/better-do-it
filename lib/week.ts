@@ -3,8 +3,6 @@
  *
  * Rules implemented:
  * - Weeks start every Wednesday at 6 PM ET.
- * - Punishment: If a user completes no tasks during a given week, they are marked for
- *   punishment the following week until they complete at least one task.
  *
  * We compute in ET but store timestamps in UTC in the DB. Comparisons use UTC ISO strings
  * derived from the ET boundary moments.

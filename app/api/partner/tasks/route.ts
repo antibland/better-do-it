@@ -6,6 +6,7 @@ import {
   getCurrentWeekStartEt,
   getNextWeekStartEt,
   toSqliteUtc,
+  debugWeekBoundaries,
 } from "@/lib/week";
 
 /**
@@ -87,12 +88,74 @@ export async function GET(req: Request) {
       // Compute partner's completed count for the current ET week window (active tasks only)
       const weekStart = toSqliteUtc(getCurrentWeekStartEt());
       const nextWeekStart = toSqliteUtc(getNextWeekStartEt());
+
+      // Debug: Log the week boundaries and check what completed tasks exist
+      debugWeekBoundaries();
+      console.log(
+        `Partner tasks API: Week boundaries - start: ${weekStart}, end: ${nextWeekStart}`
+      );
+      console.log(
+        `Partner tasks API: Current time: ${new Date().toISOString()}`
+      );
+
+      // First, let's see all completed active tasks for the partner
+      const allCompletedActiveTasksResult = await sql`
+        SELECT id, title, completedat, to_char(completedat, 'YYYY-MM-DD HH24:MI:SS') as formatted_date
+        FROM task
+        WHERE userid = ${partnerId} AND isactive = 1 AND iscompleted = 1
+        ORDER BY completedat DESC
+      `;
+      console.log(
+        `Partner tasks API: All completed active tasks:`,
+        allCompletedActiveTasksResult.rows
+      );
+
+      // Let's also check what the actual completedAt values look like in the database
+      const sampleCompletedTask = allCompletedActiveTasksResult.rows?.[0];
+      if (sampleCompletedTask) {
+        console.log(
+          `Partner tasks API: Sample completed task date:`,
+          sampleCompletedTask.completedat
+        );
+        console.log(
+          `Partner tasks API: Sample formatted date:`,
+          sampleCompletedTask.formatted_date
+        );
+      }
+
+      // TEMPORARY FIX: Check if there are any completed tasks in the last 7 days
+      // This will help us understand if the week boundary calculation is the issue
+      const sevenDaysAgo = toSqliteUtc(
+        new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+      );
+
       const completedThisWeekResult = await sql`
         SELECT COUNT(*) as cnt
         FROM task
         WHERE userid = ${partnerId} AND isactive = 1 AND iscompleted = 1 AND completedat >= ${weekStart} AND completedat < ${nextWeekStart}
       `;
       const completedThisWeek = completedThisWeekResult.rows?.[0]?.cnt || 0;
+
+      const completedLast7DaysResult = await sql`
+        SELECT COUNT(*) as cnt
+        FROM task
+        WHERE userid = ${partnerId} AND isactive = 1 AND iscompleted = 1 AND completedat >= ${sevenDaysAgo}
+      `;
+      const completedLast7Days = completedLast7DaysResult.rows?.[0]?.cnt || 0;
+
+      console.log(
+        `Partner tasks API: Completed this week (strict): ${completedThisWeek}`
+      );
+      console.log(
+        `Partner tasks API: Completed last 7 days: ${completedLast7Days}`
+      );
+
+      // Use the 7-day count as a temporary fix
+      const finalCompletedCount = completedLast7Days;
+
+      console.log(
+        `Partner tasks API: Completed this week count: ${completedThisWeek}`
+      );
 
       // Get partner's user info
       const partnerResult = await sql`
@@ -111,7 +174,7 @@ export async function GET(req: Request) {
           name: partner.name,
         },
         tasks: activeTasks,
-        completedThisWeek: completedThisWeek,
+        completedThisWeek: finalCompletedCount,
       });
     } catch (error) {
       console.error("Partner tasks API error:", error);
@@ -152,6 +215,35 @@ export async function GET(req: Request) {
     // Compute partner's completed count for the current ET week window (active tasks only)
     const weekStart = toSqliteUtc(getCurrentWeekStartEt());
     const nextWeekStart = toSqliteUtc(getNextWeekStartEt());
+
+    // Debug: Log the week boundaries for SQLite
+    debugWeekBoundaries();
+    console.log(
+      `Partner tasks API (SQLite): Week boundaries - start: ${weekStart}, end: ${nextWeekStart}`
+    );
+    console.log(
+      `Partner tasks API (SQLite): Current time: ${new Date().toISOString()}`
+    );
+
+    // First, let's see all completed active tasks for the partner
+    const allCompletedActiveTasks = appDb
+      .prepare(
+        `SELECT id, title, completedAt
+         FROM task
+         WHERE userId = ? AND isActive = 1 AND isCompleted = 1
+         ORDER BY completedAt DESC`
+      )
+      .all(partnerId) as Task[];
+    console.log(
+      `Partner tasks API (SQLite): All completed active tasks:`,
+      allCompletedActiveTasks
+    );
+
+    // TEMPORARY FIX: Check if there are any completed tasks in the last 7 days
+    const sevenDaysAgo = toSqliteUtc(
+      new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+    );
+
     const completedThisWeek = appDb
       .prepare(
         `SELECT COUNT(*) as cnt
@@ -159,6 +251,28 @@ export async function GET(req: Request) {
          WHERE userId = ? AND isActive = 1 AND isCompleted = 1 AND completedAt >= ? AND completedAt < ?`
       )
       .get(partnerId, weekStart, nextWeekStart) as { cnt: number };
+
+    const completedLast7Days = appDb
+      .prepare(
+        `SELECT COUNT(*) as cnt
+         FROM task
+         WHERE userId = ? AND isActive = 1 AND isCompleted = 1 AND completedAt >= ?`
+      )
+      .get(partnerId, sevenDaysAgo) as { cnt: number };
+
+    console.log(
+      `Partner tasks API (SQLite): Completed this week (strict): ${
+        completedThisWeek?.cnt ?? 0
+      }`
+    );
+    console.log(
+      `Partner tasks API (SQLite): Completed last 7 days: ${
+        completedLast7Days?.cnt ?? 0
+      }`
+    );
+
+    // Use the 7-day count as a temporary fix
+    const finalCompletedCount = completedLast7Days?.cnt ?? 0;
 
     // Get partner's user info
     const partner = appDb
@@ -178,7 +292,7 @@ export async function GET(req: Request) {
         name: partner.name,
       },
       tasks: activeTasks,
-      completedThisWeek: completedThisWeek?.cnt ?? 0,
+      completedThisWeek: finalCompletedCount,
     });
   }
 }

@@ -127,3 +127,45 @@ export function toSqliteUtc(date: Date): string {
     date.getUTCSeconds()
   )}`;
 }
+
+/** Debug function to help understand week boundary issues */
+export function debugWeekBoundaries(now: Date = new Date()) {
+  const p = getZonedParts(now, NEW_YORK_TZ);
+  const dayOfWeek = new Date(
+    now.toLocaleString("en-US", { timeZone: NEW_YORK_TZ })
+  ).getDay();
+
+  const weekStart = getCurrentWeekStartEt(now);
+  const nextWeekStart = getNextWeekStartEt(now);
+
+  console.log(`Debug Week Boundaries:`);
+  console.log(`  Current time (UTC): ${now.toISOString()}`);
+  console.log(
+    `  Current time (ET): ${now.toLocaleString("en-US", {
+      timeZone: NEW_YORK_TZ,
+    })}`
+  );
+  console.log(`  Day of week in ET: ${dayOfWeek} (0=Sunday, 3=Wednesday)`);
+  console.log(`  Hour in ET: ${p.hour}`);
+  console.log(`  Week start (UTC): ${weekStart.toISOString()}`);
+  console.log(
+    `  Week start (ET): ${weekStart.toLocaleString("en-US", {
+      timeZone: NEW_YORK_TZ,
+    })}`
+  );
+  console.log(`  Next week start (UTC): ${nextWeekStart.toISOString()}`);
+  console.log(
+    `  Next week start (ET): ${nextWeekStart.toLocaleString("en-US", {
+      timeZone: NEW_YORK_TZ,
+    })}`
+  );
+
+  return {
+    currentTime: now,
+    etTime: now.toLocaleString("en-US", { timeZone: NEW_YORK_TZ }),
+    dayOfWeek,
+    hourInEt: p.hour,
+    weekStart,
+    nextWeekStart,
+  };
+}

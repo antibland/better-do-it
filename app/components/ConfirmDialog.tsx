@@ -81,7 +81,7 @@ export function ConfirmDialog({
       {isOpen && (
         <dialog
           ref={dialogRef}
-          className="backdrop:bg-gray-500/20 backdrop:backdrop-blur-sm p-0 rounded-lg shadow-xl border border-gray-200 bg-white max-w-md w-full mx-4 fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"
+          className="backdrop:bg-gray-500/20 backdrop:backdrop-blur-sm p-0 rounded-lg shadow-xl border border-gray-200 bg-white max-w-md fixed top-1/2 inset-x-4 mx-auto transform -translate-y-1/2"
           onCancel={onCancel}
         >
           <motion.div

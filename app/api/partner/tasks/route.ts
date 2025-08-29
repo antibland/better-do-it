@@ -35,6 +35,9 @@ function getPartnershipForUser(
 }
 
 export async function GET(req: Request) {
+  // Simple deployment test log
+  console.log("Partner tasks API: DEPLOYMENT TEST - API is running with new code");
+  
   const session = await requireSession(req);
   if (!session) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });

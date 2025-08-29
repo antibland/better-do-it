@@ -31,8 +31,6 @@ export const metadata: Metadata = {
     type: "website",
     locale: "en_US",
     siteName: "Better Do It",
-    // The opengraph-image.png file in the app directory will be automatically used
-    // Next.js will generate the appropriate og:image meta tags
   },
   // Twitter Card metadata
   twitter: {
@@ -40,7 +38,6 @@ export const metadata: Metadata = {
     title: "Better Do It - Collaborative Todo App",
     description:
       "The collaborative todo app designed for partners. Plan, track, and accomplish your goals together.",
-    // The opengraph-image.png will also be used for Twitter cards
   },
 };
 

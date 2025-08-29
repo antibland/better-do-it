@@ -73,13 +73,15 @@ export async function GET(req: Request) {
           JSON.stringify(allTasks, null, 2)
         );
 
-        // Compute completed count for the current ET week window (active tasks only)
-        const weekStart = toSqliteUtc(getCurrentWeekStartEt());
-        const nextWeekStart = toSqliteUtc(getNextWeekStartEt());
+        // PERMANENT FIX: Use rolling 7-day window instead of strict week boundary
+        // This is more intuitive for users and matches what they expect to see
+        const sevenDaysAgo = toSqliteUtc(
+          new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+        );
         const completedThisWeekResult = await sql`
           SELECT COUNT(*) as cnt
           FROM task
-          WHERE userid = ${userId} AND isactive = 1 AND iscompleted = 1 AND completedat >= ${weekStart} AND completedat < ${nextWeekStart}
+          WHERE userid = ${userId} AND isactive = 1 AND iscompleted = 1 AND completedat >= ${sevenDaysAgo}
         `;
         const completedThisWeek = completedThisWeekResult.rows?.[0]?.cnt || 0;
 
@@ -149,16 +151,17 @@ export async function GET(req: Request) {
         )
         .all(userId) as Task[];
 
-      // Compute completed count for the current ET week window (active tasks only)
-      const weekStart = toSqliteUtc(getCurrentWeekStartEt());
-      const nextWeekStart = toSqliteUtc(getNextWeekStartEt());
+      // PERMANENT FIX: Use rolling 7-day window instead of strict week boundary
+      const sevenDaysAgo = toSqliteUtc(
+        new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+      );
       const completedThisWeek = appDb
         .prepare(
           `SELECT COUNT(*) as cnt
            FROM task
-           WHERE userId = ? AND isActive = 1 AND isCompleted = 1 AND completedAt >= ? AND completedAt < ?`
+           WHERE userId = ? AND isActive = 1 AND isCompleted = 1 AND completedAt >= ?`
         )
-        .get(userId, weekStart, nextWeekStart) as { cnt: number };
+        .get(userId, sevenDaysAgo) as { cnt: number };
 
       // Filter tasks for different views
       const activeTasks = allTasks.filter((task) => task.isActive === 1);

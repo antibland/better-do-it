@@ -126,11 +126,6 @@ export async function GET(req: Request) {
         );
       }
 
-      // PROPER FIX: Use the correct week boundary calculation
-      // The week starts on Wednesday 6 PM ET as designed
-      const weekStart = toSqliteUtc(getCurrentWeekStartEt());
-      const nextWeekStart = toSqliteUtc(getNextWeekStartEt());
-      
       // Count tasks completed in the current week (Wednesday 6 PM ET to next Wednesday 6 PM ET)
       const completedThisWeekResult = await sql`
         SELECT COUNT(*) as cnt
@@ -235,10 +230,6 @@ export async function GET(req: Request) {
       allCompletedActiveTasks
     );
 
-    // PROPER FIX: Use the correct week boundary calculation
-    const weekStart = toSqliteUtc(getCurrentWeekStartEt());
-    const nextWeekStart = toSqliteUtc(getNextWeekStartEt());
-    
     // Count tasks completed in the current week (Wednesday 6 PM ET to next Wednesday 6 PM ET)
     const completedThisWeek = appDb
       .prepare(

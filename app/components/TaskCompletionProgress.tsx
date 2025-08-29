@@ -20,36 +20,39 @@ export function TaskCompletionProgress({
   const [progress, setProgress] = useState(100);
   const [isAnimating, setIsAnimating] = useState(true);
 
-  useEffect(() => {
-    // Start the progress bar animation
-    const startTime = Date.now();
-    const duration = 4000; // 4 seconds
-    let animationId: number;
+  useEffect(
+    function startProgressAnimation() {
+      // Start the progress bar animation
+      const startTime = Date.now();
+      const duration = 4000; // 4 seconds
+      let animationId: number;
 
-    const animate = () => {
-      const elapsed = Date.now() - startTime;
-      const newProgress = Math.max(0, 100 - (elapsed / duration) * 100);
+      const animate = () => {
+        const elapsed = Date.now() - startTime;
+        const newProgress = Math.max(0, 100 - (elapsed / duration) * 100);
 
-      setProgress(newProgress);
+        setProgress(newProgress);
 
-      if (newProgress > 0 && isAnimating) {
-        animationId = requestAnimationFrame(animate);
-      } else if (newProgress <= 0 && isAnimating) {
-        // Animation complete - mark as completed
-        setIsAnimating(false);
-        onComplete(taskId);
-      }
-    };
+        if (newProgress > 0 && isAnimating) {
+          animationId = requestAnimationFrame(animate);
+        } else if (newProgress <= 0 && isAnimating) {
+          // Animation complete - mark as completed
+          setIsAnimating(false);
+          onComplete(taskId);
+        }
+      };
 
-    animationId = requestAnimationFrame(animate);
+      animationId = requestAnimationFrame(animate);
 
-    // Cleanup function to cancel animation if component unmounts or isAnimating becomes false
-    return () => {
-      if (animationId) {
-        cancelAnimationFrame(animationId);
-      }
-    };
-  }, [taskId, onComplete, isAnimating]);
+      // Cleanup function to cancel animation if component unmounts or isAnimating becomes false
+      return () => {
+        if (animationId) {
+          cancelAnimationFrame(animationId);
+        }
+      };
+    },
+    [taskId, onComplete, isAnimating]
+  );
 
   const handleProgressClick = () => {
     // User clicked the progress bar - undo the completion

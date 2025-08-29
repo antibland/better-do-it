@@ -14,15 +14,14 @@ export default function AuthPage() {
   const [error, setError] = useState("");
   const router = useRouter();
 
-  useEffect(() => {
-    const redirectAuthenticatedUsers = () => {
+  useEffect(
+    function redirectAuthenticatedUsers() {
       if (!isPending && session) {
         router.replace("/dashboard");
       }
-    };
-
-    redirectAuthenticatedUsers();
-  }, [session, isPending, router]);
+    },
+    [session, isPending, router]
+  );
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

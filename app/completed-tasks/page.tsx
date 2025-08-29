@@ -7,6 +7,7 @@ import { ArrowLeft, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { CompletedTasksSkeleton } from "@/app/components/CompletedTasksSkeleton";
 import { DashboardHeader } from "@/app/components/DashboardHeader";
+import { ConfirmDialog } from "@/app/components/ConfirmDialog";
 import Skeleton from "react-loading-skeleton";
 import "react-loading-skeleton/dist/skeleton.css";
 import { Task, CompletedTasksResponse } from "@/types";
@@ -20,19 +21,28 @@ export default function CompletedTasks() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    if (!isPending && !session) {
-      // iOS Safari fix: Use replace instead of push
-      router.replace("/auth");
-    }
-  }, [session, isPending, router]);
+  const [taskToDelete, setTaskToDelete] = useState<{
+    id: string;
+    title: string;
+  } | null>(null);
 
-  // Load completed tasks on mount and when session changes
-  useEffect(() => {
-    if (session) {
-      loadCompletedTasks();
-    }
-  }, [session]);
+  useEffect(
+    function redirectUnauthenticatedUsers() {
+      if (!isPending && !session) {
+        router.replace("/auth");
+      }
+    },
+    [session, isPending, router]
+  );
+
+  useEffect(
+    function loadCompletedTasksData() {
+      if (session) {
+        loadCompletedTasks();
+      }
+    },
+    [session]
+  );
 
   const loadCompletedTasks = async () => {
     try {
@@ -51,24 +61,35 @@ export default function CompletedTasks() {
     }
   };
 
-  const deleteTask = async (taskId: string) => {
-    if (!confirm("Are you sure you want to delete this completed task?"))
-      return;
+  const deleteTask = async (taskId: string, taskTitle: string) => {
+    setTaskToDelete({ id: taskId, title: taskTitle });
+  };
+
+  const confirmDeleteTask = async () => {
+    if (!taskToDelete) return;
 
     try {
-      const response = await fetch(`/api/tasks/${taskId}`, {
+      const response = await fetch(`/api/tasks/${taskToDelete.id}`, {
         method: "DELETE",
       });
 
       if (response.ok) {
         // Remove the task from the local state
-        setCompletedTasks((prev) => prev.filter((task) => task.id !== taskId));
+        setCompletedTasks((prev) =>
+          prev.filter((task) => task.id !== taskToDelete.id)
+        );
       } else {
         setError("Failed to delete task");
       }
     } catch {
       setError("Failed to delete task");
+    } finally {
+      setTaskToDelete(null);
     }
+  };
+
+  const cancelDeleteTask = () => {
+    setTaskToDelete(null);
   };
 
   const handleSignOut = async () => {
@@ -159,7 +180,7 @@ export default function CompletedTasks() {
                         </div>
                       </div>
                       <button
-                        onClick={() => deleteTask(task.id)}
+                        onClick={() => deleteTask(task.id, task.title)}
                         className="flex items-center justify-center px-4 py-2 text-red-600 hover:text-red-800 hover:bg-red-50 border border-red-200 rounded-lg transition-colors duration-200 ml-4"
                         aria-label={`Delete completed task: ${task.title}`}
                         title={`Delete completed task: ${task.title}`}
@@ -174,12 +195,6 @@ export default function CompletedTasks() {
                       No completed tasks yet. Complete some tasks to see them
                       here!
                     </p>
-                    <Link
-                      href="/dashboard"
-                      className="inline-block mt-4 text-indigo-600 hover:text-indigo-800 font-medium"
-                    >
-                      Go back to dashboard
-                    </Link>
                   </div>
                 )}
               </div>
@@ -197,6 +212,17 @@ export default function CompletedTasks() {
           </div>
         </div>
       </main>
+
+      <ConfirmDialog
+        isOpen={!!taskToDelete}
+        onConfirm={confirmDeleteTask}
+        onCancel={cancelDeleteTask}
+        title="Delete Completed Task"
+        message={`Are you sure you want to delete "${taskToDelete?.title}"?`}
+        confirmText="Delete"
+        cancelText="Cancel"
+        confirmVariant="danger"
+      />
     </div>
   );
 }

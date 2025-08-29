@@ -17,6 +17,7 @@ import { TaskCompletionProgress } from "@/app/components/TaskCompletionProgress"
 import { DashboardHeader } from "@/app/components/DashboardHeader";
 import { ErrorDisplay } from "@/app/components/ErrorDisplay";
 import { AddTaskForm } from "@/app/components/AddTaskForm";
+import { ConfirmDialog } from "@/app/components/ConfirmDialog";
 import {
   TasksResponse,
   Partner,
@@ -46,26 +47,41 @@ export default function Dashboard() {
   // Task completion animation states
   const [completingTaskId, setCompletingTaskId] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!isPending && !session) {
-      router.replace("/auth");
-    }
-  }, [session, isPending, router]);
+  // Delete confirmation state
+  const [taskToDelete, setTaskToDelete] = useState<{
+    id: string;
+    title: string;
+  } | null>(null);
 
-  useEffect(() => {
-    if (session) {
-      loadTasks();
-      loadPartner();
-    }
-  }, [session]);
+  useEffect(
+    function redirectUnauthenticatedUsers() {
+      if (!isPending && !session) {
+        router.replace("/auth");
+      }
+    },
+    [session, isPending, router]
+  );
 
-  useEffect(() => {
-    if (partner) {
-      loadPartnerTasks();
-    } else {
-      setPartnerTasks(null);
-    }
-  }, [partner]);
+  useEffect(
+    function loadUserData() {
+      if (session) {
+        loadTasks();
+        loadPartner();
+      }
+    },
+    [session]
+  );
+
+  useEffect(
+    function loadPartnerData() {
+      if (partner) {
+        loadPartnerTasks();
+      } else {
+        setPartnerTasks(null);
+      }
+    },
+    [partner]
+  );
 
   const loadTasks = async () => {
     try {
@@ -191,11 +207,15 @@ export default function Dashboard() {
     }
   };
 
-  const deleteTask = async (taskId: string) => {
-    if (!confirm("Are you sure you want to delete this task?")) return;
+  const deleteTask = async (taskId: string, taskTitle: string) => {
+    setTaskToDelete({ id: taskId, title: taskTitle });
+  };
+
+  const confirmDeleteTask = async () => {
+    if (!taskToDelete) return;
 
     try {
-      const response = await fetch(`/api/tasks/${taskId}`, {
+      const response = await fetch(`/api/tasks/${taskToDelete.id}`, {
         method: "DELETE",
       });
 
@@ -204,7 +224,13 @@ export default function Dashboard() {
       }
     } catch {
       setError("Failed to delete task");
+    } finally {
+      setTaskToDelete(null);
     }
+  };
+
+  const cancelDeleteTask = () => {
+    setTaskToDelete(null);
   };
 
   const updateTaskTitle = async (taskId: string, newTitle: string) => {
@@ -499,7 +525,7 @@ export default function Dashboard() {
                               </div>
                             </div>
                             <button
-                              onClick={() => deleteTask(task.id)}
+                              onClick={() => deleteTask(task.id, task.title)}
                               className="flex items-center justify-center px-4 text-red-600 hover:text-red-800 hover:bg-red-50 border border-red-200 rounded-lg transition-colors duration-200"
                               aria-label={`Delete task: ${task.title}`}
                               title={`Delete task: ${task.title}`}
@@ -592,7 +618,7 @@ export default function Dashboard() {
                             </div>
                           </div>
                           <button
-                            onClick={() => deleteTask(task.id)}
+                            onClick={() => deleteTask(task.id, task.title)}
                             className="flex items-center justify-center px-4 text-red-600 hover:text-red-800 hover:bg-red-50 border border-red-200 rounded-lg transition-colors duration-200"
                             aria-label={`Delete task: ${task.title}`}
                             title={`Delete task: ${task.title}`}
@@ -724,6 +750,17 @@ export default function Dashboard() {
           </div>
         </div>
       </main>
+
+      <ConfirmDialog
+        isOpen={!!taskToDelete}
+        onConfirm={confirmDeleteTask}
+        onCancel={cancelDeleteTask}
+        title="Delete Task"
+        message={`Are you sure you want to delete "${taskToDelete?.title}"?`}
+        confirmText="Delete"
+        cancelText="Cancel"
+        confirmVariant="danger"
+      />
     </div>
   );
 }

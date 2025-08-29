@@ -4,10 +4,6 @@ interface DashboardHeaderProps {
   onSignOut: () => void;
 }
 
-interface DashboardHeaderProps {
-  onSignOut: () => void;
-}
-
 export function DashboardHeader({ onSignOut }: DashboardHeaderProps) {
   const { data: session } = useSession();
   return (

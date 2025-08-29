@@ -677,8 +677,11 @@ export default function Dashboard() {
 
                   <div>
                     <h3 className="font-medium text-gray-900 mb-3">
-                      Partner&apos;s Active Tasks
+                      Partner&apos;s Tasks
                     </h3>
+                    <p className="text-sm text-gray-600 mb-3">
+                      Shows both active and recently completed tasks
+                    </p>
                     <div className="space-y-3">
                       {partnerTasks?.tasks.map((task) => (
                         <div

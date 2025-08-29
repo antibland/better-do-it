@@ -126,26 +126,28 @@ export async function GET(req: Request) {
         );
       }
 
-      // PERMANENT FIX: Use rolling 7-day window instead of strict week boundary
-      // This is more intuitive for users and matches what they expect to see
-      const sevenDaysAgo = toSqliteUtc(
-        new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
-      );
-
-      // Count tasks completed in the last 7 days
-      const completedLast7DaysResult = await sql`
+      // PROPER FIX: Use the correct week boundary calculation
+      // The week starts on Wednesday 6 PM ET as designed
+      const weekStart = toSqliteUtc(getCurrentWeekStartEt());
+      const nextWeekStart = toSqliteUtc(getNextWeekStartEt());
+      
+      // Count tasks completed in the current week (Wednesday 6 PM ET to next Wednesday 6 PM ET)
+      const completedThisWeekResult = await sql`
         SELECT COUNT(*) as cnt
         FROM task
-        WHERE userid = ${partnerId} AND isactive = 1 AND iscompleted = 1 AND completedat >= ${sevenDaysAgo}
+        WHERE userid = ${partnerId} AND isactive = 1 AND iscompleted = 1 AND completedat >= ${weekStart} AND completedat < ${nextWeekStart}
       `;
-      const completedLast7Days = completedLast7DaysResult.rows?.[0]?.cnt || 0;
+      const completedThisWeek = completedThisWeekResult.rows?.[0]?.cnt || 0;
 
       console.log(
-        `Partner tasks API: Completed in last 7 days: ${completedLast7Days}`
+        `Partner tasks API: Week boundaries - start: ${weekStart}, end: ${nextWeekStart}`
+      );
+      console.log(
+        `Partner tasks API: Completed this week (proper): ${completedThisWeek}`
       );
 
-      // Use the 7-day count as the final count
-      const finalCompletedCount = completedLast7Days;
+      // Use the proper week boundary count
+      const finalCompletedCount = completedThisWeek;
 
       console.log(
         `Partner tasks API: Final completed count: ${finalCompletedCount}`
@@ -233,28 +235,30 @@ export async function GET(req: Request) {
       allCompletedActiveTasks
     );
 
-    // PERMANENT FIX: Use rolling 7-day window instead of strict week boundary
-    const sevenDaysAgo = toSqliteUtc(
-      new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
-    );
-
-    // Count tasks completed in the last 7 days
-    const completedLast7Days = appDb
+    // PROPER FIX: Use the correct week boundary calculation
+    const weekStart = toSqliteUtc(getCurrentWeekStartEt());
+    const nextWeekStart = toSqliteUtc(getNextWeekStartEt());
+    
+    // Count tasks completed in the current week (Wednesday 6 PM ET to next Wednesday 6 PM ET)
+    const completedThisWeek = appDb
       .prepare(
         `SELECT COUNT(*) as cnt
          FROM task
-         WHERE userId = ? AND isActive = 1 AND isCompleted = 1 AND completedAt >= ?`
+         WHERE userId = ? AND isActive = 1 AND isCompleted = 1 AND completedAt >= ? AND completedAt < ?`
       )
-      .get(partnerId, sevenDaysAgo) as { cnt: number };
+      .get(partnerId, weekStart, nextWeekStart) as { cnt: number };
 
     console.log(
-      `Partner tasks API (SQLite): Completed in last 7 days: ${
-        completedLast7Days?.cnt ?? 0
+      `Partner tasks API (SQLite): Week boundaries - start: ${weekStart}, end: ${nextWeekStart}`
+    );
+    console.log(
+      `Partner tasks API (SQLite): Completed this week (proper): ${
+        completedThisWeek?.cnt ?? 0
       }`
     );
 
-    // Use the 7-day count as the final count
-    const finalCompletedCount = completedLast7Days?.cnt ?? 0;
+    // Use the proper week boundary count
+    const finalCompletedCount = completedThisWeek?.cnt ?? 0;
 
     // Get partner's user info
     const partner = appDb

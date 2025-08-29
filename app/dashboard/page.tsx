@@ -677,47 +677,53 @@ export default function Dashboard() {
 
                   <div>
                     <h3 className="font-medium text-gray-900 mb-3">
-                      Partner&apos;s Tasks
+                      Partner&apos;s Active Tasks
                     </h3>
-                    <p className="text-sm text-gray-600 mb-3">
-                      Shows both active and recently completed tasks
-                    </p>
                     <div className="space-y-3">
-                      {partnerTasks?.tasks.map((task) => (
-                        <div
-                          key={task.id}
-                          className={`flex items-center space-x-3 p-3 border border-gray-200 rounded-lg ${
-                            task.isCompleted === 1
-                              ? "bg-green-50"
-                              : "bg-gray-50"
-                          }`}
-                        >
-                          <div className="w-5 h-5 border-2 border-gray-300 rounded bg-gray-200 flex items-center justify-center">
-                            {task.isCompleted === 1 ? (
-                              <span className="text-green-600 text-xs">✓</span>
-                            ) : (
-                              <span className="text-gray-400 text-xs">👁</span>
-                            )}
-                          </div>
-                          <span
-                            className={`${
+                      {partnerTasks?.tasks
+                        .filter((task) => task.isCompleted === 0)
+                        .map((task) => (
+                          <div
+                            key={task.id}
+                            className={`flex items-center space-x-3 p-3 border border-gray-200 rounded-lg ${
                               task.isCompleted === 1
-                                ? "text-gray-500 line-through"
-                                : "text-gray-700"
+                                ? "bg-green-50"
+                                : "bg-gray-50"
                             }`}
                           >
-                            {task.title}
-                          </span>
-                          {task.isCompleted === 1 && (
-                            <span className="text-xs text-gray-500 ml-auto">
-                              {new Date(task.completedAt!).toLocaleDateString()}
+                            <div className="w-5 h-5 border-2 border-gray-300 rounded bg-gray-200 flex items-center justify-center">
+                              {task.isCompleted === 1 ? (
+                                <span className="text-green-600 text-xs">
+                                  ✓
+                                </span>
+                              ) : (
+                                <span className="text-gray-400 text-xs">👁</span>
+                              )}
+                            </div>
+                            <span
+                              className={`${
+                                task.isCompleted === 1
+                                  ? "text-gray-500 line-through"
+                                  : "text-gray-700"
+                              }`}
+                            >
+                              {task.title}
                             </span>
-                          )}
-                        </div>
-                      ))}
-                      {(!partnerTasks || partnerTasks.tasks.length === 0) && (
+                            {task.isCompleted === 1 && (
+                              <span className="text-xs text-gray-500 ml-auto">
+                                {new Date(
+                                  task.completedAt!
+                                ).toLocaleDateString()}
+                              </span>
+                            )}
+                          </div>
+                        ))}
+                      {(!partnerTasks ||
+                        partnerTasks.tasks.filter(
+                          (task) => task.isCompleted === 0
+                        ).length === 0) && (
                         <p className="text-gray-500 text-center py-4">
-                          No tasks
+                          No active tasks
                         </p>
                       )}
                     </div>

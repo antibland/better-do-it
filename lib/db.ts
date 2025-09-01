@@ -26,13 +26,19 @@ async function initializeSchema(): Promise<void> {
         userId TEXT NOT NULL,
         title TEXT NOT NULL,
         isCompleted INTEGER NOT NULL DEFAULT 0 CHECK (isCompleted IN (0,1)),
+        isActive INTEGER DEFAULT 0,
+        sortOrder INTEGER NOT NULL DEFAULT 0,
         createdAt TEXT NOT NULL DEFAULT (datetime('now')),
         completedAt TEXT NULL,
+        addedToActiveAt TEXT NULL,
         FOREIGN KEY (userId) REFERENCES user(id) ON DELETE CASCADE
       );
 
       CREATE INDEX IF NOT EXISTS idx_task_user_isCompleted ON task(userId, isCompleted);
       CREATE INDEX IF NOT EXISTS idx_task_completedAt ON task(completedAt);
+      CREATE INDEX IF NOT EXISTS idx_task_user_isActive ON task(userId, isActive);
+      CREATE INDEX IF NOT EXISTS idx_task_addedToActiveAt ON task(addedToActiveAt);
+      CREATE INDEX IF NOT EXISTS idx_task_user_sortOrder ON task(userId, sortOrder);
 
       CREATE TABLE IF NOT EXISTS partnership (
         id TEXT PRIMARY KEY,
@@ -89,6 +95,38 @@ async function initializeSchema(): Promise<void> {
       appDb.exec(`UPDATE task SET isActive = 1 WHERE isActive IS NULL;`);
     } catch (error) {
       console.error("Error updating existing tasks:", error);
+    }
+
+    // Check if sortOrder column exists, if not add it
+    try {
+      const result = appDb.prepare("PRAGMA table_info(task)").all() as Array<{
+        name: string;
+      }>;
+      const hasSortOrder = result.some((col) => col.name === "sortOrder");
+
+      if (!hasSortOrder) {
+        appDb.exec(
+          `ALTER TABLE task ADD COLUMN sortOrder INTEGER NOT NULL DEFAULT 0;`
+        );
+        appDb.exec(
+          `CREATE INDEX IF NOT EXISTS idx_task_user_sortOrder ON task(userId, sortOrder);`
+        );
+
+        // Update existing tasks to have proper sort order based on creation time
+        appDb.exec(`
+          UPDATE task 
+          SET sortOrder = (
+            SELECT COUNT(*) 
+            FROM task t2 
+            WHERE t2.userId = task.userId 
+            AND t2.createdAt <= task.createdAt
+            AND t2.id <= task.id
+          )
+          WHERE sortOrder = 0;
+        `);
+      }
+    } catch (error) {
+      console.error("Error checking/adding sortOrder column:", error);
     }
   } else {
     // PostgreSQL schema initialization - execute each command separately

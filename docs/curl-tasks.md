@@ -81,17 +81,7 @@ TASK_ID=$(curl -s -X POST "$BASE/api/tasks" \
 echo "$TASK_ID"
 ```
 
-## 3) Toggle completion or set explicitly
-
-Toggle completion (flip state):
-
-```bash
-TASK_ID=REPLACE_WITH_ID
-curl -i -X PATCH "$BASE/api/tasks/$TASK_ID" \
-  -H "Content-Type: application/json" \
-  -H "Cookie: $COOKIE" \
-  -d '{"toggle":true}'
-```
+## 3) Set completion status explicitly
 
 Set completed/uncompleted explicitly:
 
@@ -117,7 +107,7 @@ TASK_ID=$(curl -s "$BASE/api/tasks" -H "Cookie: $COOKIE" | jq -r '.openActiveTas
   -d '{"isCompleted":true}'
 ```
 
-## 4) Archive/Activate tasks (toggle active status)
+## 4) Archive/Activate tasks (programmatic access)
 
 Archive an active task to master list:
 
@@ -138,6 +128,8 @@ curl -i -X PATCH "$BASE/api/tasks/$TASK_ID" \
   -H "Cookie: $COOKIE" \
   -d '{"isActive":true}'
 ```
+
+**Note**: The UI now uses drag and drop for moving tasks between active and master lists. These API endpoints are still available for programmatic access.
 
 ## 5) Update task title
 
@@ -160,7 +152,7 @@ curl -i -X DELETE "$BASE/api/tasks/$TASK_ID" -H "Cookie: $COOKIE"
 
 **⚠️ REMOVED**: The "clear all tasks" functionality has been removed to prevent accidental data loss. Users can still delete individual tasks using the delete endpoint above.
 
-If you need to clear all tasks, you can use the database commands in `useful_commands.md` (for development only).
+If you need to clear all tasks, you can use the database commands in `useful-commands.md` (for development only).
 
 ## 8) Production Debugging Commands
 
@@ -265,6 +257,6 @@ curl -s "$BASE/api/tasks" -H "Cookie: $COOKIE" | jq '.activeTasks[0] | keys'
 - Include both cookies (semicolon-separated) in `COOKIE`: `next-auth.session-token` and `better-do-it.session_token`.
 - Week boundary is Wednesday 6 PM Eastern Time (America/New_York).
 - Maximum of 3 active tasks per user.
-- For partner management, see `curl_partners.md`.
+- For partner management, see `curl-partners.md`.
 - **Production debugging**: Use `BASE=https://better-do-it.vercel.app` for production testing.
 - **Database columns**: PostgreSQL uses lowercase (`userid`, `iscompleted`) but API returns camelCase (`userId`, `isCompleted`).

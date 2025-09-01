@@ -3,21 +3,13 @@
 import { useSession, signOut } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import Link from "next/link";
-import {
-  Trash2,
-  ArrowUpCircle,
-  CheckCircle2,
-  RotateCcw,
-  ArrowDownCircle,
-} from "lucide-react";
-import { motion } from "motion/react";
+import { DragDropContext, DropResult } from "@hello-pangea/dnd";
 import { DashboardSkeleton } from "@/app/components/DashboardSkeleton";
-import { TaskCompletionProgress } from "@/app/components/TaskCompletionProgress";
 import { DashboardHeader } from "@/app/components/DashboardHeader";
 import { ErrorDisplay } from "@/app/components/ErrorDisplay";
-import { AddTaskForm } from "@/app/components/AddTaskForm";
 import { ConfirmDialog } from "@/app/components/ConfirmDialog";
+import { TasksSection } from "@/app/components/TasksSection";
+import { PartnerSection } from "@/app/components/PartnerSection";
 import {
   TasksResponse,
   Partner,
@@ -31,6 +23,7 @@ export default function Dashboard() {
 
   // State for tasks and partner data
   const [tasks, setTasks] = useState<TasksResponse | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
   const [partner, setPartner] = useState<Partner | null>(null);
   const [partnerTasks, setPartnerTasks] = useState<PartnerTasksResponse | null>(
     null
@@ -84,6 +77,11 @@ export default function Dashboard() {
   );
 
   const loadTasks = async () => {
+    // Don't load tasks if we're currently dragging
+    if (isDragging) {
+      return;
+    }
+
     try {
       const response = await fetch("/api/tasks");
       if (response.ok) {
@@ -188,25 +186,6 @@ export default function Dashboard() {
     }
   };
 
-  const toggleTask = async (taskId: string) => {
-    try {
-      const response = await fetch(`/api/tasks/${taskId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ toggle: true }),
-      });
-
-      if (response.ok) {
-        await loadTasks();
-        if (partner) {
-          await loadPartnerTasks();
-        }
-      }
-    } catch {
-      setError("Failed to update task");
-    }
-  };
-
   const deleteTask = async (taskId: string, taskTitle: string) => {
     setTaskToDelete({ id: taskId, title: taskTitle });
   };
@@ -241,25 +220,6 @@ export default function Dashboard() {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ title: newTitle.trim() }),
-      });
-
-      if (response.ok) {
-        await loadTasks();
-      } else {
-        const errorData = await response.json();
-        setError(errorData.error || "Failed to update task");
-      }
-    } catch {
-      setError("Failed to update task");
-    }
-  };
-
-  const toggleTaskActive = async (taskId: string, currentActive: boolean) => {
-    try {
-      const response = await fetch(`/api/tasks/${taskId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ isActive: !currentActive }),
       });
 
       if (response.ok) {
@@ -317,9 +277,6 @@ export default function Dashboard() {
     }
   };
 
-  // Removed clearAllTasks function - no longer needed as we removed the "Clear All" functionality
-  // This prevents accidental deletion of all user tasks
-
   const pairWithPartner = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!partnerEmail.trim()) return;
@@ -369,6 +326,95 @@ export default function Dashboard() {
     router.replace("/");
   };
 
+  // Drag and drop handlers
+  const handleDragStart = () => {
+    setIsDragging(true);
+  };
+
+  const handleDragEnd = async (result: DropResult) => {
+    setIsDragging(false);
+
+    const { source, destination, draggableId } = result;
+
+    // If dropped outside a valid droppable area
+    if (!destination) {
+      return;
+    }
+
+    // If dropped in the same position
+    if (
+      source.droppableId === destination.droppableId &&
+      source.index === destination.index
+    ) {
+      return;
+    }
+
+    // Validate the move before updating state
+    if (tasks) {
+      // Check if moving to active tasks would exceed the limit
+      if (
+        destination.droppableId === "active-tasks" &&
+        source.droppableId !== "active-tasks"
+      ) {
+        const currentActiveCount = tasks.openActiveTasks.length;
+        if (currentActiveCount >= 3) {
+          // Reject the move - don't update state
+          setError(
+            "Active task limit reached: you can only have 3 active tasks at a time"
+          );
+          return;
+        }
+      }
+
+      const newTasks = { ...tasks };
+      let movedTask;
+
+      // Remove from source
+      if (source.droppableId === "active-tasks") {
+        movedTask = newTasks.openActiveTasks.splice(source.index, 1)[0];
+      } else {
+        movedTask = newTasks.masterTasks.splice(source.index, 1)[0];
+      }
+
+      // Add to destination
+      if (movedTask) {
+        if (destination.droppableId === "active-tasks") {
+          newTasks.openActiveTasks.splice(destination.index, 0, movedTask);
+        } else {
+          newTasks.masterTasks.splice(destination.index, 0, movedTask);
+        }
+        setTasks(newTasks);
+      }
+    }
+
+    // Update server asynchronously
+    fetch("/api/tasks/reorder", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        sourceDroppableId: source.droppableId,
+        destinationDroppableId: destination.droppableId,
+        sourceIndex: source.index,
+        destinationIndex: destination.index,
+        draggableId: draggableId,
+      }),
+    }).catch((error) => {
+      console.error("Failed to update server:", error);
+      setError("Failed to save task order");
+    });
+  };
+
+  // Helper function to get task item styles
+  const getTaskItemStyles = (isDragging: boolean) => {
+    const baseStyles = "flex items-stretch space-x-2";
+
+    if (isDragging) {
+      return `${baseStyles} opacity-50`;
+    }
+
+    return baseStyles;
+  };
+
   if (isPending) {
     return <DashboardSkeleton />;
   }
@@ -378,398 +424,57 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <DashboardHeader onSignOut={handleSignOut} />
+    <DragDropContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+      <div className="min-h-screen bg-gray-50">
+        <DashboardHeader onSignOut={handleSignOut} />
 
-      <ErrorDisplay error={error} onClear={() => setError("")} />
+        <ErrorDisplay error={error} onClear={() => setError("")} />
 
-      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        <div className="px-4 py-6 sm:px-0">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <div className="bg-white rounded-lg shadow p-6">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-semibold text-gray-900">
-                  My Tasks
-                </h2>
-                <div className="flex items-center space-x-4">
-                  <div className="text-sm text-gray-500">
-                    {tasks && (
-                      <span>{tasks.completedThisWeek} completed this week</span>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              <AddTaskForm
+        <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+          <div className="px-4 py-6 sm:px-0">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <TasksSection
+                tasks={tasks}
                 newTaskTitle={newTaskTitle}
                 loading={loading}
-                onTitleChange={setNewTaskTitle}
-                onSubmit={createTask}
+                editingTaskId={editingTaskId}
+                completingTaskId={completingTaskId}
+                onNewTaskTitleChange={setNewTaskTitle}
+                onCreateTask={createTask}
+                onTaskClick={handleTaskClick}
+                onTaskBlur={handleTaskBlur}
+                onTaskKeyDown={handleTaskKeyDown}
+                onStartCompletion={startTaskCompletion}
+                onDeleteTask={deleteTask}
+                getTaskItemStyles={getTaskItemStyles}
+                onUndoCompletion={undoTaskCompletion}
+                onCompleteTask={finalizeTaskCompletion}
               />
 
-              <div className="space-y-4">
-                <div>
-                  <div className="text-sm font-medium text-indigo-700 mb-2">
-                    Active Tasks ({tasks?.openActiveTasks?.length || 0}/3)
-                  </div>
-                  {tasks?.openActiveTasks &&
-                  tasks.openActiveTasks.length > 0 ? (
-                    <div className="space-y-2">
-                      {tasks.openActiveTasks.map((task) => {
-                        if (completingTaskId === task.id) {
-                          return (
-                            <TaskCompletionProgress
-                              key={task.id}
-                              taskId={task.id}
-                              taskTitle={task.title}
-                              onUndo={undoTaskCompletion}
-                              onComplete={finalizeTaskCompletion}
-                            />
-                          );
-                        }
-
-                        return (
-                          <motion.div
-                            key={task.id}
-                            layout
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -20 }}
-                            className="flex items-stretch space-x-2"
-                          >
-                            <div className="flex-1 flex items-center justify-between p-3 border border-indigo-200 rounded-lg bg-indigo-50">
-                              <div
-                                data-task-id={task.id}
-                                contentEditable={
-                                  editingTaskId === task.id &&
-                                  task.isCompleted === 0
-                                }
-                                suppressContentEditableWarning={true}
-                                onClick={() =>
-                                  task.isCompleted === 0 &&
-                                  handleTaskClick(task.id)
-                                }
-                                onBlur={(e) =>
-                                  task.isCompleted === 0 &&
-                                  handleTaskBlur(
-                                    task.id,
-                                    e.currentTarget.textContent || task.title
-                                  )
-                                }
-                                onKeyDown={(e) =>
-                                  task.isCompleted === 0 &&
-                                  handleTaskKeyDown(
-                                    e,
-                                    task.id,
-                                    e.currentTarget.textContent || task.title
-                                  )
-                                }
-                                className={`min-w-0 flex-1 ${
-                                  task.isCompleted === 1
-                                    ? "text-gray-500 line-through"
-                                    : "text-gray-900"
-                                } ${
-                                  editingTaskId === task.id
-                                    ? "outline-none border-b-2 border-indigo-500 bg-yellow-50 px-2 py-1 rounded"
-                                    : task.isCompleted === 0
-                                    ? "cursor-pointer hover:bg-indigo-100 px-2 py-1 rounded"
-                                    : "px-2 py-1 rounded"
-                                }`}
-                              >
-                                {task.title}
-                              </div>
-                              <div className="flex items-center space-x-2 ml-4">
-                                {task.isCompleted === 0 ? (
-                                  <>
-                                    <button
-                                      onClick={() =>
-                                        startTaskCompletion(task.id)
-                                      }
-                                      className="flex items-center justify-center w-10 h-10 text-green-600 hover:text-green-800 rounded-lg transition-colors duration-200"
-                                      aria-label={`Complete task: ${task.title}`}
-                                      title={`Complete task: ${task.title}`}
-                                    >
-                                      <CheckCircle2 className="w-6 h-6" />
-                                    </button>
-                                    <button
-                                      onClick={() =>
-                                        toggleTaskActive(task.id, true)
-                                      }
-                                      className="flex items-center justify-center w-10 h-10 text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 rounded-lg transition-colors duration-200"
-                                      aria-label={`Archive task: ${task.title}`}
-                                      title={`Archive task: ${task.title}`}
-                                    >
-                                      <ArrowDownCircle className="w-6 h-6" />
-                                    </button>
-                                  </>
-                                ) : (
-                                  <div className="flex items-center space-x-3">
-                                    <button
-                                      onClick={() => toggleTask(task.id)}
-                                      className="flex items-center justify-center w-10 h-10 text-orange-600 hover:text-orange-800 rounded-lg transition-colors duration-200"
-                                      aria-label={`Mark task as incomplete: ${task.title}`}
-                                      title={`Mark task as incomplete: ${task.title}`}
-                                    >
-                                      <RotateCcw className="w-5 h-5" />
-                                    </button>
-                                    <span className="text-green-600 text-lg">
-                                      ✓
-                                    </span>
-                                    <span className="text-sm text-gray-500">
-                                      {new Date(
-                                        task.completedAt!
-                                      ).toLocaleDateString()}
-                                    </span>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                            <button
-                              onClick={() => deleteTask(task.id, task.title)}
-                              className="flex items-center justify-center px-4 text-red-600 hover:text-red-800 hover:bg-red-50 border border-red-200 rounded-lg transition-colors duration-200"
-                              aria-label={`Delete task: ${task.title}`}
-                              title={`Delete task: ${task.title}`}
-                            >
-                              <Trash2 className="w-5 h-5" />
-                            </button>
-                          </motion.div>
-                        );
-                      })}
-                    </div>
-                  ) : (
-                    <p className="text-gray-500 text-center py-4">
-                      No active tasks yet.
-                    </p>
-                  )}
-                </div>
-
-                {tasks?.openActiveTasks &&
-                  tasks.openActiveTasks.length > 0 &&
-                  tasks?.masterTasks &&
-                  tasks.masterTasks.length > 0 && (
-                    <div className="border-t border-gray-300 my-4"></div>
-                  )}
-
-                <div>
-                  <div className="text-sm font-medium text-gray-700 mb-2">
-                    Master List ({tasks?.masterTasks?.length || 0} tasks)
-                  </div>
-                  {tasks?.masterTasks && tasks.masterTasks.length > 0 ? (
-                    <div className="space-y-2">
-                      {tasks.masterTasks.map((task) => (
-                        <div
-                          key={task.id}
-                          className="flex items-stretch space-x-2"
-                        >
-                          <div className="flex-1 flex items-center justify-between p-3 border border-gray-200 rounded-lg">
-                            <div
-                              data-task-id={task.id}
-                              contentEditable={
-                                editingTaskId === task.id &&
-                                task.isCompleted === 0
-                              }
-                              suppressContentEditableWarning={true}
-                              onClick={() =>
-                                task.isCompleted === 0 &&
-                                handleTaskClick(task.id)
-                              }
-                              onBlur={(e) =>
-                                task.isCompleted === 0 &&
-                                handleTaskBlur(
-                                  task.id,
-                                  e.currentTarget.textContent || task.title
-                                )
-                              }
-                              onKeyDown={(e) =>
-                                task.isCompleted === 0 &&
-                                handleTaskKeyDown(
-                                  e,
-                                  task.id,
-                                  e.currentTarget.textContent || task.title
-                                )
-                              }
-                              className={`min-w-0 flex-1 ${
-                                task.isCompleted === 1
-                                  ? "text-gray-500 line-through"
-                                  : "text-gray-900"
-                              } ${
-                                editingTaskId === task.id
-                                  ? "outline-none border-b-2 border-indigo-500 bg-yellow-50 px-2 py-1 rounded"
-                                  : task.isCompleted === 0
-                                  ? "cursor-pointer hover:bg-gray-50 px-2 py-1 rounded"
-                                  : "px-2 py-1 rounded"
-                              }`}
-                            >
-                              {task.title}
-                            </div>
-                            <div className="flex items-center space-x-2 ml-4">
-                              {tasks.openActiveTasks.length < 3 && (
-                                <button
-                                  onClick={() =>
-                                    toggleTaskActive(task.id, false)
-                                  }
-                                  className="flex items-center justify-center w-10 h-10 text-indigo-600 hover:text-indigo-800  rounded-lg transition-colors duration-200"
-                                  aria-label={`Activate task: ${task.title}`}
-                                  title={`Activate task: ${task.title}`}
-                                >
-                                  <ArrowUpCircle className="w-6 h-6" />
-                                </button>
-                              )}
-                            </div>
-                          </div>
-                          <button
-                            onClick={() => deleteTask(task.id, task.title)}
-                            className="flex items-center justify-center px-4 text-red-600 hover:text-red-800 hover:bg-red-50 border border-red-200 rounded-lg transition-colors duration-200"
-                            aria-label={`Delete task: ${task.title}`}
-                            title={`Delete task: ${task.title}`}
-                          >
-                            <Trash2 className="w-5 h-5" />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-gray-500 text-center py-4">
-                      No master tasks yet.
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              <div className="mt-6 pt-4 border-t border-gray-200">
-                <Link
-                  href="/completed-tasks"
-                  className="inline-flex items-center text-indigo-600 hover:text-indigo-800 font-medium transition-colors duration-200"
-                >
-                  View completed tasks
-                </Link>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-lg shadow p-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-6">
-                Partner
-              </h2>
-
-              {partner ? (
-                <div>
-                  <div className="mb-6 p-4 bg-indigo-50 rounded-lg">
-                    <h3 className="font-medium text-indigo-900 mb-2">
-                      Partnered with: {partner.name} ({partner.email})
-                    </h3>
-                    <p className="text-sm text-indigo-700">
-                      Since: {new Date(partner.createdAt).toLocaleDateString()}
-                    </p>
-                    <button
-                      onClick={unpairPartner}
-                      className="mt-2 text-sm text-red-600 hover:text-red-800"
-                    >
-                      Unpair
-                    </button>
-                  </div>
-
-                  <div className="mb-4 p-3 bg-gray-50 rounded-lg">
-                    <div className="text-sm text-gray-700">
-                      <span className="font-medium">Partner&apos;s Week:</span>{" "}
-                      {partnerTasks?.completedThisWeek || 0} completed this week
-                    </div>
-                  </div>
-
-                  <div>
-                    <h3 className="font-medium text-gray-900 mb-3">
-                      Partner&apos;s Active Tasks
-                    </h3>
-                    <div className="space-y-3">
-                      {partnerTasks?.tasks
-                        .filter((task) => task.isCompleted === 0)
-                        .map((task) => (
-                          <div
-                            key={task.id}
-                            className={`flex items-center space-x-3 p-3 border border-gray-200 rounded-lg ${
-                              task.isCompleted === 1
-                                ? "bg-green-50"
-                                : "bg-gray-50"
-                            }`}
-                          >
-                            <div className="w-5 h-5 border-2 border-gray-300 rounded bg-gray-200 flex items-center justify-center">
-                              {task.isCompleted === 1 ? (
-                                <span className="text-green-600 text-xs">
-                                  ✓
-                                </span>
-                              ) : (
-                                <span className="text-gray-400 text-xs">👁</span>
-                              )}
-                            </div>
-                            <span
-                              className={`${
-                                task.isCompleted === 1
-                                  ? "text-gray-500 line-through"
-                                  : "text-gray-700"
-                              }`}
-                            >
-                              {task.title}
-                            </span>
-                            {task.isCompleted === 1 && (
-                              <span className="text-xs text-gray-500 ml-auto">
-                                {new Date(
-                                  task.completedAt!
-                                ).toLocaleDateString()}
-                              </span>
-                            )}
-                          </div>
-                        ))}
-                      {(!partnerTasks ||
-                        partnerTasks.tasks.filter(
-                          (task) => task.isCompleted === 0
-                        ).length === 0) && (
-                        <p className="text-gray-500 text-center py-4">
-                          No active tasks
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div>
-                  <p className="text-gray-600 mb-4">
-                    Find a partner to collaborate on tasks together.
-                  </p>
-                  <form onSubmit={pairWithPartner}>
-                    <div className="flex gap-2">
-                      <input
-                        type="email"
-                        value={partnerEmail}
-                        onChange={(e) => setPartnerEmail(e.target.value)}
-                        placeholder="Partner's email address..."
-                        className="flex-1 border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        disabled={loading}
-                      />
-                      <button
-                        type="submit"
-                        disabled={loading || !partnerEmail.trim()}
-                        className="bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-400 text-white px-4 py-2 rounded-md text-sm font-medium"
-                      >
-                        {loading ? "Pairing..." : "Pair"}
-                      </button>
-                    </div>
-                  </form>
-                </div>
-              )}
+              <PartnerSection
+                partner={partner}
+                partnerTasks={partnerTasks}
+                partnerEmail={partnerEmail}
+                loading={loading}
+                onPartnerEmailChange={setPartnerEmail}
+                onPairWithPartner={pairWithPartner}
+                onUnpairPartner={unpairPartner}
+              />
             </div>
           </div>
-        </div>
-      </main>
+        </main>
 
-      <ConfirmDialog
-        isOpen={!!taskToDelete}
-        onConfirm={confirmDeleteTask}
-        onCancel={cancelDeleteTask}
-        title="Delete Task"
-        message={`Are you sure you want to delete "${taskToDelete?.title}"?`}
-        confirmText="Delete"
-        cancelText="Cancel"
-        confirmVariant="danger"
-      />
-    </div>
+        <ConfirmDialog
+          isOpen={!!taskToDelete}
+          onConfirm={confirmDeleteTask}
+          onCancel={cancelDeleteTask}
+          title="Delete Task"
+          message={`Are you sure you want to delete "${taskToDelete?.title}"?`}
+          confirmText="Delete"
+          cancelText="Cancel"
+          confirmVariant="danger"
+        />
+      </div>
+    </DragDropContext>
   );
 }

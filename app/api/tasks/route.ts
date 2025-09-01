@@ -45,10 +45,10 @@ export async function GET(req: Request) {
 
       try {
         const allTasksResult = await sql`
-          SELECT id, userid, title, iscompleted, isactive, createdat, completedat, addedtoactiveat
+          SELECT id, userid, title, iscompleted, isactive, sort_order, createdat, completedat, addedtoactiveat
           FROM task
           WHERE userid = ${userId}
-          ORDER BY isactive DESC, iscompleted ASC, createdat DESC
+          ORDER BY isactive DESC, iscompleted ASC, sort_order ASC, createdat DESC
         `;
 
         console.log(
@@ -63,6 +63,7 @@ export async function GET(req: Request) {
           title: task.title,
           isCompleted: task.iscompleted,
           isActive: task.isactive,
+          sortOrder: task.sort_order,
           createdAt: task.createdat,
           completedAt: task.completedat,
           addedToActiveAt: task.addedtoactiveat,
@@ -143,10 +144,10 @@ export async function GET(req: Request) {
       // SQLite implementation for development
       const allTasks = appDb
         .prepare(
-          `SELECT id, userId, title, isCompleted, isActive, createdAt, completedAt, addedToActiveAt
+          `SELECT id, userId, title, isCompleted, isActive, sortOrder, createdAt, completedAt, addedToActiveAt
            FROM task
            WHERE userId = ?
-           ORDER BY isActive DESC, isCompleted ASC, createdAt DESC`
+           ORDER BY isActive DESC, isCompleted ASC, sortOrder ASC, createdAt DESC`
         )
         .all(userId) as Task[];
 
@@ -248,16 +249,25 @@ export async function POST(req: Request) {
     const now = new Date().toISOString();
     const addedToActiveAt = isActive ? now : null;
 
-    // Insert task with active status
+    // Get the next sort order for this user
+    const maxSortOrderResult = await sql`
+      SELECT COALESCE(MAX(sort_order), 0) as max_sort_order
+      FROM task
+      WHERE userid = ${userId}
+    `;
+    const nextSortOrder =
+      (maxSortOrderResult.rows?.[0]?.max_sort_order || 0) + 1;
+
+    // Insert task with active status and sort order
     await sql`
-      INSERT INTO task (id, userid, title, iscompleted, isactive, createdat, completedat, addedtoactiveat)
+      INSERT INTO task (id, userid, title, iscompleted, isactive, sort_order, createdat, completedat, addedtoactiveat)
       VALUES (${id}, ${userId}, ${title}, 0, ${
       isActive ? 1 : 0
-    }, ${now}, NULL, ${addedToActiveAt})
+    }, ${nextSortOrder}, ${now}, NULL, ${addedToActiveAt})
     `;
 
     const createdResult = await sql`
-      SELECT id, userid, title, iscompleted, isactive, createdat, completedat, addedtoactiveat 
+      SELECT id, userid, title, iscompleted, isactive, sort_order, createdat, completedat, addedtoactiveat 
       FROM task WHERE id = ${id}
     `;
     const created = createdResult.rows?.[0];
@@ -287,16 +297,32 @@ export async function POST(req: Request) {
     const now = toSqliteUtc(new Date());
     const addedToActiveAt = isActive ? now : null;
 
-    // Insert task with active status
+    // Get the next sort order for this user
+    const maxSortOrderRow = appDb
+      .prepare(
+        `SELECT COALESCE(MAX(sortOrder), 0) as maxSortOrder FROM task WHERE userId = ?`
+      )
+      .get(userId) as { maxSortOrder: number };
+    const nextSortOrder = (maxSortOrderRow?.maxSortOrder || 0) + 1;
+
+    // Insert task with active status and sort order
     const stmt = appDb.prepare(
-      `INSERT INTO task (id, userId, title, isCompleted, isActive, createdAt, completedAt, addedToActiveAt)
-       VALUES (?, ?, ?, 0, ?, ?, NULL, ?)`
+      `INSERT INTO task (id, userId, title, isCompleted, isActive, sortOrder, createdAt, completedAt, addedToActiveAt)
+       VALUES (?, ?, ?, 0, ?, ?, ?, NULL, ?)`
     );
-    stmt.run(id, userId, title, isActive ? 1 : 0, now, addedToActiveAt);
+    stmt.run(
+      id,
+      userId,
+      title,
+      isActive ? 1 : 0,
+      nextSortOrder,
+      now,
+      addedToActiveAt
+    );
 
     const created = appDb
       .prepare(
-        `SELECT id, userId, title, isCompleted, isActive, createdAt, completedAt, addedToActiveAt FROM task WHERE id = ?`
+        `SELECT id, userId, title, isCompleted, isActive, sortOrder, createdAt, completedAt, addedToActiveAt FROM task WHERE id = ?`
       )
       .get(id) as Task;
 

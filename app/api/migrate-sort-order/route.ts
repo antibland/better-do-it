@@ -29,7 +29,6 @@ export async function POST(req: Request) {
       }
     }
 
-    const isProduction = process.env.NODE_ENV === "production";
     const results: string[] = [];
 
     if (isProduction) {

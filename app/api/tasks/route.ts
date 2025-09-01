@@ -45,10 +45,10 @@ export async function GET(req: Request) {
 
       try {
         const allTasksResult = await sql`
-          SELECT id, userid, title, iscompleted, isactive, createdat, completedat, addedtoactiveat
+          SELECT id, userid, title, iscompleted, isactive, sort_order, createdat, completedat, addedtoactiveat
           FROM task
           WHERE userid = ${userId}
-          ORDER BY isactive DESC, iscompleted ASC, createdat DESC
+          ORDER BY isactive DESC, iscompleted ASC, sort_order ASC, createdat DESC
         `;
 
         console.log(
@@ -63,7 +63,7 @@ export async function GET(req: Request) {
           title: task.title,
           isCompleted: task.iscompleted,
           isActive: task.isactive,
-          sortOrder: 0, // Default until sort_order column is added
+          sortOrder: task.sort_order,
           createdAt: task.createdat,
           completedAt: task.completedat,
           addedToActiveAt: task.addedtoactiveat,

@@ -18,11 +18,6 @@ async function requireSession(req: Request) {
 
 export async function POST(req: Request) {
   try {
-    const session = await requireSession(req);
-    if (!session) {
-      return Response.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
     const isProduction = process.env.NODE_ENV === "production";
     const results: string[] = [];
 

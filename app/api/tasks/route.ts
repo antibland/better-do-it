@@ -44,11 +44,20 @@ export async function GET(req: Request) {
       console.log("Tasks API: Executing PostgreSQL query...");
 
       try {
+        // Check if sort_order column exists
+        const checkColumn = await sql`
+          SELECT column_name 
+          FROM information_schema.columns 
+          WHERE table_name = 'task' AND column_name = 'sort_order'
+        `;
+        
+        const hasSortOrder = checkColumn.rows.length > 0;
+        
         const allTasksResult = await sql`
-          SELECT id, userid, title, iscompleted, isactive, sort_order, createdat, completedat, addedtoactiveat
+          SELECT id, userid, title, iscompleted, isactive, ${hasSortOrder ? sql`sort_order` : sql`0 as sort_order`}, createdat, completedat, addedtoactiveat
           FROM task
           WHERE userid = ${userId}
-          ORDER BY isactive DESC, iscompleted ASC, sort_order ASC, createdat DESC
+          ORDER BY isactive DESC, iscompleted ASC, ${hasSortOrder ? sql`sort_order ASC,` : sql``} createdat DESC
         `;
 
         console.log(

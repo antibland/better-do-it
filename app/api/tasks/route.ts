@@ -63,6 +63,7 @@ export async function GET(req: Request) {
           title: task.title,
           isCompleted: task.iscompleted,
           isActive: task.isactive,
+          sortOrder: 0, // Default until sort_order column is added
           createdAt: task.createdat,
           completedAt: task.completedat,
           addedToActiveAt: task.addedtoactiveat,
@@ -141,14 +142,14 @@ export async function GET(req: Request) {
       }
     } else {
       // SQLite implementation for development
-      const allTasks = appDb
-        .prepare(
-          `SELECT id, userId, title, isCompleted, isActive, createdAt, completedAt, addedToActiveAt
-           FROM task
-           WHERE userId = ?
-           ORDER BY isActive DESC, isCompleted ASC, createdAt DESC`
-        )
-        .all(userId) as Task[];
+              const allTasks = appDb
+          .prepare(
+            `SELECT id, userId, title, isCompleted, isActive, sortOrder, createdAt, completedAt, addedToActiveAt
+             FROM task
+             WHERE userId = ?
+             ORDER BY isActive DESC, isCompleted ASC, sortOrder ASC, createdAt DESC`
+          )
+          .all(userId) as Task[];
 
       // PROPER FIX: Use the correct week boundary calculation
       const weekStart = toSqliteUtc(getCurrentWeekStartEt());

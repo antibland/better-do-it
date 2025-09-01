@@ -58,7 +58,7 @@ export async function POST(req: Request) {
           WHERE "sort_order" = 0
         `;
 
-        if (updateResult.rowCount > 0) {
+        if (updateResult.rowCount && updateResult.rowCount > 0) {
           results.push(
             `Updated ${updateResult.rowCount} tasks with sort_order in PostgreSQL`
           );
@@ -104,7 +104,7 @@ export async function POST(req: Request) {
 
         if (!hasSortOrder) {
           // Column doesn't exist, add it safely
-          appDb
+          await appDb
             .prepare(
               "ALTER TABLE task ADD COLUMN sortOrder INTEGER NOT NULL DEFAULT 0"
             )
@@ -115,7 +115,7 @@ export async function POST(req: Request) {
         }
 
         // Update existing tasks to have proper sortOrder based on creation time
-        const updateResult = appDb
+        const updateResult = await appDb
           .prepare(
             `
             UPDATE task 
@@ -131,7 +131,7 @@ export async function POST(req: Request) {
           )
           .run();
 
-        if (updateResult.changes > 0) {
+        if (updateResult.changes && updateResult.changes > 0) {
           results.push(
             `Updated ${updateResult.changes} tasks with sortOrder in SQLite`
           );
@@ -141,7 +141,7 @@ export async function POST(req: Request) {
 
         // Create index if it doesn't exist
         try {
-          appDb
+          await appDb
             .prepare(
               "CREATE INDEX idx_task_user_sort_order ON task(userId, sortOrder)"
             )

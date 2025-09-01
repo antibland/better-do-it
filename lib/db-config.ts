@@ -12,6 +12,7 @@ export interface DatabaseRow {
 export interface DatabaseResult {
   rows?: DatabaseRow[];
   rowCount?: number | null;
+  changes?: number;
 }
 
 export interface PreparedStatement {

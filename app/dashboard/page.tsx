@@ -2,7 +2,7 @@
 
 import { useSession, signOut } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
-import { useEffect, useState, useOptimistic, startTransition } from "react";
+import { useEffect, useState } from "react";
 import { DragDropContext, DropResult } from "@hello-pangea/dnd";
 import { DashboardSkeleton } from "@/app/components/DashboardSkeleton";
 import { DashboardHeader } from "@/app/components/DashboardHeader";
@@ -405,10 +405,7 @@ export default function Dashboard() {
   };
 
   // Helper function to get task item styles
-  const getTaskItemStyles = (
-    isDragging: boolean,
-    draggingOver: string | null
-  ) => {
+  const getTaskItemStyles = (isDragging: boolean) => {
     const baseStyles = "flex items-stretch space-x-2";
 
     if (isDragging) {

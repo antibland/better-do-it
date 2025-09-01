@@ -117,26 +117,26 @@ The `/api/migrate-sort-order` endpoint handles both environments safely:
 ### **Check Current Schema**
 
 ```bash
-curl -s https://your-domain.vercel.app/api/check-schema | jq
+curl -s https://better-do-it.vercel.app/api/check-schema | jq
 ```
 
 ### **Run Migration**
 
 ```bash
-curl -X POST https://your-domain.vercel.app/api/migrate-sort-order
+curl -X POST https://better-do-it.vercel.app/api/migrate-sort-order
 ```
 
 ### **Test API Endpoints**
 
 ```bash
 # Test tasks API
-curl -s https://your-domain.vercel.app/api/tasks | jq '.tasks[0]'
+curl -s https://better-do-it.vercel.app/api/tasks | jq '.tasks[0]'
 
 # Test partner API
-curl -s https://your-domain.vercel.app/api/partner | jq
+curl -s https://better-do-it.vercel.app/api/partner | jq
 
 # Test partner tasks API
-curl -s https://your-domain.vercel.app/api/partner/tasks | jq
+curl -s https://better-do-it.vercel.app/api/partner/tasks | jq
 ```
 
 ## **Best Practices**
@@ -174,13 +174,13 @@ curl -s https://your-domain.vercel.app/api/partner/tasks | jq
 
 ```bash
 # Check database connectivity
-curl -s https://your-domain.vercel.app/api/test-db | jq
+curl -s https://better-do-it.vercel.app/api/test-db | jq
 
 # Check authentication setup
-curl -s https://your-domain.vercel.app/api/test-auth | jq
+curl -s https://better-do-it.vercel.app/api/test-auth | jq
 
 # Check schema
-curl -s https://your-domain.vercel.app/api/check-schema | jq
+curl -s https://better-do-it.vercel.app/api/check-schema | jq
 ```
 
 ## **Future Improvements**

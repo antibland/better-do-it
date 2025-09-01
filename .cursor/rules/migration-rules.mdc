@@ -1,34 +1,35 @@
 # Database Migration Rules
 
-## **Core Rule: Always Use Safe Migration Endpoints**
+## **CRITICAL: Follow the Bulletproof Migration Process**
 
-**NEVER create direct SQL migration files** - they can cause data loss and environment inconsistencies.
+**NEVER create direct SQL migration files** - they can cause data loss and business failure.
 
-## **Required Migration Process**
+### **1. Reference migration-process.md**
 
-### **1. Use the Safe Migration Endpoint**
+- **ALWAYS** reference `docs/migration-process.md` for the complete bulletproof process
+- This document contains the step-by-step process that prevents database disasters
+- Follow it exactly, every time, no exceptions
 
-- **ALWAYS** use `/api/migrate-sort-order` for database schema changes
-- This endpoint handles both PostgreSQL (production) and SQLite (development) environments
-- It's idempotent and data-loss-free - can be run multiple times safely
+### **2. Use Safe Migration Endpoints**
 
-### **2. Reference data-consistency.md**
-
-- **ALWAYS** reference `docs/data-consistency.md` for complete migration strategy
-- Follow the column naming conventions documented there
-- Use the transformation patterns shown in the examples
+- **ALWAYS** use `/api/migrate-[feature]` for database schema changes
+- Migration endpoints handle both PostgreSQL (production) and SQLite (development)
+- They are idempotent and data-loss-free - can be run multiple times safely
 
 ### **3. Follow the Established Pattern**
 
-When adding new columns, follow this exact pattern from `docs/data-consistency.md`:
+When adding new columns, follow this exact pattern from `docs/migration-process.md`:
 
-1. **Update both schema files** with appropriate naming
-2. **Add transformation logic** in API endpoints
-3. **Create migration endpoint** for safe deployment
-4. **Test in both environments** before deploying
+1. **Create migration endpoint** with full validation
+2. **Test locally** (MANDATORY)
+3. **Deploy migration endpoint**
+4. **Run production migration**
+5. **Verify migration succeeded**
+6. **Deploy application code**
 
 ### **4. Use Migration Scripts**
 
+- Use `scripts/migration-safety.js` for safety checks
 - Use `scripts/run-migration.sh` for convenient migration execution
 - Verify schema consistency with `/api/check-schema` endpoint after migrations
 
@@ -38,11 +39,12 @@ When adding new columns, follow this exact pattern from `docs/data-consistency.m
 ❌ **NEVER use direct database commands**
 ❌ **NEVER assume column names are the same across environments**
 ❌ **NEVER skip environment testing**
+❌ **NEVER deploy code before running migrations**
 
 ## **What TO Do**
 
 ✅ **ALWAYS use the migration endpoint**
-✅ **ALWAYS reference DATA_CONSISTENCY.md**
+✅ **ALWAYS follow the bulletproof process**
 ✅ **ALWAYS test in both environments**
 ✅ **ALWAYS verify schema consistency**
 ✅ **ALWAYS use the transformation layer**
@@ -50,14 +52,14 @@ When adding new columns, follow this exact pattern from `docs/data-consistency.m
 ## **Quick Reference**
 
 ```bash
-# Run migration
-curl -X POST https://your-domain.vercel.app/api/migrate-sort-order
+# Run migration safety check
+node scripts/migration-safety.js
+
+# Run migration (production)
+curl -X POST https://better-do-it.vercel.app/api/migrate-[feature] | jq
 
 # Check schema
-curl -s https://your-domain.vercel.app/api/check-schema | jq
-
-# Use migration script
-./scripts/run-migration.sh
+curl -s https://better-do-it.vercel.app/api/check-schema | jq
 ```
 
 ## **Why This Rule Exists**
@@ -68,10 +70,11 @@ The old `migrate-sort-order.sql` file was removed because:
 - It didn't handle environment differences properly
 - It wasn't idempotent (couldn't be run safely multiple times)
 - It lacked proper error handling and feedback
+- It nearly destroyed the production database
 
 The new migration endpoint solves all these problems and provides a safe, consistent way to handle database changes across both development and production environments.
 
-**Reference: See `docs/data-consistency.md` for complete implementation details and examples.**
+**Reference: See `docs/migration-process.md` for the complete bulletproof migration process.**
 description:
 globs:
 alwaysApply: true

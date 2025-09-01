@@ -1,36 +1,41 @@
-# Database Migration Rules
+# Migration Rules (Quick Reference)
 
-## **Core Rule: Always Use Safe Migration Endpoints**
+## **Core Rule: Always Use the Bulletproof Migration Process**
 
-**NEVER create direct SQL migration files** - they can cause data loss and environment inconsistencies.
+**NEVER create direct SQL migration files** - they can cause data loss and business failure.
 
-## **Required Migration Process**
+## **Quick Reference**
 
 ### **1. Use the Safe Migration Endpoint**
 
-- **ALWAYS** use `/api/migrate-sort-order` for database schema changes
-- This endpoint handles both PostgreSQL (production) and SQLite (development) environments
+- **ALWAYS** use `/api/migrate-[feature]` for database schema changes
+- This endpoint handles both PostgreSQL (production) and SQLite (development)
 - It's idempotent and data-loss-free - can be run multiple times safely
 
-### **2. Reference data-consistency.md**
+### **2. Follow the Bulletproof Process**
 
-- **ALWAYS** reference `data-consistency.md` for complete migration strategy
-- Follow the column naming conventions documented there
-- Use the transformation patterns shown in the examples
+**See `migration-process.md` for the complete, step-by-step process.**
 
-### **3. Follow the Established Pattern**
+The process includes:
 
-When adding new columns, follow this exact pattern from `data-consistency.md`:
+- Pre-migration checklist (backup, validation, isolation)
+- Step-by-step migration execution
+- Emergency rollback procedures
+- Validation commands
+- Critical rules that must never be broken
 
-1. **Update both schema files** with appropriate naming
-2. **Add transformation logic** in API endpoints
-3. **Create migration endpoint** for safe deployment
-4. **Test in both environments** before deploying
+### **3. Use Migration Scripts**
 
-### **4. Use Migration Scripts**
+```bash
+# Run migration safety check
+node scripts/migration-safety.js
 
-- Use `scripts/run-migration.sh` for convenient migration execution
-- Verify schema consistency with `/api/check-schema` endpoint after migrations
+# Run migration (production)
+curl -X POST https://better-do-it.vercel.app/api/migrate-[feature] | jq
+
+# Check schema
+curl -s https://better-do-it.vercel.app/api/check-schema | jq
+```
 
 ## **What NOT to Do**
 
@@ -38,27 +43,15 @@ When adding new columns, follow this exact pattern from `data-consistency.md`:
 ❌ **NEVER use direct database commands**
 ❌ **NEVER assume column names are the same across environments**
 ❌ **NEVER skip environment testing**
+❌ **NEVER deploy code before running migrations**
 
 ## **What TO Do**
 
 ✅ **ALWAYS use the migration endpoint**
-✅ **ALWAYS reference data-consistency.md**
+✅ **ALWAYS follow the bulletproof process**
 ✅ **ALWAYS test in both environments**
 ✅ **ALWAYS verify schema consistency**
 ✅ **ALWAYS use the transformation layer**
-
-## **Quick Reference**
-
-```bash
-# Run migration
-curl -X POST https://your-domain.vercel.app/api/migrate-sort-order
-
-# Check schema
-curl -s https://your-domain.vercel.app/api/check-schema | jq
-
-# Use migration script
-./scripts/run-migration.sh
-```
 
 ## **Why This Rule Exists**
 
@@ -68,7 +61,10 @@ The old `migrate-sort-order.sql` file was removed because:
 - It didn't handle environment differences properly
 - It wasn't idempotent (couldn't be run safely multiple times)
 - It lacked proper error handling and feedback
+- It nearly destroyed the production database
 
 The new migration endpoint solves all these problems and provides a safe, consistent way to handle database changes across both development and production environments.
 
-**Reference: See `data-consistency.md` for complete implementation details and examples.**
+---
+
+**Reference: See `migration-process.md` for the complete bulletproof migration process.**

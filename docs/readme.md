@@ -1,165 +1,210 @@
-# Better Do It - Todo App for Partners
+# Better Do It
 
-A collaborative task management app built with Next.js 15, Better Auth, and dual database support (SQLite for development, PostgreSQL for production).
+A collaborative task management app for partners to stay organized and motivated together.
 
-## 🚀 **Live Demo**
+## Features
 
-- **Production**: [https://better-do-it.vercel.app](https://better-do-it.vercel.app)
-- **Local Development**: [http://localhost:3000](http://localhost:3000)
+- **Task Management**: Create, organize, and complete tasks with drag-and-drop functionality
+- **Partner Collaboration**: Share your active tasks with a partner for accountability
+- **Weekly Progress Tracking**: Monitor completion rates with custom week boundaries
+- **Responsive Design**: Works seamlessly on desktop and mobile devices
+- **Real-time Updates**: Instant feedback for all task operations
 
-## ✨ **Features**
+## Tech Stack
 
-- **Task Management**: Create, complete, and organize tasks with drag and drop
-- **Partner Collaboration**: Pair with another user to see their active tasks
-- **Weekly Goals**: Track completion within Wednesday 6 PM ET week boundaries
-- **Active Task Limits**: Maximum 3 active tasks per user
-- **Drag and Drop**: Smooth reordering within and between active/master lists
-- **Dual Environment**: Works seamlessly in local development and production
-
-## 🛠 **Tech Stack**
-
-- **Framework**: Next.js 15 (App Router)
-- **Authentication**: Better Auth
-- **Database**:
-  - **Local**: SQLite with better-sqlite3
-  - **Production**: PostgreSQL (Neon) with @vercel/postgres
-- **Styling**: Tailwind CSS
-- **Icons**: Lucide React
+- **Frontend**: Next.js 15, React, TypeScript, Tailwind CSS
+- **Backend**: Next.js API Routes, Better Auth
+- **Database**: PostgreSQL (production), SQLite (development)
 - **Deployment**: Vercel
+- **Drag & Drop**: React Beautiful DnD
 
-## 🚀 **Quick Start**
+## Quick Start
 
 ### Prerequisites
 
 - Node.js 18+
-- npm, yarn, or pnpm
+- npm or yarn
 
-### Local Development
+### Installation
 
-```bash
-# Clone the repository
-git clone https://github.com/antibland/better-do-it.git
-cd better-do-it
+1. **Clone the repository**
 
-# Install dependencies
-npm install
+   ```bash
+   git clone <repository-url>
+   cd better-do-it
+   ```
 
-# Start development server
-npm run dev
-```
+2. **Install dependencies**
 
-Open [http://localhost:3000](http://localhost:3000) to see the app.
+   ```bash
+   npm install
+   ```
 
-### Environment Variables
+3. **Set up environment variables**
 
-Create a `.env.local` file for local development:
+   ```bash
+   cp .env.example .env.local
+   # Edit .env.local with your configuration
+   ```
 
-```env
-BETTER_AUTH_SECRET=your-secret-key-here
-BETTER_AUTH_URL=http://localhost:3000
-NEXT_PUBLIC_BETTER_AUTH_URL=http://localhost:3000
-```
+4. **Start development server**
 
-## 📖 **Documentation**
+   ```bash
+   npm run dev
+   ```
+
+5. **Open your browser**
+   ```
+   http://localhost:3000
+   ```
+
+## Documentation
+
+### Essential Guides
+
+- **[Database Architecture](db-architecture.md)** - Understanding the dual database setup
+- **[Data Consistency](data-consistency.md)** - Column naming conventions and transformations
+- **[Migration Process](migration-process.md)** - Bulletproof database migration process
+- **[Essential Commands](useful-commands.md)** - Key commands for development and debugging
+
+### API Documentation
 
 - **[Task API Commands](curl-tasks.md)** - Complete cURL cookbook for task operations
 - **[Partner API Commands](curl-partners.md)** - Partnership management commands
-- **[Useful Commands](useful-commands.md)** - Database, deployment, and debugging commands
-- **[Database Troubleshooting](db-troubleshooting.md)** - Common database issues and solutions
 
-## 🔧 **Development Commands**
+### Quick Reference
 
-```bash
-# Development
-npm run dev          # Start development server
-npm run build        # Build for production
-npm run start        # Start production server
-npm run lint         # Run ESLint
+- **[Migration Rules](migration-rules.md)** - Quick reference for database migrations
 
-# Database
-npx @better-auth/cli generate  # Generate auth migrations
-npx @better-auth/cli migrate   # Run auth migrations
+## Development
+
+### Project Structure
+
+```
+better-do-it/
+├── app/                    # Next.js app directory
+│   ├── api/               # API routes
+│   ├── auth/              # Authentication pages
+│   ├── components/        # Reusable React components
+│   ├── dashboard/         # Main application
+│   └── completed-tasks/   # Task history
+├── lib/                   # Utility libraries
+├── types/                 # TypeScript type definitions
+├── docs/                  # Documentation
+└── scripts/               # Development scripts
 ```
 
-## 🌐 **Production Deployment**
+### Key Files
 
-The app is automatically deployed to Vercel on push to main branch.
+- `app/dashboard/page.tsx` - Main application interface
+- `app/api/tasks/route.ts` - Task CRUD operations
+- `app/api/tasks/reorder/route.ts` - Drag-and-drop reordering
+- `lib/db.ts` - Database configuration
+- `lib/auth.ts` - Authentication setup
 
-### Environment Variables (Production)
+### Database Setup
 
-- `BETTER_AUTH_SECRET` - Secret key for authentication
-- `BETTER_AUTH_URL` - Production auth URL
-- `NEXT_PUBLIC_BETTER_AUTH_URL` - Client-side auth URL
-- `POSTGRES_URL` - Neon database connection string
+The application uses a dual database architecture:
 
-## 🗄 **Database Schema**
+- **Development**: SQLite (`./sqlite.db`)
+- **Production**: PostgreSQL (Vercel managed)
 
-### Core Tables
+Database schema is automatically initialized on first run.
 
-- **user** - User accounts and profiles
-- **session** - Authentication sessions
-- **task** - User tasks with active/master status
-- **partnership** - User partnerships for collaboration
+### Authentication
 
-### Key Features
+Better Auth handles user authentication with:
 
-- **Dual Database Support**: SQLite (local) ↔ PostgreSQL (production)
-- **Data Transformation**: Automatic column name mapping (lowercase ↔ camelCase)
-- **Week Boundaries**: Wednesday 6 PM ET completion tracking
-- **Active Task Limits**: Maximum 3 active tasks per user
+- Email/password registration and login
+- Session management
+- Email verification (optional)
 
-## 🐛 **Troubleshooting**
+## Deployment
+
+### Vercel Deployment
+
+1. **Connect repository** to Vercel
+2. **Set environment variables**:
+   - `POSTGRES_URL` - PostgreSQL connection string
+   - `BETTER_AUTH_SECRET` - Authentication secret
+   - `BETTER_AUTH_URL` - Your domain URL
+3. **Deploy** - Vercel automatically builds and deploys
+
+### Environment Variables
+
+```bash
+# Required
+POSTGRES_URL=postgresql://...
+BETTER_AUTH_SECRET=your-secret-key
+BETTER_AUTH_URL=https://better-do-it.vercel.app
+
+# Optional
+NEXT_PUBLIC_BETTER_AUTH_URL=https://better-do-it.vercel.app
+```
+
+## Contributing
+
+### Development Workflow
+
+1. **Create feature branch**
+
+   ```bash
+   git checkout -b feature/your-feature
+   ```
+
+2. **Make changes** and test locally
+
+3. **Run safety checks**
+
+   ```bash
+   node scripts/migration-safety.js
+   ```
+
+4. **Commit and push**
+   ```bash
+   git add .
+   git commit -m "Add your feature"
+   git push
+   ```
+
+### Database Changes
+
+**IMPORTANT**: Follow the bulletproof migration process for any database changes:
+
+1. **Read the migration process** in `docs/migration-process.md`
+2. **Create migration endpoint** with full validation
+3. **Test locally** before touching production
+4. **Deploy migration endpoint** first
+5. **Run production migration**
+6. **Deploy application code**
+
+### Code Style
+
+- **TypeScript** for type safety
+- **ESLint** for code quality
+- **Prettier** for formatting
+- **Component-based** architecture
+- **API-first** design
+
+## Troubleshooting
 
 ### Common Issues
 
-1. **Authentication Problems**: Check environment variables and cookie settings
-2. **Database Issues**: Verify PostgreSQL connection and table schema
-3. **API Errors**: Use the debugging endpoints in the documentation
+- **Database connection errors**: Check environment variables
+- **Authentication issues**: Verify Better Auth configuration
+- **Drag-and-drop not working**: Check browser console for errors
 
-### Debugging Commands
+### Getting Help
 
-```bash
-# Test database connectivity
-curl -s https://better-do-it.vercel.app/api/test-db | jq
+1. **Check the documentation** in the `docs/` folder
+2. **Run diagnostic commands** from `useful-commands.md`
+3. **Check Vercel logs** for production issues
+4. **Review migration process** if database issues occur
 
-# Check authentication setup
-curl -s https://better-do-it.vercel.app/api/test-auth | jq
+## License
 
-# Verify database schema
-curl -s https://better-do-it.vercel.app/api/check-schema | jq
-```
-
-## 📝 **API Reference**
-
-### Core Endpoints
-
-- `GET /api/tasks` - List user's tasks
-- `POST /api/tasks` - Create new task
-- `PATCH /api/tasks/[id]` - Update task (complete, archive, title)
-- `DELETE /api/tasks/[id]` - Delete task
-- `GET /api/partner` - Get current partner
-- `POST /api/partner` - Pair with user by email
-- `DELETE /api/partner` - Unpair from current partnership
-
-### Debugging Endpoints
-
-- `GET /api/test-db` - Test database connectivity
-- `GET /api/test-auth` - Test authentication setup
-- `GET /api/check-schema` - View database schema
-- `POST /api/setup-db` - Create database tables
-
-## 🤝 **Contributing**
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Test thoroughly (local + production)
-5. Submit a pull request
-
-## 📄 **License**
-
-This project is open source and available under the [MIT License](LICENSE).
+This project is licensed under the MIT License.
 
 ---
 
-**Built with ❤️ for better task management and collaboration**
+**Built with ❤️ for better productivity and collaboration**

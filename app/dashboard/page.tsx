@@ -30,6 +30,7 @@ export default function Dashboard() {
   );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [lastDragTime, setLastDragTime] = useState(0);
 
   // Form states
   const [newTaskTitle, setNewTaskTitle] = useState("");
@@ -65,6 +66,19 @@ export default function Dashboard() {
     [session]
   );
 
+  // Prevent immediate task reloading after drag operations
+  useEffect(
+    function preventImmediateReloadAfterDrag() {
+      if (lastDragTime > 0) {
+        const timer = setTimeout(() => {
+          // Allow task reloading after drag operations
+        }, 500);
+        return () => clearTimeout(timer);
+      }
+    },
+    [lastDragTime]
+  );
+
   useEffect(
     function loadPartnerData() {
       if (partner) {
@@ -79,6 +93,12 @@ export default function Dashboard() {
   const loadTasks = async () => {
     // Don't load tasks if we're currently dragging
     if (isDragging) {
+      return;
+    }
+
+    // Don't load tasks if we just finished dragging (within 500ms)
+    const timeSinceLastDrag = Date.now() - lastDragTime;
+    if (timeSinceLastDrag < 500) {
       return;
     }
 
@@ -333,6 +353,7 @@ export default function Dashboard() {
 
   const handleDragEnd = async (result: DropResult) => {
     setIsDragging(false);
+    setLastDragTime(Date.now());
 
     const { source, destination, draggableId } = result;
 
@@ -349,7 +370,7 @@ export default function Dashboard() {
       return;
     }
 
-    // Validate the move before updating state
+    // Validate the move before proceeding
     if (tasks) {
       // Check if moving to active tasks would exceed the limit
       if (
@@ -366,42 +387,61 @@ export default function Dashboard() {
         }
       }
 
-      const newTasks = { ...tasks };
+      // Store the original state for potential rollback
+      const originalTasks = { ...tasks };
       let movedTask;
 
       // Remove from source
       if (source.droppableId === "active-tasks") {
-        movedTask = newTasks.openActiveTasks.splice(source.index, 1)[0];
+        movedTask = originalTasks.openActiveTasks.splice(source.index, 1)[0];
       } else {
-        movedTask = newTasks.masterTasks.splice(source.index, 1)[0];
+        movedTask = originalTasks.masterTasks.splice(source.index, 1)[0];
       }
 
       // Add to destination
       if (movedTask) {
         if (destination.droppableId === "active-tasks") {
-          newTasks.openActiveTasks.splice(destination.index, 0, movedTask);
+          originalTasks.openActiveTasks.splice(destination.index, 0, movedTask);
         } else {
-          newTasks.masterTasks.splice(destination.index, 0, movedTask);
+          originalTasks.masterTasks.splice(destination.index, 0, movedTask);
         }
-        setTasks(newTasks);
+      }
+
+      // Update server first, then update UI only on success
+      try {
+        const response = await fetch("/api/tasks/reorder", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            sourceDroppableId: source.droppableId,
+            destinationDroppableId: destination.droppableId,
+            sourceIndex: source.index,
+            destinationIndex: destination.index,
+            draggableId: draggableId,
+          }),
+        });
+
+        if (response.ok) {
+          // Server update succeeded - update the UI state
+          setTasks(originalTasks);
+          setError(""); // Clear any previous errors
+        } else {
+          // Server update failed - show error and reload tasks to get correct state
+          const errorData = await response.json();
+          setError(errorData.error || "Failed to save task order");
+
+          // Reload tasks from server to ensure UI matches database state
+          await loadTasks();
+        }
+      } catch (error) {
+        // Network or other error - show error and reload tasks
+        console.error("Failed to update server:", error);
+        setError("Failed to save task order - network error");
+
+        // Reload tasks from server to ensure UI matches database state
+        await loadTasks();
       }
     }
-
-    // Update server asynchronously
-    fetch("/api/tasks/reorder", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        sourceDroppableId: source.droppableId,
-        destinationDroppableId: destination.droppableId,
-        sourceIndex: source.index,
-        destinationIndex: destination.index,
-        draggableId: draggableId,
-      }),
-    }).catch((error) => {
-      console.error("Failed to update server:", error);
-      setError("Failed to save task order");
-    });
   };
 
   // Helper function to get task item styles

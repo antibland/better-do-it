@@ -68,7 +68,7 @@ export async function POST(req: Request) {
       try {
         // Get the task being moved
         const taskResult = await sql`
-          SELECT id, isactive
+          SELECT id, sort_order, isactive
           FROM task
           WHERE id = ${draggableId} AND userid = ${userId}
         `;
@@ -116,6 +116,99 @@ export async function POST(req: Request) {
           `;
         }
 
+        // Handle reordering within the same list
+        if (sourceDroppableId === destinationDroppableId) {
+          const currentSortOrder = task.sort_order;
+
+          if (sourceIndex < destinationIndex) {
+            // Moving down: shift tasks up
+            await sql`
+              UPDATE task
+              SET sort_order = sort_order - 1
+              WHERE userid = ${userId} 
+                AND sort_order > ${currentSortOrder} 
+                AND sort_order <= ${currentSortOrder + (destinationIndex - sourceIndex)}
+            `;
+          } else {
+            // Moving up: shift tasks down
+            await sql`
+              UPDATE task
+              SET sort_order = sort_order + 1
+              WHERE userid = ${userId} 
+                AND sort_order >= ${currentSortOrder + (destinationIndex - sourceIndex)} 
+                AND sort_order < ${currentSortOrder}
+            `;
+          }
+
+          // Set the moved task's new sort order
+          await sql`
+            UPDATE task
+            SET sort_order = ${currentSortOrder + (destinationIndex - sourceIndex)}
+            WHERE id = ${draggableId} AND userid = ${userId}
+          `;
+        } else {
+          // Moving between lists - respect the destination index
+          if (destinationDroppableId === "active-tasks") {
+            // Get active tasks ordered by sort_order (excluding the task being moved)
+            const activeTasksResult = await sql`
+              SELECT id, sort_order
+              FROM task
+              WHERE userid = ${userId} AND isactive = 1 AND iscompleted = 0 AND id != ${draggableId}
+              ORDER BY sort_order ASC
+            `;
+            const activeTasks = activeTasksResult.rows || [];
+
+            // Calculate the new sort order based on destination index
+            let newSortOrder;
+            if (destinationIndex === 0) {
+              newSortOrder = activeTasks.length > 0 ? activeTasks[0].sort_order - 1 : 0;
+            } else if (destinationIndex >= activeTasks.length) {
+              newSortOrder = activeTasks.length > 0
+                ? activeTasks[activeTasks.length - 1].sort_order + 1
+                : 0;
+            } else {
+              const beforeTask = activeTasks[destinationIndex - 1];
+              const afterTask = activeTasks[destinationIndex];
+              newSortOrder = (beforeTask.sort_order + afterTask.sort_order) / 2;
+            }
+
+            await sql`
+              UPDATE task
+              SET sort_order = ${newSortOrder}
+              WHERE id = ${draggableId} AND userid = ${userId}
+            `;
+          } else {
+            // Moving to master list - respect the destination index
+            const masterTasksResult = await sql`
+              SELECT id, sort_order
+              FROM task
+              WHERE userid = ${userId} AND isactive = 0 AND iscompleted = 0 AND id != ${draggableId}
+              ORDER BY sort_order ASC
+            `;
+            const masterTasks = masterTasksResult.rows || [];
+
+            // Calculate the new sort order based on destination index
+            let newSortOrder;
+            if (destinationIndex === 0) {
+              newSortOrder = masterTasks.length > 0 ? masterTasks[0].sort_order - 1 : 0;
+            } else if (destinationIndex >= masterTasks.length) {
+              newSortOrder = masterTasks.length > 0
+                ? masterTasks[masterTasks.length - 1].sort_order + 1
+                : 0;
+            } else {
+              const beforeTask = masterTasks[destinationIndex - 1];
+              const afterTask = masterTasks[destinationIndex];
+              newSortOrder = (beforeTask.sort_order + afterTask.sort_order) / 2;
+            }
+
+            await sql`
+              UPDATE task
+              SET sort_order = ${newSortOrder}
+              WHERE id = ${draggableId} AND userid = ${userId}
+            `;
+          }
+        }
+
         await sql`COMMIT`;
         return Response.json({ success: true });
       } catch (error) {
@@ -128,10 +221,11 @@ export async function POST(req: Request) {
         // Get the task being moved
         const task = appDb
           .prepare(
-            `SELECT id, isActive FROM task WHERE id = ? AND userId = ?`
+            `SELECT id, sortOrder, isActive FROM task WHERE id = ? AND userId = ?`
           )
           .get(draggableId, userId) as {
           id: string;
+          sortOrder: number;
           isActive: number;
         };
 
@@ -174,6 +268,109 @@ export async function POST(req: Request) {
               `UPDATE task SET isActive = 1, addedToActiveAt = datetime('now') WHERE id = ? AND userId = ?`
             )
             .run(draggableId, userId);
+        }
+
+        // Handle reordering within the same list
+        if (sourceDroppableId === destinationDroppableId) {
+          const currentSortOrder = task.sortOrder;
+
+          if (sourceIndex < destinationIndex) {
+            // Moving down: shift tasks up
+            appDb
+              .prepare(
+                `UPDATE task SET sortOrder = sortOrder - 1 WHERE userId = ? AND sortOrder > ? AND sortOrder <= ?`
+              )
+              .run(
+                userId,
+                currentSortOrder,
+                currentSortOrder + (destinationIndex - sourceIndex)
+              );
+          } else {
+            // Moving up: shift tasks down
+            appDb
+              .prepare(
+                `UPDATE task SET sortOrder = sortOrder + 1 WHERE userId = ? AND sortOrder >= ? AND sortOrder < ?`
+              )
+              .run(
+                userId,
+                currentSortOrder + (destinationIndex - sourceIndex),
+                currentSortOrder
+              );
+          }
+
+          // Set the moved task's new sort order
+          appDb
+            .prepare(
+              `UPDATE task SET sortOrder = ? WHERE id = ? AND userId = ?`
+            )
+            .run(
+              currentSortOrder + (destinationIndex - sourceIndex),
+              draggableId,
+              userId
+            );
+        } else {
+          // Moving between lists - respect the destination index
+          if (destinationDroppableId === "active-tasks") {
+            // Get active tasks ordered by sortOrder (excluding the task being moved)
+            const activeTasks = appDb
+              .prepare(
+                `SELECT id, sortOrder FROM task WHERE userId = ? AND isActive = 1 AND isCompleted = 0 AND id != ? ORDER BY sortOrder ASC`
+              )
+              .all(userId, draggableId) as Array<{
+              id: string;
+              sortOrder: number;
+            }>;
+
+            // Calculate the new sort order based on destination index
+            let newSortOrder;
+            if (destinationIndex === 0) {
+              newSortOrder = activeTasks.length > 0 ? activeTasks[0].sortOrder - 1 : 0;
+            } else if (destinationIndex >= activeTasks.length) {
+              newSortOrder = activeTasks.length > 0
+                ? activeTasks[activeTasks.length - 1].sortOrder + 1
+                : 0;
+            } else {
+              const beforeTask = activeTasks[destinationIndex - 1];
+              const afterTask = activeTasks[destinationIndex];
+              newSortOrder = (beforeTask.sortOrder + afterTask.sortOrder) / 2;
+            }
+
+            appDb
+              .prepare(
+                `UPDATE task SET sortOrder = ? WHERE id = ? AND userId = ?`
+              )
+              .run(newSortOrder, draggableId, userId);
+          } else {
+            // Moving to master list - respect the destination index
+            const masterTasks = appDb
+              .prepare(
+                `SELECT id, sortOrder FROM task WHERE userId = ? AND isActive = 0 AND isCompleted = 0 AND id != ? ORDER BY sortOrder ASC`
+              )
+              .all(userId, draggableId) as Array<{
+              id: string;
+              sortOrder: number;
+            }>;
+
+            // Calculate the new sort order based on destination index
+            let newSortOrder;
+            if (destinationIndex === 0) {
+              newSortOrder = masterTasks.length > 0 ? masterTasks[0].sortOrder - 1 : 0;
+            } else if (destinationIndex >= masterTasks.length) {
+              newSortOrder = masterTasks.length > 0
+                ? masterTasks[masterTasks.length - 1].sortOrder + 1
+                : 0;
+            } else {
+              const beforeTask = masterTasks[destinationIndex - 1];
+              const afterTask = masterTasks[destinationIndex];
+              newSortOrder = (beforeTask.sortOrder + afterTask.sortOrder) / 2;
+            }
+
+            appDb
+              .prepare(
+                `UPDATE task SET sortOrder = ? WHERE id = ? AND userId = ?`
+              )
+              .run(newSortOrder, draggableId, userId);
+          }
         }
 
         return Response.json({ success: true });

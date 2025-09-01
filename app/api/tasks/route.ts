@@ -45,10 +45,10 @@ export async function GET(req: Request) {
 
       try {
         const allTasksResult = await sql`
-          SELECT id, userid, title, iscompleted, isactive, sort_order, createdat, completedat, addedtoactiveat
+          SELECT id, userid, title, iscompleted, isactive, createdat, completedat, addedtoactiveat
           FROM task
           WHERE userid = ${userId}
-          ORDER BY isactive DESC, iscompleted ASC, sort_order ASC, createdat DESC
+          ORDER BY isactive DESC, iscompleted ASC, createdat DESC
         `;
 
         console.log(
@@ -63,7 +63,6 @@ export async function GET(req: Request) {
           title: task.title,
           isCompleted: task.iscompleted,
           isActive: task.isactive,
-          sortOrder: task.sort_order,
           createdAt: task.createdat,
           completedAt: task.completedat,
           addedToActiveAt: task.addedtoactiveat,
@@ -144,10 +143,10 @@ export async function GET(req: Request) {
       // SQLite implementation for development
       const allTasks = appDb
         .prepare(
-          `SELECT id, userId, title, isCompleted, isActive, sortOrder, createdAt, completedAt, addedToActiveAt
+          `SELECT id, userId, title, isCompleted, isActive, createdAt, completedAt, addedToActiveAt
            FROM task
            WHERE userId = ?
-           ORDER BY isActive DESC, isCompleted ASC, sortOrder ASC, createdAt DESC`
+           ORDER BY isActive DESC, isCompleted ASC, createdAt DESC`
         )
         .all(userId) as Task[];
 

@@ -426,10 +426,10 @@ curl -s https://better-do-it.vercel.app/api/test-auth | jq '.environment, .hasSe
 
 ## 📚 **Related Documentation**
 
-- **[Task API Commands](curl_tasks.md)** - Complete API testing commands
-- **[Partner API Commands](curl_partners.md)** - Partnership troubleshooting
-- **[Useful Commands](useful_commands.md)** - Database management commands
-- **[README.md](README.md)** - Project overview and setup
+- **[Task API Commands](curl-tasks.md)** - Complete API testing commands
+- **[Partner API Commands](curl-partners.md)** - Partnership troubleshooting
+- **[Useful Commands](useful-commands.md)** - Database management commands
+- **[README.md](readme.md)** - Project overview and setup
 
 ---
 

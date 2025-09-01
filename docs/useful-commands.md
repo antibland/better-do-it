@@ -484,15 +484,6 @@ Response includes:
 - `open`: array of your open tasks
 - `completedThisWeek`: number of tasks you completed in the current ET week
 
-### Toggle Completion for a Task
-
-```bash
-curl -X PATCH http://localhost:3000/api/tasks/TASK_ID \
-  -H "Content-Type: application/json" \
-  -H "Cookie: better-do-it-session=YOUR_SESSION_TOKEN" \
-  -d '{"toggle":true}'
-```
-
 ### Mark Completed/Uncompleted Explicitly
 
 ```bash

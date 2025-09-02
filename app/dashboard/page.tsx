@@ -46,6 +46,9 @@ export default function Dashboard() {
     title: string;
   } | null>(null);
 
+  // Partner unpair confirmation state
+  const [showUnpairConfirm, setShowUnpairConfirm] = useState(false);
+
   useEffect(
     function redirectUnauthenticatedUsers() {
       if (!isPending && !session) {
@@ -305,8 +308,10 @@ export default function Dashboard() {
   };
 
   const unpairPartner = async () => {
-    if (!confirm("Are you sure you want to unpair from your partner?")) return;
+    setShowUnpairConfirm(true);
+  };
 
+  const confirmUnpairPartner = async () => {
     try {
       const response = await fetch("/api/partner", {
         method: "DELETE",
@@ -318,7 +323,13 @@ export default function Dashboard() {
       }
     } catch {
       setError("Failed to unpair from partner");
+    } finally {
+      setShowUnpairConfirm(false);
     }
+  };
+
+  const cancelUnpairPartner = () => {
+    setShowUnpairConfirm(false);
   };
 
   const handleSignOut = async () => {
@@ -490,6 +501,17 @@ export default function Dashboard() {
           title="Delete Task"
           message={`Are you sure you want to delete "${taskToDelete?.title}"?`}
           confirmText="Delete"
+          cancelText="Cancel"
+          confirmVariant="danger"
+        />
+
+        <ConfirmDialog
+          isOpen={showUnpairConfirm}
+          onConfirm={confirmUnpairPartner}
+          onCancel={cancelUnpairPartner}
+          title="Unpair Partner"
+          message="Are you sure you want to unpair from your partner? This action cannot be undone."
+          confirmText="Unpair"
           cancelText="Cancel"
           confirmVariant="danger"
         />

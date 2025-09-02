@@ -30,7 +30,6 @@ export default function Dashboard() {
   );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [lastDragTime, setLastDragTime] = useState(0);
 
   // Form states
   const [newTaskTitle, setNewTaskTitle] = useState("");
@@ -66,19 +65,6 @@ export default function Dashboard() {
     [session]
   );
 
-  // Prevent immediate task reloading after drag operations
-  useEffect(
-    function preventImmediateReloadAfterDrag() {
-      if (lastDragTime > 0) {
-        const timer = setTimeout(() => {
-          // Allow task reloading after drag operations
-        }, 500);
-        return () => clearTimeout(timer);
-      }
-    },
-    [lastDragTime]
-  );
-
   useEffect(
     function loadPartnerData() {
       if (partner) {
@@ -93,12 +79,6 @@ export default function Dashboard() {
   const loadTasks = async () => {
     // Don't load tasks if we're currently dragging
     if (isDragging) {
-      return;
-    }
-
-    // Don't load tasks if we just finished dragging (within 500ms)
-    const timeSinceLastDrag = Date.now() - lastDragTime;
-    if (timeSinceLastDrag < 500) {
       return;
     }
 
@@ -353,7 +333,6 @@ export default function Dashboard() {
 
   const handleDragEnd = async (result: DropResult) => {
     setIsDragging(false);
-    setLastDragTime(Date.now());
 
     const { source, destination, draggableId } = result;
 

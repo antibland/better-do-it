@@ -10,7 +10,7 @@ echo "🚀 Starting sort_order migration..."
 # Check if we're in production or development
 if [ "$NODE_ENV" = "production" ]; then
     echo "📦 Production environment detected"
-    URL="https://better-do-it.vercel.app/api/migrate-sort-order"
+    URL="https://better-do-it.com/api/migrate-sort-order"
 else
     echo "🔧 Development environment detected"
     URL="http://localhost:3000/api/migrate-sort-order"

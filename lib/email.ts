@@ -8,7 +8,7 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 // Get the appropriate app URL based on environment
 function getAppUrl(): string {
   if (process.env.NODE_ENV === "production") {
-    return process.env.PRODUCTION_APP_URL || "https://better-do-it.vercel.app";
+    return process.env.PRODUCTION_APP_URL || "https://better-do-it.com";
   }
   return process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 }

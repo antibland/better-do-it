@@ -21,3 +21,21 @@ export type PartnerTasksResponse = {
   tasks: import("./task").Task[];
   completedThisWeek: number;
 };
+
+export type Invite = {
+  id: string;
+  code: string;
+  inviterId: string;
+  inviteeEmail: string;
+  status: "pending" | "accepted" | "expired";
+  expiresAt: string;
+  createdAt: string;
+  acceptedAt: string | null;
+};
+
+export type InviteResponse = {
+  success: boolean;
+  message: string;
+  invite?: Invite;
+  error?: string;
+};

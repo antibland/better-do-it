@@ -2,14 +2,16 @@
 
 import { useSession, signOut } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { DragDropContext, DropResult } from "@hello-pangea/dnd";
 import { DashboardSkeleton } from "@/app/components/DashboardSkeleton";
 import { DashboardHeader } from "@/app/components/DashboardHeader";
 import { ErrorDisplay } from "@/app/components/ErrorDisplay";
+import { SuccessDisplay } from "@/app/components/SuccessDisplay";
 import { ConfirmDialog } from "@/app/components/ConfirmDialog";
 import { TasksSection } from "@/app/components/TasksSection";
 import { PartnerSection } from "@/app/components/PartnerSection";
+import { EmailPreview } from "@/app/components/EmailPreview";
 import {
   TasksResponse,
   Partner,
@@ -30,6 +32,7 @@ export default function Dashboard() {
   );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
 
   // Form states
   const [newTaskTitle, setNewTaskTitle] = useState("");
@@ -49,6 +52,9 @@ export default function Dashboard() {
   // Partner unpair confirmation state
   const [showUnpairConfirm, setShowUnpairConfirm] = useState(false);
 
+  // Email preview state
+  const [showEmailPreview, setShowEmailPreview] = useState(false);
+
   useEffect(
     function redirectUnauthenticatedUsers() {
       if (!isPending && !session) {
@@ -58,28 +64,7 @@ export default function Dashboard() {
     [session, isPending, router]
   );
 
-  useEffect(
-    function loadUserData() {
-      if (session) {
-        loadTasks();
-        loadPartner();
-      }
-    },
-    [session]
-  );
-
-  useEffect(
-    function loadPartnerData() {
-      if (partner) {
-        loadPartnerTasks();
-      } else {
-        setPartnerTasks(null);
-      }
-    },
-    [partner]
-  );
-
-  const loadTasks = async () => {
+  const loadTasks = useCallback(async () => {
     // Don't load tasks if we're currently dragging
     if (isDragging) {
       return;
@@ -96,9 +81,9 @@ export default function Dashboard() {
     } catch {
       setError("Failed to load tasks");
     }
-  };
+  }, [isDragging]);
 
-  const loadPartner = async () => {
+  const loadPartner = useCallback(async () => {
     try {
       const response = await fetch("/api/partner");
       if (response.ok) {
@@ -108,7 +93,95 @@ export default function Dashboard() {
     } catch {
       // Partner loading errors are not critical
     }
-  };
+  }, []);
+
+  useEffect(
+    function loadUserData() {
+      if (session) {
+        loadTasks();
+        loadPartner();
+      }
+    },
+    [session, loadTasks, loadPartner]
+  );
+
+  useEffect(function checkInviteAccepted() {
+    if (typeof window !== "undefined") {
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get("inviteAccepted") === "true") {
+        setSuccessMessage(
+          "Partnership invitation accepted successfully. You're now partnered."
+        );
+        // Clear the URL parameter
+        const newUrl = new URL(window.location.href);
+        newUrl.searchParams.delete("inviteAccepted");
+        window.history.replaceState({}, "", newUrl.toString());
+        // Clear success message after 5 seconds
+        setTimeout(() => setSuccessMessage(""), 5000);
+      }
+    }
+  }, []);
+
+  const acceptInvite = useCallback(
+    async (inviteCode: string) => {
+      try {
+        const response = await fetch("/api/invites/accept", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ inviteCode }),
+        });
+
+        if (response.ok) {
+          setSuccessMessage(
+            "Partnership invitation accepted successfully. You're now partnered."
+          );
+          // Reload partner data
+          await loadPartner();
+          // Clear success message after 5 seconds
+          setTimeout(() => setSuccessMessage(""), 5000);
+        } else {
+          const errorData = await response.json();
+          setError(`Invitation error: ${errorData.error}`);
+        }
+      } catch {
+        setError("Failed to accept invitation");
+      }
+    },
+    [loadPartner]
+  );
+
+  useEffect(
+    function checkPendingInvite() {
+      if (typeof window !== "undefined" && session) {
+        const urlParams = new URLSearchParams(window.location.search);
+        const inviteCode = urlParams.get("invite_code");
+        const pendingAccept = urlParams.get("pending_accept");
+
+        if (inviteCode && pendingAccept === "true") {
+          // Clear the URL parameters
+          const newUrl = new URL(window.location.href);
+          newUrl.searchParams.delete("invite_code");
+          newUrl.searchParams.delete("pending_accept");
+          window.history.replaceState({}, "", newUrl.toString());
+
+          // Accept the invitation
+          acceptInvite(inviteCode);
+        }
+      }
+    },
+    [session, acceptInvite]
+  );
+
+  useEffect(
+    function loadPartnerData() {
+      if (partner) {
+        loadPartnerTasks();
+      } else {
+        setPartnerTasks(null);
+      }
+    },
+    [partner]
+  );
 
   const loadPartnerTasks = async () => {
     try {
@@ -159,7 +232,7 @@ export default function Dashboard() {
     setCompletingTaskId(taskId);
   };
 
-  const undoTaskCompletion = (taskId: string) => {
+  const undoTaskCompletion = () => {
     // User clicked the progress bar to undo - cancel the completion
     setCompletingTaskId(null);
   };
@@ -280,13 +353,13 @@ export default function Dashboard() {
     }
   };
 
-  const pairWithPartner = async (e: React.FormEvent) => {
+  const sendInvite = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!partnerEmail.trim()) return;
 
     setLoading(true);
     try {
-      const response = await fetch("/api/partner", {
+      const response = await fetch("/api/invites", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: partnerEmail.trim() }),
@@ -294,14 +367,18 @@ export default function Dashboard() {
 
       if (response.ok) {
         const data = await response.json();
-        setPartner(data.partner);
+        setError(""); // Clear any previous errors
         setPartnerEmail("");
+        // Show success message
+        setSuccessMessage(data.message);
+        // Clear success message after 5 seconds
+        setTimeout(() => setSuccessMessage(""), 5000);
       } else {
         const errorData = await response.json();
-        setError(errorData.error || "Failed to pair with partner");
+        setError(errorData.error || "Failed to send invitation");
       }
     } catch {
-      setError("Failed to pair with partner");
+      setError("Failed to send invitation");
     } finally {
       setLoading(false);
     }
@@ -459,6 +536,10 @@ export default function Dashboard() {
         <DashboardHeader onSignOut={handleSignOut} />
 
         <ErrorDisplay error={error} onClear={() => setError("")} />
+        <SuccessDisplay
+          message={successMessage}
+          onClear={() => setSuccessMessage("")}
+        />
 
         <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
           <div className="px-4 py-6 sm:px-0">
@@ -487,8 +568,9 @@ export default function Dashboard() {
                 partnerEmail={partnerEmail}
                 loading={loading}
                 onPartnerEmailChange={setPartnerEmail}
-                onPairWithPartner={pairWithPartner}
+                onSendInvite={sendInvite}
                 onUnpairPartner={unpairPartner}
+                onShowEmailPreview={() => setShowEmailPreview(true)}
               />
             </div>
           </div>
@@ -514,6 +596,11 @@ export default function Dashboard() {
           confirmText="Unpair"
           cancelText="Cancel"
           confirmVariant="danger"
+        />
+
+        <EmailPreview
+          isOpen={showEmailPreview}
+          onClose={() => setShowEmailPreview(false)}
         />
       </div>
     </DragDropContext>

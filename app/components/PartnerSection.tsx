@@ -6,8 +6,9 @@ interface PartnerSectionProps {
   partnerEmail: string;
   loading: boolean;
   onPartnerEmailChange: (email: string) => void;
-  onPairWithPartner: (e: React.FormEvent) => void;
+  onSendInvite: (e: React.FormEvent) => void;
   onUnpairPartner: () => void;
+  onShowEmailPreview?: () => void;
 }
 
 export function PartnerSection({
@@ -16,8 +17,9 @@ export function PartnerSection({
   partnerEmail,
   loading,
   onPartnerEmailChange,
-  onPairWithPartner,
+  onSendInvite,
   onUnpairPartner,
+  onShowEmailPreview,
 }: PartnerSectionProps) {
   return (
     <div className="bg-white rounded-lg shadow p-6">
@@ -96,10 +98,21 @@ export function PartnerSection({
         </div>
       ) : (
         <div>
-          <p className="text-gray-600 mb-4">
-            Find a partner to collaborate on tasks together.
-          </p>
-          <form onSubmit={onPairWithPartner}>
+          <div className="flex items-center justify-between mb-4">
+            <p className="text-gray-600">
+              Send an invitation to someone you&apos;d like to partner with on
+              tasks.
+            </p>
+            {onShowEmailPreview && (
+              <button
+                onClick={onShowEmailPreview}
+                className="text-sm text-indigo-600 hover:text-indigo-800 underline"
+              >
+                Preview Emails
+              </button>
+            )}
+          </div>
+          <form onSubmit={onSendInvite}>
             <div className="flex gap-2">
               <input
                 type="email"
@@ -114,7 +127,7 @@ export function PartnerSection({
                 disabled={loading || !partnerEmail.trim()}
                 className="bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-400 text-white px-4 py-2 rounded-md text-sm font-medium"
               >
-                {loading ? "Pairing..." : "Pair"}
+                {loading ? "Sending..." : "Send Invitation"}
               </button>
             </div>
           </form>

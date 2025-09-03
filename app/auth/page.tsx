@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { signIn, signUp, useSession } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
 
@@ -12,6 +12,8 @@ export default function AuthPage() {
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [inviteCode, setInviteCode] = useState<string | null>(null);
+  const [showInviteError, setShowInviteError] = useState(false);
   const router = useRouter();
 
   useEffect(
@@ -21,6 +23,49 @@ export default function AuthPage() {
       }
     },
     [session, isPending, router]
+  );
+
+  useEffect(function extractInviteCodeFromURL() {
+    if (typeof window !== "undefined") {
+      const urlParams = new URLSearchParams(window.location.search);
+      const code = urlParams.get("invite_code");
+      if (code) {
+        setInviteCode(code);
+      }
+    }
+  }, []);
+
+  const acceptInvite = useCallback(async () => {
+    if (!inviteCode || !session) return;
+
+    try {
+      const response = await fetch("/api/invites/accept", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ inviteCode }),
+      });
+
+      if (response.ok) {
+        // Redirect to dashboard with success message
+        router.replace("/dashboard?inviteAccepted=true");
+      } else {
+        const errorData = await response.json();
+        setShowInviteError(true);
+        setError(`Invitation error: ${errorData.error}`);
+      }
+    } catch {
+      setShowInviteError(true);
+      setError("Failed to accept invitation");
+    }
+  }, [inviteCode, session, router]);
+
+  useEffect(
+    function handleInviteCodeAfterAuth() {
+      if (session && inviteCode && !showInviteError) {
+        acceptInvite();
+      }
+    },
+    [session, inviteCode, showInviteError, acceptInvite]
   );
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -42,8 +87,13 @@ export default function AuthPage() {
 
         if (result.data) {
           console.log("Signup successful, redirecting...");
-          // Force a page reload to ensure session state is properly updated
-          window.location.href = "/dashboard";
+          // Preserve invite code if present
+          if (inviteCode) {
+            window.location.href = `/dashboard?invite_code=${inviteCode}&pending_accept=true`;
+          } else {
+            // Force a page reload to ensure session state is properly updated
+            window.location.href = "/dashboard";
+          }
         } else if (result.error) {
           console.error("Signup error:", result.error);
           setError(
@@ -65,8 +115,13 @@ export default function AuthPage() {
 
         if (result.data) {
           console.log("Signin successful, redirecting...");
-          // Force a page reload to ensure session state is properly updated
-          window.location.href = "/dashboard";
+          // Preserve invite code if present
+          if (inviteCode) {
+            window.location.href = `/dashboard?invite_code=${inviteCode}&pending_accept=true`;
+          } else {
+            // Force a page reload to ensure session state is properly updated
+            window.location.href = "/dashboard";
+          }
         } else if (result.error) {
           console.error("Signin error:", result.error);
           setError(
@@ -174,6 +229,13 @@ export default function AuthPage() {
           {error && (
             <div className="text-red-600 text-sm text-center bg-red-50 border border-red-200 rounded p-3">
               {error}
+            </div>
+          )}
+
+          {inviteCode && (
+            <div className="text-blue-600 text-sm text-center bg-blue-50 border border-blue-200 rounded p-3">
+              📧 You have a partnership invitation! Complete your account to
+              accept it.
             </div>
           )}
 

@@ -78,3 +78,43 @@ input:focus {
     -webkit-text-size-adjust: 100%;
   }
 }
+
+/* Email Preview Styles */
+.email-preview {
+  /* Ensure proper email rendering */
+  font-family: Arial, Helvetica, sans-serif;
+  line-height: 1.6;
+  color: #333;
+}
+
+.email-preview img {
+  max-width: 100%;
+  height: auto;
+}
+
+.email-preview table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.email-preview td,
+.email-preview th {
+  padding: 8px;
+  border: 1px solid #ddd;
+}
+
+.email-preview button {
+  display: inline-block;
+  padding: 12px 24px;
+  background-color: #6366f1;
+  color: white;
+  text-decoration: none;
+  border-radius: 6px;
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+}
+
+.email-preview button:hover {
+  background-color: #4f46e5;
+}

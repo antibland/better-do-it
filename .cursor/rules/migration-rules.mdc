@@ -39,6 +39,8 @@ When adding new columns, follow this exact pattern from `docs/migration-process.
 ❌ **NEVER use direct database commands**
 ❌ **NEVER assume column names are the same across environments**
 ❌ **NEVER skip environment testing**
+❌ **NEVER write database queries without environment detection**
+❌ **NEVER expose raw database column names to frontend**
 ❌ **NEVER deploy code before running migrations**
 
 ## **What TO Do**
@@ -47,6 +49,8 @@ When adding new columns, follow this exact pattern from `docs/migration-process.
 ✅ **ALWAYS follow the bulletproof process**
 ✅ **ALWAYS test in both environments**
 ✅ **ALWAYS verify schema consistency**
+✅ **ALWAYS detect environment before writing queries**
+✅ **ALWAYS transform database columns to frontend format**
 ✅ **ALWAYS use the transformation layer**
 
 ## **Quick Reference**
@@ -75,8 +79,13 @@ The old `migrate-sort-order.sql` file was removed because:
 The new migration endpoint solves all these problems and provides a safe, consistent way to handle database changes across both development and production environments.
 
 **Reference: See `docs/migration-process.md` for the complete bulletproof migration process.**
-description:
-globs:
-alwaysApply: true
+
+## **Related Rules**
+
+- **[Database Column Naming Rules](database-column-naming.mdc)** - **MANDATORY** for all database code
 
 ---
+
+description: Follow the bulletproof migration process to prevent database disasters
+globs: ["**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx"]
+alwaysApply: true

@@ -1,0 +1,142 @@
+# Database Column Naming Rules
+
+## **CRITICAL: Prevent Column Naming Disasters**
+
+**ALWAYS follow these rules when writing database code** - column naming issues cause 80% of database errors.
+
+### **1. Environment Detection Required**
+
+**NEVER write database queries without environment detection:**
+
+```typescript
+// ✅ CORRECT - Always detect environment first
+const isProduction = process.env.NODE_ENV === "production";
+
+if (isProduction) {
+  // PostgreSQL path with lowercase columns
+} else {
+  // SQLite path with camelCase columns
+}
+```
+
+### **2. Column Name Conventions**
+
+**PostgreSQL (Production):**
+
+- Uses lowercase column names: `userid`, `iscompleted`, `usera`, `userb`
+- Example: `SELECT userid, iscompleted FROM task WHERE userid = ${userId}`
+
+**SQLite (Development):**
+
+- Uses camelCase column names: `userId`, `isCompleted`, `userA`, `userB`
+- Example: `SELECT userId, isCompleted FROM task WHERE userId = ?`
+
+**Frontend (Always):**
+
+- Always receives camelCase: `userId`, `isCompleted`, `userA`, `userB`
+
+### **3. Transformation Layer Required**
+
+**NEVER expose raw database column names to frontend:**
+
+```typescript
+// ✅ CORRECT - Transform database columns to frontend format
+if (isProduction) {
+  const result =
+    await sql`SELECT userid, iscompleted FROM task WHERE userid = ${userId}`;
+  return result.rows.map((row) => ({
+    userId: row.userid, // lowercase → camelCase
+    isCompleted: row.iscompleted, // lowercase → camelCase
+  }));
+} else {
+  const result = appDb
+    .prepare("SELECT userId, isCompleted FROM task WHERE userId = ?")
+    .get(userId);
+  return [
+    {
+      userId: result.userId, // camelCase → camelCase
+      isCompleted: result.isCompleted, // camelCase → camelCase
+    },
+  ];
+}
+```
+
+### **4. Common Column Patterns**
+
+| Table         | PostgreSQL                  | SQLite                      | Frontend                    |
+| ------------- | --------------------------- | --------------------------- | --------------------------- |
+| `user`        | `id`, `email`, `name`       | `id`, `email`, `name`       | `id`, `email`, `name`       |
+| `task`        | `userid`, `iscompleted`     | `userId`, `isCompleted`     | `userId`, `isCompleted`     |
+| `partnership` | `usera`, `userb`            | `userA`, `userB`            | `userA`, `userB`            |
+| `invite`      | `inviterid`, `inviteeemail` | `inviterId`, `inviteeEmail` | `inviterId`, `inviteeEmail` |
+
+### **5. Pre-Deployment Checklist**
+
+**BEFORE declaring code "ready to test":**
+
+- [ ] Environment detection implemented
+- [ ] Both SQLite and PostgreSQL paths work
+- [ ] Transformation layer transforms all columns
+- [ ] Frontend receives consistent camelCase format
+- [ ] No hardcoded column names without environment checks
+
+### **6. What NEVER to Do**
+
+```typescript
+// ❌ WRONG - Hardcoded column names
+const result = await sql`SELECT * FROM task WHERE userid = ${userId}`;
+
+// ❌ WRONG - No environment detection
+const result = appDb.prepare("SELECT * FROM task WHERE userId = ?").get(userId);
+
+// ❌ WRONG - Inconsistent naming
+return { userId: row.userid, isCompleted: row.iscompleted };
+
+// ❌ WRONG - Direct database exposure
+return result.rows; // Frontend sees raw database columns
+```
+
+### **7. Testing Requirements**
+
+**ALWAYS test both environments:**
+
+```typescript
+// Test SQLite path locally
+// Test PostgreSQL path (or verify schema matches)
+// Ensure both return identical data structures
+// Verify frontend receives expected format
+```
+
+### **8. Reference Documentation**
+
+**BEFORE writing database code, read:**
+
+1. `docs/data-consistency.md` - Complete column mapping
+2. `docs/db-architecture.md` - Dual database setup
+3. `docs/pre-deployment-checklist.md` - Mandatory checklist
+
+### **9. When in Doubt**
+
+1. **Check existing working code** for patterns
+2. **Use the transformation layer** consistently
+3. **Test both environments** before declaring ready
+4. **Ask for review** if unsure about column naming
+
+## **Why This Rule Exists**
+
+Column naming issues have occurred 10-15+ times across different threads because:
+
+- Developers didn't follow established patterns
+- Environment detection was missing
+- Transformation layers were incomplete
+- No pre-deployment checklist existed
+
+This rule prevents these recurring disasters by enforcing consistent patterns and mandatory checks.
+
+**Reference: See `docs/pre-deployment-checklist.md` for the complete checklist.**
+
+---
+
+description: Prevent database column naming disasters by enforcing environment detection, transformation layers, and consistent naming conventions
+globs: ["**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx"]
+alwaysApply: true

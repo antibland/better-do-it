@@ -18,6 +18,16 @@ A collaborative task management app for partners to stay organized and motivated
 - **Deployment**: Vercel
 - **Drag & Drop**: React Beautiful DnD
 
+## ⚠️ **CRITICAL: Database Column Naming**
+
+**BEFORE writing any database code, read:**
+
+- **[Data Consistency Guide](data-consistency.md)** - Column naming conventions
+- **[Database Architecture](db-architecture.md)** - Dual database setup
+- **[Migration Rules](migration-rules.md)** - Quick reference
+
+**Key Rule:** PostgreSQL uses lowercase, SQLite uses camelCase. Always use environment detection and transformation layers.
+
 ## Quick Start
 
 ### Prerequisites
@@ -66,6 +76,10 @@ A collaborative task management app for partners to stay organized and motivated
 - **[Data Consistency](data-consistency.md)** - Column naming conventions and transformations
 - **[Migration Process](migration-process.md)** - Bulletproof database migration process
 - **[Essential Commands](useful-commands.md)** - Key commands for development and debugging
+
+### 🚨 **Pre-Deployment Checklist**
+
+- **[Pre-Deployment Checklist](pre-deployment-checklist.md)** - **MANDATORY** before declaring code ready
 
 ### API Documentation
 

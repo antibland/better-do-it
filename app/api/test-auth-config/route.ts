@@ -7,9 +7,7 @@ export async function GET() {
       environment: process.env.NODE_ENV,
       betterAuthUrl: process.env.BETTER_AUTH_URL,
       hasSecret: !!process.env.BETTER_AUTH_SECRET,
-      authBaseUrl: auth.config.baseURL,
-      cookieDomain: auth.config.advanced?.crossSubDomainCookies?.domain,
-      crossDomainEnabled: auth.config.advanced?.crossSubDomainCookies?.enabled,
+      authInstanceExists: !!auth,
       timestamp: new Date().toISOString(),
     });
   } catch (error) {

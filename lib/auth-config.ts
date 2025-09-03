@@ -23,7 +23,10 @@ export const auth = betterAuth({
   secret: process.env.BETTER_AUTH_SECRET!,
 
   // Trusted origins to fix CORS redirect issues
-  trustedOrigins: ["https://www.better-do-it.com"],
+  trustedOrigins: [
+    "https://*.better-do-it.com",
+    "https://better-do-it.com"
+  ],
 
   // Enable email and password authentication
   emailAndPassword: {

@@ -51,7 +51,6 @@ export const auth = betterAuth({
     cookiePrefix: "better-do-it",
     crossSubDomainCookies: {
       enabled: true, // Enable cross-domain cookies
-      domain: isProduction ? ".better-do-it.com" : undefined, // Allow cookies across subdomains in production
     },
     // Production cookie settings - iOS Safari compatible
     ...(isProduction && {

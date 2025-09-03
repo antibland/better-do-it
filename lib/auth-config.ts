@@ -17,7 +17,7 @@ export const auth = betterAuth({
   // Base URL for the authentication API
   baseURL:
     process.env.BETTER_AUTH_URL ||
-    (isProduction ? "https://better-do-it.com" : "http://localhost:3000"),
+    (isProduction ? "https://www.better-do-it.com" : "http://localhost:3000"),
 
   // Secret key for encryption and token signing
   secret: process.env.BETTER_AUTH_SECRET!,

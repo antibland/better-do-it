@@ -50,7 +50,8 @@ export const auth = betterAuth({
   advanced: {
     cookiePrefix: "better-do-it",
     crossSubDomainCookies: {
-      enabled: false,
+      enabled: true, // Enable cross-domain cookies
+      domain: isProduction ? ".better-do-it.com" : undefined, // Allow cookies across subdomains in production
     },
     // Production cookie settings - iOS Safari compatible
     ...(isProduction && {
@@ -67,3 +68,6 @@ export const auth = betterAuth({
 
 // Type inference from the auth instance
 export type Session = typeof auth.$Infer.Session;
+export type User = typeof auth.$Infer.User;
+export type Account = typeof auth.$Infer.Account;
+export type Verification = typeof auth.$Infer.Verification;

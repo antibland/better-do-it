@@ -1,4 +1,4 @@
-import { auth } from "@/lib/auth";
+// import { auth } from "@/lib/auth"; // Unused import removed
 import { sql } from "@vercel/postgres";
 import { appDb } from "@/lib/db";
 
@@ -8,15 +8,16 @@ import { appDb } from "@/lib/db";
  * Avoids data loss by checking existing state first
  */
 
-async function requireSession(req: Request) {
-  const session = await auth.api.getSession({ headers: req.headers });
-  if (!session || !session.user) {
-    return null;
-  }
-  return session;
-}
+// Unused function removed - not needed for this migration
+// async function requireSession(req: Request) {
+//   const session = await auth.api.getSession({ headers: req.headers });
+//   if (!session || !session.user) {
+//     return null;
+//   }
+//   return session;
+// }
 
-export async function POST(req: Request) {
+export async function POST() {
   try {
     const isProduction = process.env.NODE_ENV === "production";
     const results: string[] = [];

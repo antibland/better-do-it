@@ -52,6 +52,24 @@ async function initializeSchema(): Promise<void> {
 
       CREATE INDEX IF NOT EXISTS idx_partnership_userA ON partnership(userA);
       CREATE INDEX IF NOT EXISTS idx_partnership_userB ON partnership(userB);
+
+      CREATE TABLE IF NOT EXISTS invite (
+        id TEXT PRIMARY KEY,
+        code TEXT NOT NULL UNIQUE,
+        inviterId TEXT NOT NULL,
+        inviteeEmail TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'accepted', 'expired')),
+        expiresAt TEXT NOT NULL,
+        createdAt TEXT NOT NULL DEFAULT (datetime('now')),
+        acceptedAt TEXT NULL,
+        FOREIGN KEY (inviterId) REFERENCES user(id) ON DELETE CASCADE
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_invite_code ON invite(code);
+      CREATE INDEX IF NOT EXISTS idx_invite_inviterId ON invite(inviterId);
+      CREATE INDEX IF NOT EXISTS idx_invite_inviteeEmail ON invite(inviteeEmail);
+      CREATE INDEX IF NOT EXISTS idx_invite_status ON invite(status);
+      CREATE INDEX IF NOT EXISTS idx_invite_expiresAt ON invite(expiresAt);
     `);
 
     // Check if isActive column exists, if not add it
@@ -139,7 +157,8 @@ async function initializeSchema(): Promise<void> {
         createdat TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
         completedat TIMESTAMP WITH TIME ZONE NULL,
         isactive INTEGER DEFAULT 0,
-        addedtoactiveat TIMESTAMP WITH TIME ZONE NULL
+        addedtoactiveat TIMESTAMP WITH TIME ZONE NULL,
+        sort_order INTEGER NOT NULL DEFAULT 0
       )`;
     } catch (error) {
       console.log("Task table creation:", error);
@@ -170,6 +189,12 @@ async function initializeSchema(): Promise<void> {
     }
 
     try {
+      await sql`CREATE INDEX IF NOT EXISTS idx_task_user_sort_order ON task(userid, sort_order)`;
+    } catch (error) {
+      console.log("Task sort_order index creation:", error);
+    }
+
+    try {
       await sql`CREATE TABLE IF NOT EXISTS partnership (
         id TEXT PRIMARY KEY,
         usera TEXT NOT NULL UNIQUE,
@@ -191,6 +216,51 @@ async function initializeSchema(): Promise<void> {
       await sql`CREATE INDEX IF NOT EXISTS idx_partnership_userb ON partnership(userb)`;
     } catch (error) {
       console.log("Partnership userb index creation:", error);
+    }
+
+    try {
+      await sql`CREATE TABLE IF NOT EXISTS invite (
+        id TEXT PRIMARY KEY,
+        code TEXT NOT NULL UNIQUE,
+        inviterid TEXT NOT NULL,
+        inviteeemail TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'accepted', 'expired')),
+        expiresat TIMESTAMP WITH TIME ZONE NOT NULL,
+        createdat TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+        acceptedat TIMESTAMP WITH TIME ZONE NULL
+      )`;
+    } catch (error) {
+      console.log("Invite table creation:", error);
+    }
+
+    try {
+      await sql`CREATE INDEX IF NOT EXISTS idx_invite_code ON invite(code)`;
+    } catch (error) {
+      console.log("Invite code index creation:", error);
+    }
+
+    try {
+      await sql`CREATE INDEX IF NOT EXISTS idx_invite_inviterid ON invite(inviterid)`;
+    } catch (error) {
+      console.log("Invite inviterid index creation:", error);
+    }
+
+    try {
+      await sql`CREATE INDEX IF NOT EXISTS idx_invite_inviteeemail ON invite(inviteeemail)`;
+    } catch (error) {
+      console.log("Invite inviteeemail index creation:", error);
+    }
+
+    try {
+      await sql`CREATE INDEX IF NOT EXISTS idx_invite_status ON invite(status)`;
+    } catch (error) {
+      console.log("Invite status index creation:", error);
+    }
+
+    try {
+      await sql`CREATE INDEX IF NOT EXISTS idx_invite_expiresat ON invite(expiresat)`;
+    } catch (error) {
+      console.log("Invite expiresat index creation:", error);
     }
   }
 }

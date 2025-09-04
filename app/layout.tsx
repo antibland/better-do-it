@@ -23,6 +23,12 @@ export const metadata: Metadata = {
   title: "Better Do It - Collaborative Todo App",
   description:
     "The collaborative todo app designed for partners. Plan, track, and accomplish your goals together.",
+
+  icons: {
+    icon: "/icon.png",
+    shortcut: "/icon.png",
+    apple: "/icon.png",
+  },
   // iOS Safari compatibility
   other: {
     "apple-mobile-web-app-capable": "yes",

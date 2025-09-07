@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@hello-pangea/dnd": "^18.0.1",
+    "@radix-ui/react-accordion": "^1.2.12",
     "@react-email/components": "^0.5.1",
     "@react-email/render": "^1.2.1",
     "@types/pg": "^8.15.5",

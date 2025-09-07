@@ -62,11 +62,12 @@ CREATE TABLE IF NOT EXISTS "task" (
 
 CREATE TABLE IF NOT EXISTS "partnership" (
     "id" TEXT PRIMARY KEY,
-    "usera" TEXT NOT NULL UNIQUE,
-    "userb" TEXT NOT NULL UNIQUE,
+    "usera" TEXT NOT NULL,
+    "userb" TEXT NOT NULL,
     "createdat" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     FOREIGN KEY ("usera") REFERENCES "user"("id") ON DELETE CASCADE,
-    FOREIGN KEY ("userb") REFERENCES "user"("id") ON DELETE CASCADE
+    FOREIGN KEY ("userb") REFERENCES "user"("id") ON DELETE CASCADE,
+    UNIQUE("usera", "userb")
 );
 
 -- Indexes for better performance

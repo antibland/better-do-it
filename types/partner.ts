@@ -9,7 +9,7 @@ export type Partner = {
 };
 
 export type PartnerResponse = {
-  partner: Partner | null;
+  partners: Partner[];
 };
 
 export type PartnerTasksResponse = {
@@ -37,5 +37,11 @@ export type InviteResponse = {
   success: boolean;
   message: string;
   invite?: Invite;
+  error?: string;
+};
+
+export type InvitesResponse = {
+  success: boolean;
+  invites: Invite[];
   error?: string;
 };

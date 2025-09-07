@@ -10,13 +10,15 @@ import { ErrorDisplay } from "@/app/components/ErrorDisplay";
 import { SuccessDisplay } from "@/app/components/SuccessDisplay";
 import { ConfirmDialog } from "@/app/components/ConfirmDialog";
 import { TasksSection } from "@/app/components/TasksSection";
-import { PartnerSection } from "@/app/components/PartnerSection";
+import { PartnersSection } from "@/app/components/PartnersSection";
 import { EmailPreview } from "@/app/components/EmailPreview";
 import {
   TasksResponse,
   Partner,
   PartnerResponse,
   PartnerTasksResponse,
+  Invite,
+  InvitesResponse,
 } from "@/types";
 
 export default function Dashboard() {
@@ -26,10 +28,11 @@ export default function Dashboard() {
   // State for tasks and partner data
   const [tasks, setTasks] = useState<TasksResponse | null>(null);
   const [isDragging, setIsDragging] = useState(false);
-  const [partner, setPartner] = useState<Partner | null>(null);
-  const [partnerTasks, setPartnerTasks] = useState<PartnerTasksResponse | null>(
-    null
-  );
+  const [partners, setPartners] = useState<Partner[]>([]);
+  const [partnerTasksMap, setPartnerTasksMap] = useState<
+    Record<string, PartnerTasksResponse>
+  >({});
+  const [invites, setInvites] = useState<Invite[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
@@ -50,7 +53,10 @@ export default function Dashboard() {
   } | null>(null);
 
   // Partner unpair confirmation state
-  const [showUnpairConfirm, setShowUnpairConfirm] = useState(false);
+  const [partnerToUnpair, setPartnerToUnpair] = useState<{
+    partnershipId: string;
+    partnerName: string;
+  } | null>(null);
 
   // Email preview state
   const [showEmailPreview, setShowEmailPreview] = useState(false);
@@ -83,15 +89,27 @@ export default function Dashboard() {
     }
   }, [isDragging]);
 
-  const loadPartner = useCallback(async () => {
+  const loadPartners = useCallback(async () => {
     try {
       const response = await fetch("/api/partner");
       if (response.ok) {
         const data: PartnerResponse = await response.json();
-        setPartner(data.partner);
+        setPartners(data.partners);
       }
     } catch {
       // Partner loading errors are not critical
+    }
+  }, []);
+
+  const loadInvites = useCallback(async () => {
+    try {
+      const response = await fetch("/api/invites");
+      if (response.ok) {
+        const data: InvitesResponse = await response.json();
+        setInvites(data.invites);
+      }
+    } catch {
+      // Invite loading errors are not critical
     }
   }, []);
 
@@ -99,10 +117,11 @@ export default function Dashboard() {
     function loadUserData() {
       if (session) {
         loadTasks();
-        loadPartner();
+        loadPartners();
+        loadInvites();
       }
     },
-    [session, loadTasks, loadPartner]
+    [session, loadTasks, loadPartners, loadInvites]
   );
 
   useEffect(function checkInviteAccepted() {
@@ -136,7 +155,7 @@ export default function Dashboard() {
             "Partnership invitation accepted successfully. You're now partnered."
           );
           // Reload partner data
-          await loadPartner();
+          await loadPartners();
           // Clear success message after 5 seconds
           setTimeout(() => setSuccessMessage(""), 5000);
         } else {
@@ -147,7 +166,7 @@ export default function Dashboard() {
         setError("Failed to accept invitation");
       }
     },
-    [loadPartner]
+    [loadPartners]
   );
 
   useEffect(
@@ -172,28 +191,36 @@ export default function Dashboard() {
     [session, acceptInvite]
   );
 
+  const loadAllPartnerTasks = useCallback(async () => {
+    const newPartnerTasksMap: Record<string, PartnerTasksResponse> = {};
+
+    for (const partner of partners) {
+      try {
+        const response = await fetch(
+          `/api/partner/tasks?partnerId=${partner.id}`
+        );
+        if (response.ok) {
+          const data = await response.json();
+          newPartnerTasksMap[partner.id] = data;
+        }
+      } catch {
+        // Partner tasks loading errors are not critical
+      }
+    }
+
+    setPartnerTasksMap(newPartnerTasksMap);
+  }, [partners]);
+
   useEffect(
-    function loadPartnerData() {
-      if (partner) {
-        loadPartnerTasks();
+    function loadPartnerTasks() {
+      if (partners.length > 0) {
+        loadAllPartnerTasks();
       } else {
-        setPartnerTasks(null);
+        setPartnerTasksMap({});
       }
     },
-    [partner]
+    [partners, loadAllPartnerTasks]
   );
-
-  const loadPartnerTasks = async () => {
-    try {
-      const response = await fetch("/api/partner/tasks");
-      if (response.ok) {
-        const data = await response.json();
-        setPartnerTasks(data);
-      }
-    } catch {
-      // Partner tasks loading errors are not critical
-    }
-  };
 
   const createTask = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -249,8 +276,8 @@ export default function Dashboard() {
       if (response.ok) {
         setCompletingTaskId(null);
         await loadTasks();
-        if (partner) {
-          await loadPartnerTasks();
+        if (partners.length > 0) {
+          await loadAllPartnerTasks();
         }
       } else {
         setError("Failed to complete task");
@@ -371,6 +398,8 @@ export default function Dashboard() {
         setPartnerEmail("");
         // Show success message
         setSuccessMessage(data.message);
+        // Reload invites
+        await loadInvites();
         // Clear success message after 5 seconds
         setTimeout(() => setSuccessMessage(""), 5000);
       } else {
@@ -384,29 +413,59 @@ export default function Dashboard() {
     }
   };
 
-  const unpairPartner = async () => {
-    setShowUnpairConfirm(true);
+  const unpairPartner = async (partnershipId: string) => {
+    const partner = partners.find((p) => p.partnershipId === partnershipId);
+    if (partner) {
+      setPartnerToUnpair({
+        partnershipId,
+        partnerName: partner.name,
+      });
+    }
   };
 
   const confirmUnpairPartner = async () => {
+    if (!partnerToUnpair) return;
+
     try {
       const response = await fetch("/api/partner", {
         method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ partnershipId: partnerToUnpair.partnershipId }),
       });
 
       if (response.ok) {
-        setPartner(null);
-        setPartnerTasks(null);
+        await loadPartners();
+        await loadAllPartnerTasks();
+      } else {
+        setError("Failed to unpair from partner");
       }
     } catch {
       setError("Failed to unpair from partner");
     } finally {
-      setShowUnpairConfirm(false);
+      setPartnerToUnpair(null);
     }
   };
 
   const cancelUnpairPartner = () => {
-    setShowUnpairConfirm(false);
+    setPartnerToUnpair(null);
+  };
+
+  const revokeInvite = async (inviteId: string) => {
+    try {
+      const response = await fetch("/api/invites", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ inviteId }),
+      });
+
+      if (response.ok) {
+        await loadInvites();
+      } else {
+        setError("Failed to revoke invitation");
+      }
+    } catch {
+      setError("Failed to revoke invitation");
+    }
   };
 
   const handleSignOut = async () => {
@@ -562,14 +621,16 @@ export default function Dashboard() {
                 onCompleteTask={finalizeTaskCompletion}
               />
 
-              <PartnerSection
-                partner={partner}
-                partnerTasks={partnerTasks}
+              <PartnersSection
+                partners={partners}
+                partnerTasksMap={partnerTasksMap}
                 partnerEmail={partnerEmail}
                 loading={loading}
+                invites={invites}
                 onPartnerEmailChange={setPartnerEmail}
                 onSendInvite={sendInvite}
                 onUnpairPartner={unpairPartner}
+                onRevokeInvite={revokeInvite}
                 onShowEmailPreview={() => setShowEmailPreview(true)}
               />
             </div>
@@ -588,11 +649,11 @@ export default function Dashboard() {
         />
 
         <ConfirmDialog
-          isOpen={showUnpairConfirm}
+          isOpen={!!partnerToUnpair}
           onConfirm={confirmUnpairPartner}
           onCancel={cancelUnpairPartner}
           title="Unpair Partner"
-          message="Are you sure you want to unpair from your partner? This action cannot be undone."
+          message={`Are you sure you want to unpair from ${partnerToUnpair?.partnerName}? This action cannot be undone, though you can resend them an invitation if you change your mind.`}
           confirmText="Unpair"
           cancelText="Cancel"
           confirmVariant="danger"

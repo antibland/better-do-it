@@ -2,7 +2,7 @@
 
 Use these commands to interact with the Tasks API during development and production debugging. Ensure you are signed in on the same origin as `BASE`.
 
-Tip: Copy the exact Cookie header from your browser DevTools → Application/Storage → Cookies. Include both cookies in one string (semicolon-separated): `next-auth.session-token` and `better-do-it.session_token`.
+Tip: Copy the exact Cookie header from your browser DevTools → Application/Storage → Cookies. Use the `better-do-it.session_token` cookie.
 
 ## 0) Set environment variables
 
@@ -13,10 +13,10 @@ BASE=http://localhost:3000
 # For production debugging
 BASE=https://better-do-it.vercel.app
 
-# Paste the full cookie string here. Include all better-do-it-* cookies if there are multiple.
-# Example (names may differ slightly; use DevTools as source of truth):
-# COOKIE='next-auth.session-token=...; better-do-it.session_token=...'
-COOKIE='next-auth.session-token=REPLACE_WITH_YOUR_VALUE; better-do-it.session_token=REPLACE_WITH_YOUR_VALUE'
+# Paste the full cookie string here. Use the better-do-it.session_token cookie.
+# Example (use DevTools as source of truth):
+# COOKIE='better-do-it.session_token=...'
+COOKIE='better-do-it.session_token=REPLACE_WITH_YOUR_VALUE'
 
 # Verify
 [ -n "$BASE" ] && echo "BASE is set" || echo "BASE is empty"
@@ -254,7 +254,7 @@ curl -s "$BASE/api/tasks" -H "Cookie: $COOKIE" | jq '.activeTasks[0] | keys'
 ## Notes
 
 - Host must match where you signed in (`localhost` vs `127.0.0.1`).
-- Include both cookies (semicolon-separated) in `COOKIE`: `next-auth.session-token` and `better-do-it.session_token`.
+- Use the `better-do-it.session_token` cookie in `COOKIE`.
 - Week boundary is Wednesday 6 PM Eastern Time (America/New_York).
 - Maximum of 3 active tasks per user.
 - For partner management, see `curl-partners.md`.

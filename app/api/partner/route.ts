@@ -4,9 +4,9 @@ import { sql } from "@vercel/postgres";
 
 /**
  * Partnership management route
- * - GET: return current partner info for the auth user
- * - POST: pair with another user by email
- * - DELETE: unpair from current partnership
+ * - GET: return all partners for the auth user
+ * - POST: pair with another user by email (creates new partnership)
+ * - DELETE: unpair from a specific partnership (requires partnershipId in body)
  */
 
 async function requireSession(req: Request) {
@@ -17,28 +17,26 @@ async function requireSession(req: Request) {
   return session;
 }
 
-function getPartnershipForUser(userId: string): PartnershipRow | undefined {
+function getPartnershipsForUser(userId: string): PartnershipRow[] {
   return appDb
     .prepare(
       `SELECT id, userA, userB, createdAt FROM partnership WHERE userA = ? OR userB = ?`
     )
-    .get(userId, userId) as PartnershipRow | undefined;
+    .all(userId, userId) as PartnershipRow[];
 }
 
-async function getPartnershipForUserPostgres(userId: string) {
+async function getPartnershipsForUserPostgres(userId: string) {
   const result = await sql`
     SELECT id, usera, userb, createdat FROM partnership WHERE usera = ${userId} OR userb = ${userId}
   `;
-  const row = result.rows?.[0];
-  if (!row) return undefined;
 
   // Transform to match PartnershipRow interface
-  return {
+  return (result.rows || []).map((row) => ({
     id: row.id,
     userA: row.usera,
     userB: row.userb,
     createdAt: row.createdat,
-  };
+  }));
 }
 
 function getUserById(
@@ -75,32 +73,31 @@ export async function GET(req: Request) {
   if (isProduction) {
     // PostgreSQL implementation
     try {
-      const partnership = await getPartnershipForUserPostgres(userId);
+      const partnerships = await getPartnershipsForUserPostgres(userId);
+      const partners = [];
 
-      if (!partnership) {
-        return Response.json({ partner: null });
-      }
+      for (const partnership of partnerships) {
+        // Determine which user is the partner
+        const partnerId =
+          partnership.userA === userId ? partnership.userB : partnership.userA;
+        const partner = await getUserByIdPostgres(partnerId);
 
-      // Determine which user is the partner
-      const partnerId =
-        partnership.userA === userId ? partnership.userB : partnership.userA;
-      const partner = await getUserByIdPostgres(partnerId);
+        if (!partner) {
+          // Partner user was deleted, clean up the partnership
+          await sql`DELETE FROM partnership WHERE id = ${partnership.id}`;
+          continue;
+        }
 
-      if (!partner) {
-        // Partner user was deleted, clean up the partnership
-        await sql`DELETE FROM partnership WHERE id = ${partnership.id}`;
-        return Response.json({ partner: null });
-      }
-
-      return Response.json({
-        partner: {
+        partners.push({
           id: partner.id,
           email: partner.email,
           name: partner.name,
           partnershipId: partnership.id,
           createdAt: partnership.createdAt,
-        },
-      });
+        });
+      }
+
+      return Response.json({ partners });
     } catch (error) {
       console.error("PostgreSQL partner GET error:", error);
       return Response.json(
@@ -112,33 +109,34 @@ export async function GET(req: Request) {
       );
     }
   } else {
-    // SQLite implementation (existing code)
-    const partnership = getPartnershipForUser(userId);
+    // SQLite implementation
+    const partnerships = getPartnershipsForUser(userId);
+    const partners = [];
 
-    if (!partnership) {
-      return Response.json({ partner: null });
-    }
+    for (const partnership of partnerships) {
+      // Determine which user is the partner
+      const partnerId =
+        partnership.userA === userId ? partnership.userB : partnership.userA;
+      const partner = getUserById(partnerId);
 
-    // Determine which user is the partner
-    const partnerId =
-      partnership.userA === userId ? partnership.userB : partnership.userA;
-    const partner = getUserById(partnerId);
+      if (!partner) {
+        // Partner user was deleted, clean up the partnership
+        appDb
+          .prepare(`DELETE FROM partnership WHERE id = ?`)
+          .run(partnership.id);
+        continue;
+      }
 
-    if (!partner) {
-      // Partner user was deleted, clean up the partnership
-      appDb.prepare(`DELETE FROM partnership WHERE id = ?`).run(partnership.id);
-      return Response.json({ partner: null });
-    }
-
-    return Response.json({
-      partner: {
+      partners.push({
         id: partner.id,
         email: partner.email,
         name: partner.name,
         partnershipId: partnership.id,
         createdAt: partnership.createdAt,
-      },
-    });
+      });
+    }
+
+    return Response.json({ partners });
   }
 }
 
@@ -170,15 +168,6 @@ export async function POST(req: Request) {
   if (isProduction) {
     // PostgreSQL implementation
     try {
-      // Check if current user is already in a partnership
-      const existingPartnership = await getPartnershipForUserPostgres(userId);
-      if (existingPartnership) {
-        return Response.json(
-          { error: "You are already in a partnership" },
-          { status: 400 }
-        );
-      }
-
       // Find the partner user by email
       const partnerResult = await sql`
         SELECT id, email, name FROM "user" WHERE email = ${partnerEmail}
@@ -196,13 +185,14 @@ export async function POST(req: Request) {
         );
       }
 
-      // Check if partner is already in a partnership
-      const partnerExistingPartnership = await getPartnershipForUserPostgres(
-        partner.id
-      );
-      if (partnerExistingPartnership) {
+      // Check if partnership already exists between these users
+      const existingPartnership = await sql`
+        SELECT id FROM partnership WHERE (usera = ${userId} AND userb = ${partner.id}) OR (usera = ${partner.id} AND userb = ${userId})
+      `;
+
+      if (existingPartnership.rows.length > 0) {
         return Response.json(
-          { error: "Partner is already in a partnership" },
+          { error: "Partnership already exists with this user" },
           { status: 400 }
         );
       }
@@ -235,16 +225,7 @@ export async function POST(req: Request) {
       );
     }
   } else {
-    // SQLite implementation (existing code)
-    // Check if current user is already in a partnership
-    const existingPartnership = getPartnershipForUser(userId);
-    if (existingPartnership) {
-      return Response.json(
-        { error: "You are already in a partnership" },
-        { status: 400 }
-      );
-    }
-
+    // SQLite implementation
     // Find the partner user by email
     const partner = appDb
       .prepare(`SELECT id, email, name FROM user WHERE email = ?`)
@@ -263,11 +244,16 @@ export async function POST(req: Request) {
       );
     }
 
-    // Check if partner is already in a partnership
-    const partnerExistingPartnership = getPartnershipForUser(partner.id);
-    if (partnerExistingPartnership) {
+    // Check if partnership already exists between these users
+    const existingPartnership = appDb
+      .prepare(
+        `SELECT id FROM partnership WHERE (userA = ? AND userB = ?) OR (userA = ? AND userB = ?)`
+      )
+      .get(userId, partner.id, partner.id, userId);
+
+    if (existingPartnership) {
       return Response.json(
-        { error: "Partner is already in a partnership" },
+        { error: "Partnership already exists with this user" },
         { status: 400 }
       );
     }
@@ -303,19 +289,37 @@ export async function DELETE(req: Request) {
   const userId = session.user.id as string;
   const isProduction = process.env.NODE_ENV === "production";
 
+  let body: { partnershipId?: string };
+  try {
+    body = await req.json();
+  } catch {
+    return Response.json({ error: "Invalid JSON" }, { status: 400 });
+  }
+
+  const partnershipId = body?.partnershipId;
+  if (!partnershipId) {
+    return Response.json(
+      { error: "Partnership ID is required" },
+      { status: 400 }
+    );
+  }
+
   if (isProduction) {
     // PostgreSQL implementation
     try {
-      const partnership = await getPartnershipForUserPostgres(userId);
+      // Verify the partnership exists and the user is part of it
+      const partnership = await sql`
+        SELECT id FROM partnership WHERE id = ${partnershipId} AND (usera = ${userId} OR userb = ${userId})
+      `;
 
-      if (!partnership) {
+      if (partnership.rows.length === 0) {
         return Response.json(
-          { error: "No partnership to remove" },
+          { error: "Partnership not found or access denied" },
           { status: 404 }
         );
       }
 
-      await sql`DELETE FROM partnership WHERE id = ${partnership.id}`;
+      await sql`DELETE FROM partnership WHERE id = ${partnershipId}`;
       return Response.json({ ok: true });
     } catch (error) {
       console.error("PostgreSQL partner DELETE error:", error);
@@ -328,17 +332,22 @@ export async function DELETE(req: Request) {
       );
     }
   } else {
-    // SQLite implementation (existing code)
-    const partnership = getPartnershipForUser(userId);
+    // SQLite implementation
+    // Verify the partnership exists and the user is part of it
+    const partnership = appDb
+      .prepare(
+        `SELECT id FROM partnership WHERE id = ? AND (userA = ? OR userB = ?)`
+      )
+      .get(partnershipId, userId, userId);
 
     if (!partnership) {
       return Response.json(
-        { error: "No partnership to remove" },
+        { error: "Partnership not found or access denied" },
         { status: 404 }
       );
     }
 
-    appDb.prepare(`DELETE FROM partnership WHERE id = ?`).run(partnership.id);
+    appDb.prepare(`DELETE FROM partnership WHERE id = ?`).run(partnershipId);
     return Response.json({ ok: true });
   }
 }

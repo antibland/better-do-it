@@ -70,12 +70,13 @@ CREATE TABLE IF NOT EXISTS "task" (
 -- Partnership table (for the app functionality)
 CREATE TABLE IF NOT EXISTS "partnership" (
     "id" TEXT PRIMARY KEY,
-    "userA" TEXT NOT NULL UNIQUE,
-    "userB" TEXT NOT NULL UNIQUE,
+    "userA" TEXT NOT NULL,
+    "userB" TEXT NOT NULL,
     "createdAt" TEXT NOT NULL DEFAULT (datetime('now')),
     CHECK ("userA" <> "userB"),
     FOREIGN KEY ("userA") REFERENCES "user"("id") ON DELETE CASCADE,
-    FOREIGN KEY ("userB") REFERENCES "user"("id") ON DELETE CASCADE
+    FOREIGN KEY ("userB") REFERENCES "user"("id") ON DELETE CASCADE,
+    UNIQUE("userA", "userB")
 );
 
 -- Create indexes for better-auth tables

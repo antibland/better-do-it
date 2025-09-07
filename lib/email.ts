@@ -29,6 +29,22 @@ export async function sendInviteToExistingUser(
   inviteeEmail: string,
   inviteCode: string
 ): Promise<{ success: boolean; error?: string }> {
+  // In development, skip email sending unless it's to the verified email
+  if (process.env.NODE_ENV !== "production") {
+    const verifiedEmail =
+      process.env.RESEND_VERIFIED_EMAIL || "antibland@gmail.com";
+
+    if (inviteeEmail !== verifiedEmail) {
+      console.log(
+        `[DEV] Skipping email to ${inviteeEmail} - would send invite code: ${inviteCode}`
+      );
+      console.log(
+        `[DEV] In production, this would send an email to ${inviteeEmail}`
+      );
+      return { success: true };
+    }
+  }
+
   try {
     const appUrl = getAppUrl();
 
@@ -67,6 +83,22 @@ export async function sendInviteToNewUser(
   inviteeEmail: string,
   inviteCode: string
 ): Promise<{ success: boolean; error?: string }> {
+  // In development, skip email sending unless it's to the verified email
+  if (process.env.NODE_ENV !== "production") {
+    const verifiedEmail =
+      process.env.RESEND_VERIFIED_EMAIL || "antibland@gmail.com";
+
+    if (inviteeEmail !== verifiedEmail) {
+      console.log(
+        `[DEV] Skipping email to ${inviteeEmail} - would send invite code: ${inviteCode}`
+      );
+      console.log(
+        `[DEV] In production, this would send an email to ${inviteeEmail}`
+      );
+      return { success: true };
+    }
+  }
+
   try {
     const appUrl = getAppUrl();
 

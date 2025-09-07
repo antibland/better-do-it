@@ -81,7 +81,9 @@ export async function POST(req: Request) {
       }
     } else {
       // SQLite validation
-      const tableInfo = appDb.prepare(`PRAGMA table_info(partnership)`).all();
+      const tableInfo = appDb
+        .prepare(`PRAGMA table_info(partnership)`)
+        .all() as unknown[];
       results.push(`Partnership table has ${tableInfo.length} columns`);
 
       // Check if SQLite migration already completed by looking for existing partnerships
@@ -94,7 +96,7 @@ export async function POST(req: Request) {
         HAVING COUNT(*) > 1
       `
         )
-        .all();
+        .all() as unknown[];
 
       if (existingPartnerships.length > 0) {
         return Response.json({
@@ -117,7 +119,9 @@ export async function POST(req: Request) {
         `Backed up ${existingPartnerships.length} existing partnerships`
       );
     } else {
-      existingPartnerships = appDb.prepare(`SELECT * FROM partnership`).all();
+      existingPartnerships = appDb
+        .prepare(`SELECT * FROM partnership`)
+        .all() as unknown[];
       results.push(
         `Backed up ${existingPartnerships.length} existing partnerships`
       );
@@ -127,19 +131,19 @@ export async function POST(req: Request) {
     if (isProduction) {
       // PostgreSQL: Drop individual UNIQUE constraints and add composite constraint
       try {
-        // First, get the actual constraint names
-        const uniqueConstraints = await sql`
-          SELECT constraint_name 
-          FROM information_schema.table_constraints 
-          WHERE table_name = 'partnership' 
-          AND constraint_type = 'UNIQUE'
-          AND constraint_name != 'partnership_pkey'
-        `;
-
-        // Drop existing UNIQUE constraints
-        for (const constraint of uniqueConstraints.rows) {
-          await sql`ALTER TABLE "partnership" DROP CONSTRAINT ${sql(constraint.constraint_name)}`;
-          results.push(`Dropped constraint: ${constraint.constraint_name}`);
+        // Drop existing UNIQUE constraints (if they exist)
+        try {
+          await sql`ALTER TABLE "partnership" DROP CONSTRAINT IF EXISTS "partnership_usera_key"`;
+          results.push("Dropped usera UNIQUE constraint (if existed)");
+        } catch {
+          // Constraint might not exist, continue
+        }
+        
+        try {
+          await sql`ALTER TABLE "partnership" DROP CONSTRAINT IF EXISTS "partnership_userb_key"`;
+          results.push("Dropped userb UNIQUE constraint (if existed)");
+        } catch {
+          // Constraint might not exist, continue
         }
 
         // Add composite UNIQUE constraint

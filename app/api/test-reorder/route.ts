@@ -1,4 +1,3 @@
-import { auth } from "@/lib/auth";
 import { sql } from "@vercel/postgres";
 import { appDb } from "@/lib/db";
 

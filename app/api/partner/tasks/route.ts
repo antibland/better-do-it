@@ -22,22 +22,13 @@ async function requireSession(req: Request) {
   return session;
 }
 
-function getPartnershipForUser(
-  userId: string
-): { id: string; userA: string; userB: string } | undefined {
-  return appDb
-    .prepare(
-      `SELECT id, userA, userB FROM partnership WHERE userA = ? OR userB = ?`
-    )
-    .get(userId, userId) as
-    | { id: string; userA: string; userB: string }
-    | undefined;
-}
 
 export async function GET(req: Request) {
   // Simple deployment test log
-  console.log("Partner tasks API: DEPLOYMENT TEST - API is running with new code");
-  
+  console.log(
+    "Partner tasks API: DEPLOYMENT TEST - API is running with new code"
+  );
+
   const session = await requireSession(req);
   if (!session) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
@@ -46,27 +37,33 @@ export async function GET(req: Request) {
   const userId = session.user.id as string;
   const isProduction = process.env.NODE_ENV === "production";
 
+  // Get partnerId from query parameters
+  const url = new URL(req.url);
+  const partnerId = url.searchParams.get("partnerId");
+
   if (isProduction) {
     // PostgreSQL implementation for production
     try {
-      // Get partnership
+      if (!partnerId) {
+        return Response.json(
+          { error: "Partner ID is required" },
+          { status: 400 }
+        );
+      }
+
+      // Verify partnership exists between current user and specified partner
       const partnershipResult = await sql`
-        SELECT id, usera, userb FROM partnership WHERE usera = ${userId} OR userb = ${userId}
+        SELECT id, usera, userb FROM partnership 
+        WHERE (usera = ${userId} AND userb = ${partnerId}) OR (usera = ${partnerId} AND userb = ${userId})
       `;
       const partnership = partnershipResult.rows?.[0];
 
       if (!partnership) {
-        // Return empty response instead of 404 error
-        return Response.json({
-          partner: null,
-          tasks: [],
-          completedThisWeek: 0,
-        });
+        return Response.json(
+          { error: "Partnership not found" },
+          { status: 404 }
+        );
       }
-
-      // Determine which user is the partner
-      const partnerId =
-        partnership.usera === userId ? partnership.userb : partnership.usera;
 
       // Fetch partner's active tasks only
       const activeTasksResult = await sql`
@@ -183,15 +180,26 @@ export async function GET(req: Request) {
     }
   } else {
     // SQLite implementation for development
-    const partnership = getPartnershipForUser(userId);
-
-    if (!partnership) {
-      return Response.json({ error: "No partnership found" }, { status: 404 });
+    if (!partnerId) {
+      return Response.json(
+        { error: "Partner ID is required" },
+        { status: 400 }
+      );
     }
 
-    // Determine which user is the partner
-    const partnerId =
-      partnership.userA === userId ? partnership.userB : partnership.userA;
+    // Verify partnership exists between current user and specified partner
+    const partnership = appDb
+      .prepare(
+        `SELECT id, userA, userB FROM partnership 
+         WHERE (userA = ? AND userB = ?) OR (userA = ? AND userB = ?)`
+      )
+      .get(userId, partnerId, partnerId, userId) as
+      | { id: string; userA: string; userB: string }
+      | undefined;
+
+    if (!partnership) {
+      return Response.json({ error: "Partnership not found" }, { status: 404 });
+    }
 
     // Fetch partner's active tasks only
     const activeTasks = appDb

@@ -3,9 +3,9 @@ import "react-loading-skeleton/dist/skeleton.css";
 
 export function CompletedTasksSkeleton() {
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
       {/* Header Skeleton */}
-      <header className="bg-white shadow">
+      <header className="bg-white dark:bg-gray-950 shadow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-6">
             {/* Back button and title */}
@@ -26,7 +26,7 @@ export function CompletedTasksSkeleton() {
       {/* Main Content Skeleton */}
       <main className="max-w-4xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0">
-          <div className="bg-white rounded-lg shadow p-6">
+          <div className="bg-white dark:bg-gray-900 rounded-lg shadow p-6">
             {/* Section header */}
             <div className="flex items-center justify-between mb-6">
               <Skeleton width={160} height={24} />
@@ -37,7 +37,7 @@ export function CompletedTasksSkeleton() {
               {[...Array(5)].map((_, i) => (
                 <div
                   key={i}
-                  className="flex items-center justify-between p-4 border border-gray-200 rounded-lg bg-gray-50"
+                  className="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800"
                 >
                   <div className="flex-1">
                     <Skeleton width="70%" height={20} className="mb-2" />

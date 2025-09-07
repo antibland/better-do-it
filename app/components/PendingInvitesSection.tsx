@@ -60,10 +60,10 @@ export function PendingInvitesSection({
 
   return (
     <>
-      <div className="bg-white rounded-lg shadow p-6 mt-6">
+      <div className="bg-white dark:bg-gray-900 rounded-lg shadow p-6 mt-6">
         <div className="flex items-center space-x-2 mb-4">
-          <ClockIcon className="w-5 h-5 text-amber-500" />
-          <h2 className="text-lg font-semibold text-gray-900">
+          <ClockIcon className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
             Pending Invitations
           </h2>
         </div>
@@ -77,24 +77,24 @@ export function PendingInvitesSection({
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.2 }}
-                className="flex items-center justify-between p-3 bg-amber-50 border border-amber-200 rounded-lg"
+                className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg"
               >
                 <div className="flex-1">
                   <div className="flex items-center space-x-2">
-                    <span className="font-medium text-gray-900">
+                    <span className="font-medium text-gray-900 dark:text-gray-100">
                       {invite.inviteeEmail}
                     </span>
-                    <span className="text-xs text-amber-600 bg-amber-100 px-2 py-1 rounded-full">
+                    <span className="text-xs text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded-full">
                       {invite.status}
                     </span>
                   </div>
-                  <div className="text-sm text-gray-600 mt-1">
+                  <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                     {formatExpiryDate(invite.expiresAt)}
                   </div>
                 </div>
                 <button
                   onClick={() => handleRevokeClick(invite)}
-                  className="p-1 text-gray-400 hover:text-red-600 transition-colors duration-200"
+                  className="p-1 text-gray-400 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400 transition-colors duration-200"
                   title="Revoke invitation"
                 >
                   <XIcon className="w-4 h-4" />
@@ -105,8 +105,8 @@ export function PendingInvitesSection({
         </div>
 
         {invites.length > 0 && (
-          <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-            <p className="text-sm text-amber-800">
+          <div className="mt-4 p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg">
+            <p className="text-sm text-gray-600 dark:text-gray-300">
               <strong>Note:</strong> Invitations expire after 30 days. The
               recipient will receive an email with instructions to accept the
               invitation.

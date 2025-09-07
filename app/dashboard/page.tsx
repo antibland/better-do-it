@@ -591,7 +591,7 @@ export default function Dashboard() {
 
   return (
     <DragDropContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
         <DashboardHeader onSignOut={handleSignOut} />
 
         <ErrorDisplay error={error} onClear={() => setError("")} />

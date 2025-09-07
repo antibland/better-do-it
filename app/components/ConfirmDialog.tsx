@@ -72,8 +72,10 @@ export function ConfirmDialog({
   );
 
   const confirmButtonClasses = {
-    danger: "bg-red-600 hover:bg-red-700 focus:ring-red-500",
-    primary: "bg-indigo-600 hover:bg-indigo-700 focus:ring-indigo-500",
+    danger:
+      "bg-red-600 hover:bg-red-700 focus:ring-red-500 dark:focus:ring-offset-gray-800",
+    primary:
+      "bg-indigo-600 hover:bg-indigo-700 focus:ring-indigo-500 dark:focus:ring-offset-gray-800",
   };
 
   return (
@@ -81,7 +83,7 @@ export function ConfirmDialog({
       {isOpen && (
         <dialog
           ref={dialogRef}
-          className="backdrop:bg-gray-500/20 backdrop:backdrop-blur-sm p-0 rounded-lg shadow-xl border border-gray-200 bg-white max-w-md fixed top-1/2 inset-x-4 mx-auto transform -translate-y-1/2"
+          className="backdrop:bg-gray-500/20 backdrop:backdrop-blur-sm p-0 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 max-w-md fixed top-1/2 inset-x-4 mx-auto transform -translate-y-1/2"
           onCancel={onCancel}
         >
           <motion.div
@@ -92,16 +94,16 @@ export function ConfirmDialog({
             className="p-6"
           >
             <div className="mb-4">
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
                 {title}
               </h3>
-              <p className="text-gray-600">{message}</p>
+              <p className="text-gray-600 dark:text-gray-300">{message}</p>
             </div>
 
             <div className="flex justify-end space-x-3">
               <button
                 onClick={onCancel}
-                className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+                className="px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-md transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800"
               >
                 {cancelText}
               </button>

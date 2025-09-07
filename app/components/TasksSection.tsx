@@ -46,11 +46,13 @@ export function TasksSection({
   onCompleteTask,
 }: TasksSectionProps) {
   return (
-    <div className="bg-white rounded-lg shadow p-6">
+    <div className="bg-white dark:bg-gray-900 rounded-lg shadow p-6">
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-semibold text-gray-900">My Tasks</h2>
+        <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
+          My Tasks
+        </h2>
         <div className="flex items-center space-x-4">
-          <div className="text-sm text-gray-500">
+          <div className="text-sm text-gray-500 dark:text-gray-400">
             {tasks && (
               <span>{tasks.completedThisWeek} completed this week</span>
             )}
@@ -89,7 +91,7 @@ export function TasksSection({
           tasks.openActiveTasks.length > 0 &&
           tasks?.masterTasks &&
           tasks.masterTasks.length > 0 && (
-            <div className="border-t border-gray-300 my-4"></div>
+            <div className="border-t border-gray-300 dark:border-gray-600 my-4"></div>
           )}
 
         {/* Master Tasks */}
@@ -111,10 +113,10 @@ export function TasksSection({
         />
       </div>
 
-      <div className="mt-6 pt-4 border-t border-gray-200">
+      <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-600">
         <Link
           href="/completed-tasks"
-          className="inline-flex items-center text-indigo-600 hover:text-indigo-800 font-medium"
+          className="inline-flex items-center text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300 font-medium"
         >
           View completed tasks
         </Link>

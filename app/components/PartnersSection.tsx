@@ -37,27 +37,27 @@ function PartnersAccordion({
             <Accordion.Item
               key={partner.id}
               value={partner.id}
-              className="border border-gray-200 rounded-lg overflow-hidden"
+              className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden"
             >
               <Accordion.Header className="w-full">
-                <Accordion.Trigger className="flex items-center justify-between w-full p-4 text-left hover:bg-gray-50 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-inset">
+                <Accordion.Trigger className="flex items-center justify-between w-full p-4 text-left hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-inset">
                   <div className="flex items-center space-x-3">
-                    <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center">
-                      <span className="text-indigo-600 font-medium text-sm">
+                    <div className="w-8 h-8 bg-indigo-100 dark:bg-indigo-900 rounded-full flex items-center justify-center">
+                      <span className="text-indigo-600 dark:text-indigo-400 font-medium text-sm">
                         {partner.name.charAt(0).toUpperCase()}
                       </span>
                     </div>
                     <div>
-                      <div className="font-medium text-gray-900">
+                      <div className="font-medium text-gray-900 dark:text-gray-100">
                         {partner.name}
                       </div>
-                      <div className="text-sm text-gray-500">
+                      <div className="text-sm text-gray-500 dark:text-gray-400">
                         {partner.email}
                       </div>
                     </div>
                   </div>
                   <ChevronDownIcon
-                    className={`w-5 h-5 text-gray-400 transition-transform duration-200 ${
+                    className={`w-5 h-5 text-gray-400 dark:text-gray-500 transition-transform duration-200 ${
                       isOpen ? "rotate-180" : ""
                     }`}
                   />
@@ -66,15 +66,15 @@ function PartnersAccordion({
 
               <Accordion.Content className="AccordionContent px-4 pb-4">
                 <div className="space-y-4">
-                  <div className="p-3 bg-indigo-50 rounded-lg">
-                    <p className="text-sm text-indigo-700">
+                  <div className="p-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg">
+                    <p className="text-sm text-indigo-700 dark:text-indigo-300">
                       <span className="font-medium">Partnered since:</span>{" "}
                       {new Date(partner.createdAt).toLocaleDateString()}
                     </p>
                   </div>
 
-                  <div className="p-3 bg-gray-50 rounded-lg">
-                    <div className="text-sm text-gray-700">
+                  <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                    <div className="text-sm text-gray-700 dark:text-gray-300">
                       <span className="font-medium">
                         {partner.name}&apos;s Week:
                       </span>{" "}
@@ -83,7 +83,7 @@ function PartnersAccordion({
                   </div>
 
                   <div>
-                    <h3 className="font-medium text-gray-900 mb-3">
+                    <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-3">
                       {partner.name}&apos;s Active Tasks
                     </h3>
                     <div className="space-y-3">
@@ -92,19 +92,19 @@ function PartnersAccordion({
                         .map((task) => (
                           <div
                             key={task.id}
-                            className={`flex items-center space-x-3 p-3 border border-gray-200 rounded-lg ${
+                            className={`flex items-center space-x-3 p-3 border border-gray-200 dark:border-gray-700 rounded-lg ${
                               task.isCompleted === 1
-                                ? "bg-green-50"
-                                : "bg-gray-50"
+                                ? "bg-green-50 dark:bg-green-950/20"
+                                : "bg-gray-50 dark:bg-gray-800"
                             }`}
                           >
-                            <div className="w-5 h-5 border-2 border-gray-300 rounded bg-gray-200 flex items-center justify-center">
+                            <div className="w-5 h-5 border-2 border-gray-300 dark:border-gray-600 rounded bg-gray-200 dark:bg-gray-600 flex items-center justify-center">
                               {task.isCompleted === 1 ? (
-                                <span className="text-green-600 text-xs">
+                                <span className="text-green-600 dark:text-green-400 text-xs">
                                   ✓
                                 </span>
                               ) : (
-                                <span className="text-gray-400 text-xs">
+                                <span className="text-gray-400 dark:text-gray-500 text-xs">
                                   👁
                                 </span>
                               )}
@@ -112,14 +112,14 @@ function PartnersAccordion({
                             <span
                               className={`${
                                 task.isCompleted === 1
-                                  ? "text-gray-500 line-through"
-                                  : "text-gray-700"
+                                  ? "text-gray-500 dark:text-gray-400 line-through"
+                                  : "text-gray-700 dark:text-gray-300"
                               }`}
                             >
                               {task.title}
                             </span>
                             {task.isCompleted === 1 && (
-                              <span className="text-xs text-gray-500 ml-auto">
+                              <span className="text-xs text-gray-500 dark:text-gray-400 ml-auto">
                                 {new Date(
                                   task.completedAt!
                                 ).toLocaleDateString()}
@@ -131,17 +131,17 @@ function PartnersAccordion({
                         partnerTasks.tasks.filter(
                           (task) => task.isCompleted === 0
                         ).length === 0) && (
-                        <p className="text-gray-500 text-center py-4">
+                        <p className="text-gray-500 dark:text-gray-400 text-center py-4">
                           No active tasks
                         </p>
                       )}
                     </div>
                   </div>
 
-                  <div className="pt-4 border-t border-gray-200">
+                  <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
                     <button
                       onClick={() => onUnpairPartner(partner.partnershipId)}
-                      className="text-red-600 hover:text-red-700 text-sm font-medium transition-colors duration-200"
+                      className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 text-sm font-medium transition-colors duration-200"
                     >
                       Unpair with {partner.name}
                     </button>
@@ -172,14 +172,14 @@ function InvitePartnerForm({
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
-        <p className="text-gray-600">
+        <p className="text-gray-600 dark:text-gray-300">
           Send an invitation to someone you&apos;d like to partner with on
           tasks.
         </p>
         {onShowEmailPreview && process.env.NODE_ENV === "development" && (
           <button
             onClick={onShowEmailPreview}
-            className="text-sm text-indigo-600 hover:text-indigo-800"
+            className="text-sm text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300"
           >
             Preview Emails
           </button>
@@ -189,7 +189,7 @@ function InvitePartnerForm({
         <div>
           <label
             htmlFor="partner-email"
-            className="block text-sm font-medium text-gray-700 mb-1"
+            className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
           >
             Email Address
           </label>
@@ -199,7 +199,7 @@ function InvitePartnerForm({
             value={partnerEmail}
             onChange={(e) => onPartnerEmailChange(e.target.value)}
             placeholder="Enter partner's email address..."
-            className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+            className="w-full border border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
             disabled={loading}
           />
         </div>
@@ -241,8 +241,8 @@ export function PartnersSection({
   onShowEmailPreview,
 }: PartnersSectionProps) {
   return (
-    <div className="bg-white rounded-lg shadow p-6">
-      <h2 className="text-xl font-semibold text-gray-900 mb-6">
+    <div className="bg-white dark:bg-gray-900 rounded-lg shadow p-6">
+      <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-6">
         {partners.length === 1 ? "Partner" : "Partners"}
       </h2>
 
@@ -253,8 +253,8 @@ export function PartnersSection({
           onUnpairPartner={onUnpairPartner}
         />
       ) : (
-        <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-          <p className="text-gray-600 text-center">
+        <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+          <p className="text-gray-600 dark:text-gray-300 text-center">
             No partners yet. Send an invitation below to get started!
           </p>
         </div>

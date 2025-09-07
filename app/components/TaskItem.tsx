@@ -67,8 +67,8 @@ export function TaskItem({
           <div
             className={`flex-1 flex items-center justify-between p-3 border rounded-lg ${
               isActiveTask
-                ? "border-indigo-200 bg-indigo-50"
-                : "border-gray-200"
+                ? "border-indigo-200 dark:border-indigo-800 bg-indigo-50 dark:bg-indigo-950/30"
+                : "border-gray-200 dark:border-gray-700"
             }`}
           >
             <div
@@ -92,17 +92,19 @@ export function TaskItem({
               }
               className={`min-w-0 flex-1 ${
                 task.isCompleted === 1
-                  ? "text-gray-500 line-through"
-                  : "text-gray-900"
+                  ? "text-gray-500 dark:text-gray-400 line-through"
+                  : "text-gray-900 dark:text-gray-100"
               } ${
                 editingTaskId === task.id
-                  ? "outline-none border-b-2 border-indigo-500 bg-yellow-50 px-2 py-1 rounded"
+                  ? "outline-none border-b-2 border-indigo-500 bg-yellow-50 dark:bg-yellow-950/20 px-2 py-1 rounded"
                   : task.isCompleted === 0
-                  ? `cursor-pointer hover:${
-                      isActiveTask ? "bg-indigo-100" : "bg-gray-50"
-                    } px-2 py-1 rounded`
-                  : "px-2 py-1 rounded"
-              }`}
+                    ? `cursor-pointer hover:${
+                        isActiveTask
+                          ? "bg-indigo-100 dark:bg-indigo-950/40"
+                          : "bg-gray-50 dark:bg-gray-800"
+                      } px-2 py-1 rounded`
+                    : "px-2 py-1 rounded"
+              } bg-transparent dark:bg-transparent`}
             >
               {task.title}
             </div>
@@ -111,7 +113,7 @@ export function TaskItem({
                 isActiveTask && (
                   <button
                     onClick={() => onStartCompletion(task.id)}
-                    className="flex items-center justify-center w-10 h-10 text-green-600 hover:text-green-800 rounded-lg"
+                    className="flex items-center justify-center w-10 h-10 text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300 rounded-lg"
                     aria-label={`Complete task: ${task.title}`}
                     title={`Complete task: ${task.title}`}
                   >
@@ -120,8 +122,10 @@ export function TaskItem({
                 )
               ) : (
                 <div className="flex items-center space-x-2">
-                  <span className="text-green-600 text-lg">✓</span>
-                  <span className="text-sm text-gray-500">
+                  <span className="text-green-600 dark:text-green-400 text-lg">
+                    ✓
+                  </span>
+                  <span className="text-sm text-gray-500 dark:text-gray-400">
                     {new Date(task.completedAt!).toLocaleDateString()}
                   </span>
                 </div>
@@ -130,7 +134,7 @@ export function TaskItem({
           </div>
           <button
             onClick={() => onDeleteTask(task.id, task.title)}
-            className="flex items-center justify-center px-4 text-red-600 hover:text-red-800 hover:bg-red-50 border border-red-200 rounded-lg"
+            className="flex items-center justify-center px-4 text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-950/30 border border-red-200 dark:border-gray-700 hover:border-red-300 dark:hover:border-gray-600 rounded-lg transition-colors duration-200"
             aria-label={`Delete task: ${task.title}`}
             title={`Delete task: ${task.title}`}
           >

@@ -46,7 +46,9 @@ export function TaskList({
     <div>
       <div
         className={`text-sm font-medium mb-2 ${
-          isActiveList ? "text-indigo-700" : "text-gray-700"
+          isActiveList
+            ? "text-indigo-700 dark:text-indigo-400"
+            : "text-gray-700 dark:text-gray-300"
         }`}
       >
         {title}
@@ -59,9 +61,9 @@ export function TaskList({
             className={`rounded-lg border-2 border-dashed ${
               snapshot.isDraggingOver
                 ? tasks.length > 0
-                  ? "border-blue-400 bg-blue-50 min-h-[120px]"
-                  : "border-blue-400 bg-blue-50"
-                : "border-gray-300 bg-gray-50"
+                  ? "border-blue-400 bg-blue-50 dark:bg-blue-900/20 min-h-[120px]"
+                  : "border-blue-400 bg-blue-50 dark:bg-blue-900/20"
+                : "border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800"
             } p-2`}
           >
             {tasks.length > 0 ? (
@@ -86,7 +88,7 @@ export function TaskList({
                 ))}
               </div>
             ) : (
-              <div className="flex items-center justify-center h-20 text-gray-500">
+              <div className="flex items-center justify-center h-20 text-gray-500 dark:text-gray-400">
                 <p>No {isActiveList ? "active" : "master"} tasks yet.</p>
               </div>
             )}

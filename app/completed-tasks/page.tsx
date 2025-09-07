@@ -106,24 +106,26 @@ export default function CompletedTasks() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
       <DashboardHeader onSignOut={handleSignOut} />
 
       {/* Error Display */}
       {error && (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
-          <div className="bg-red-50 border border-red-200 rounded-md p-4">
+          <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-md p-4">
             <div className="flex">
               <div className="flex-shrink-0">
-                <span className="text-red-400">⚠️</span>
+                <span className="text-red-600 dark:text-red-400">⚠️</span>
               </div>
               <div className="ml-3">
-                <p className="text-sm text-red-800">{error}</p>
+                <p className="text-sm text-red-800 dark:text-red-200">
+                  {error}
+                </p>
               </div>
               <div className="ml-auto pl-3">
                 <button
                   onClick={() => setError("")}
-                  className="text-red-400 hover:text-red-600"
+                  className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 transition-colors duration-200"
                 >
                   ×
                 </button>
@@ -136,9 +138,9 @@ export default function CompletedTasks() {
       {/* Main Content */}
       <main className="max-w-4xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0">
-          <div className="bg-white rounded-lg shadow p-6">
+          <div className="bg-white dark:bg-gray-900 rounded-lg shadow p-6">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-semibold text-gray-900">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
                 Completed Tasks ({completedTasks.length})
               </h2>
             </div>
@@ -149,7 +151,7 @@ export default function CompletedTasks() {
                 {[...Array(3)].map((_, i) => (
                   <div
                     key={i}
-                    className="flex items-center justify-between p-4 border border-gray-200 rounded-lg bg-gray-50"
+                    className="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800"
                   >
                     <div className="flex-1">
                       <Skeleton width="70%" height={20} className="mb-2" />
@@ -168,20 +170,20 @@ export default function CompletedTasks() {
                   completedTasks.map((task) => (
                     <div
                       key={task.id}
-                      className="flex items-center justify-between p-4 border border-gray-200 rounded-lg bg-gray-50"
+                      className="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800"
                     >
                       <div className="flex-1">
-                        <div className="text-gray-900 font-medium">
+                        <div className="text-gray-900 dark:text-gray-100 font-medium">
                           {task.title}
                         </div>
-                        <div className="text-sm text-gray-500 mt-1">
+                        <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                           Completed on{" "}
                           {new Date(task.completedAt!).toLocaleDateString()}
                         </div>
                       </div>
                       <button
                         onClick={() => deleteTask(task.id, task.title)}
-                        className="flex items-center justify-center px-4 py-2 text-red-600 hover:text-red-800 hover:bg-red-50 border border-red-200 rounded-lg transition-colors duration-200 ml-4"
+                        className="flex items-center justify-center px-4 py-2 text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-950/30 border border-red-200 dark:border-gray-700 hover:border-red-300 dark:hover:border-gray-600 rounded-lg transition-colors duration-200 ml-4"
                         aria-label={`Delete completed task: ${task.title}`}
                         title={`Delete completed task: ${task.title}`}
                       >
@@ -191,7 +193,7 @@ export default function CompletedTasks() {
                   ))
                 ) : (
                   <div className="text-center py-8">
-                    <p className="text-gray-500">
+                    <p className="text-gray-500 dark:text-gray-400">
                       No completed tasks yet. Complete some tasks to see them
                       here!
                     </p>
@@ -201,10 +203,10 @@ export default function CompletedTasks() {
             )}
 
             {/* Back to Dashboard Link - positioned inside the main content box */}
-            <div className="mt-6 pt-4 border-t border-gray-200">
+            <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
               <Link
                 href="/dashboard"
-                className="inline-flex items-center text-indigo-600 hover:text-indigo-800 font-medium transition-colors duration-200"
+                className="inline-flex items-center text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300 font-medium transition-colors duration-200"
               >
                 <ArrowLeft className="w-4 h-4 mr-2" /> Back to Dashboard
               </Link>

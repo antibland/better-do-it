@@ -1,5 +1,6 @@
 import { useSession } from "@/lib/auth-client";
 import Image from "next/image";
+import Link from "next/link";
 
 interface DashboardHeaderProps {
   onSignOut: () => void;
@@ -8,11 +9,16 @@ interface DashboardHeaderProps {
 export function DashboardHeader({ onSignOut }: DashboardHeaderProps) {
   const { data: session } = useSession();
   return (
-    <header className="bg-white shadow">
+    <header className="bg-white dark:bg-gray-950 shadow">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center py-6">
           <div className="flex items-center">
-            <h1 className="text-3xl font-bold text-gray-900">Better Do It</h1>
+            <Link
+              href="/"
+              className="text-3xl font-bold text-gray-900 dark:text-gray-100 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors duration-200"
+            >
+              Better Do It
+            </Link>
           </div>
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-2">

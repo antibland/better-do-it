@@ -176,7 +176,7 @@ function InvitePartnerForm({
           Send an invitation to someone you&apos;d like to partner with on
           tasks.
         </p>
-        {onShowEmailPreview && (
+        {onShowEmailPreview && process.env.NODE_ENV === "development" && (
           <button
             onClick={onShowEmailPreview}
             className="text-sm text-indigo-600 hover:text-indigo-800"

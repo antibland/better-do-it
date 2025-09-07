@@ -659,10 +659,12 @@ export default function Dashboard() {
           confirmVariant="danger"
         />
 
-        <EmailPreview
-          isOpen={showEmailPreview}
-          onClose={() => setShowEmailPreview(false)}
-        />
+        {process.env.NODE_ENV === "development" && (
+          <EmailPreview
+            isOpen={showEmailPreview}
+            onClose={() => setShowEmailPreview(false)}
+          />
+        )}
       </div>
     </DragDropContext>
   );

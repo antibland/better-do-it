@@ -22,7 +22,7 @@ function PartnersAccordion({
   };
 
   return (
-    <div className="mb-6">
+    <div className="mb-10">
       <Accordion.Root
         type="multiple"
         value={openAccordionItems}
@@ -172,18 +172,10 @@ function InvitePartnerForm({
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
-        <p className="text-gray-600 dark:text-gray-300">
+        <p className="text-gray-600 dark:text-gray-300 text-pretty">
           Send an invitation to someone you&apos;d like to partner with on
           tasks.
         </p>
-        {onShowEmailPreview && process.env.NODE_ENV === "development" && (
-          <button
-            onClick={onShowEmailPreview}
-            className="text-sm text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300"
-          >
-            Preview Emails
-          </button>
-        )}
       </div>
       <form onSubmit={onSendInvite} className="space-y-4">
         <div>

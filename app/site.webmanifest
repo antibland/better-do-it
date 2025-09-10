@@ -1,7 +1,7 @@
 {
-  "name": "Better Do It - Collaborative Todo App",
+  "name": "Better Do It - The Collaborative Todo App",
   "short_name": "Better Do It",
-  "description": "The collaborative todo app designed for partners. Plan, track, and accomplish your goals together.",
+  "description": "Encouraging accountability by sharing progress among friends.",
   "icons": [
     {
       "src": "/icon-192.png",

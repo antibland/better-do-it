@@ -8,7 +8,6 @@ interface PartnerSectionProps {
   onPartnerEmailChange: (email: string) => void;
   onSendInvite: (e: React.FormEvent) => void;
   onUnpairPartner: () => void;
-  onShowEmailPreview?: () => void;
 }
 
 export function PartnerSection({
@@ -19,7 +18,6 @@ export function PartnerSection({
   onPartnerEmailChange,
   onSendInvite,
   onUnpairPartner,
-  onShowEmailPreview,
 }: PartnerSectionProps) {
   return (
     <div className="bg-white rounded-lg shadow p-6">
@@ -103,14 +101,6 @@ export function PartnerSection({
               Send an invitation to someone you&apos;d like to partner with on
               tasks.
             </p>
-            {onShowEmailPreview && (
-              <button
-                onClick={onShowEmailPreview}
-                className="text-sm text-indigo-600 hover:text-indigo-800 underline"
-              >
-                Preview Emails
-              </button>
-            )}
           </div>
           <form onSubmit={onSendInvite}>
             <div className="flex gap-2">

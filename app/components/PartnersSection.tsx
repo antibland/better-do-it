@@ -161,13 +161,11 @@ function InvitePartnerForm({
   loading,
   onPartnerEmailChange,
   onSendInvite,
-  onShowEmailPreview,
 }: {
   partnerEmail: string;
   loading: boolean;
   onPartnerEmailChange: (email: string) => void;
   onSendInvite: (e: React.FormEvent) => void;
-  onShowEmailPreview?: () => void;
 }) {
   return (
     <div>
@@ -217,7 +215,6 @@ interface PartnersSectionProps {
   onSendInvite: (e: React.FormEvent) => void;
   onUnpairPartner: (partnershipId: string) => void;
   onRevokeInvite: (inviteId: string) => void;
-  onShowEmailPreview?: () => void;
 }
 
 export function PartnersSection({
@@ -230,7 +227,6 @@ export function PartnersSection({
   onSendInvite,
   onUnpairPartner,
   onRevokeInvite,
-  onShowEmailPreview,
 }: PartnersSectionProps) {
   return (
     <div className="bg-white dark:bg-gray-900 rounded-lg shadow p-6">
@@ -257,7 +253,6 @@ export function PartnersSection({
         loading={loading}
         onPartnerEmailChange={onPartnerEmailChange}
         onSendInvite={onSendInvite}
-        onShowEmailPreview={onShowEmailPreview}
       />
 
       <PendingInvitesSection

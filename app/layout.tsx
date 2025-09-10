@@ -20,9 +20,8 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "Better Do It - Collaborative Todo App",
-  description:
-    "The collaborative todo app designed for partners. Plan, track, and accomplish your goals together.",
+  title: "Better Do It - The Collaborative Todo App",
+  description: "Encouraging accountability by sharing progress among friend.",
   // iOS Safari compatibility
   other: {
     "apple-mobile-web-app-capable": "yes",
@@ -30,9 +29,9 @@ export const metadata: Metadata = {
   },
   // Open Graph metadata for social media sharing
   openGraph: {
-    title: "Better Do It - Collaborative Todo App",
+    title: "Better Do It - The Collaborative Todo App",
     description:
-      "The collaborative todo app designed for partners. Plan, track, and accomplish your goals together.",
+      "Encouraging accountability by sharing progress among friends.",
     type: "website",
     locale: "en_US",
     siteName: "Better Do It",
@@ -40,9 +39,9 @@ export const metadata: Metadata = {
   // Twitter Card metadata
   twitter: {
     card: "summary_large_image",
-    title: "Better Do It - Collaborative Todo App",
+    title: "Better Do It - The Collaborative Todo App",
     description:
-      "The collaborative todo app designed for partners. Plan, track, and accomplish your goals together.",
+      "Encouraging accountability by sharing progress among friends.",
   },
 };
 

@@ -11,7 +11,6 @@ import { SuccessDisplay } from "@/app/components/SuccessDisplay";
 import { ConfirmDialog } from "@/app/components/ConfirmDialog";
 import { TasksSection } from "@/app/components/TasksSection";
 import { PartnersSection } from "@/app/components/PartnersSection";
-import { EmailPreview } from "@/app/components/EmailPreview";
 import {
   TasksResponse,
   Partner,
@@ -58,8 +57,6 @@ export default function Dashboard() {
     partnerName: string;
   } | null>(null);
 
-  // Email preview state
-  const [showEmailPreview, setShowEmailPreview] = useState(false);
 
   useEffect(
     function redirectUnauthenticatedUsers() {
@@ -631,7 +628,6 @@ export default function Dashboard() {
                 onSendInvite={sendInvite}
                 onUnpairPartner={unpairPartner}
                 onRevokeInvite={revokeInvite}
-                onShowEmailPreview={() => setShowEmailPreview(true)}
               />
             </div>
           </div>
@@ -659,12 +655,6 @@ export default function Dashboard() {
           confirmVariant="danger"
         />
 
-        {process.env.NODE_ENV === "development" && (
-          <EmailPreview
-            isOpen={showEmailPreview}
-            onClose={() => setShowEmailPreview(false)}
-          />
-        )}
       </div>
     </DragDropContext>
   );

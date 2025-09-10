@@ -53,9 +53,7 @@ export default function Home() {
             </span>
           </h1>
           <p className="mt-3 max-w-md mx-auto text-base text-gray-500 dark:text-gray-300 sm:text-lg md:mt-5 md:text-xl md:max-w-3xl">
-            The collaborative todo app designed for partners. Plan, track, and
-            accomplish your goals together with seamless sharing and real-time
-            updates.
+            Encouraging accountability by sharing progress among friends.
           </p>
 
           {!isPending && !session && (

@@ -57,7 +57,6 @@ export default function Dashboard() {
     partnerName: string;
   } | null>(null);
 
-
   useEffect(
     function redirectUnauthenticatedUsers() {
       if (!isPending && !session) {
@@ -545,9 +544,7 @@ export default function Dashboard() {
         });
 
         if (response.ok) {
-          // Server update succeeded - update the UI state
-          setTasks(originalTasks);
-          setError(""); // Clear any previous errors
+          setError("");
         } else {
           // Server update failed - show error and reload tasks to get correct state
           const errorData = await response.json();
@@ -654,7 +651,6 @@ export default function Dashboard() {
           cancelText="Cancel"
           confirmVariant="danger"
         />
-
       </div>
     </DragDropContext>
   );

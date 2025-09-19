@@ -164,7 +164,7 @@ FROM_NAME=Better Do It
 
 # App URLs
 NEXT_PUBLIC_APP_URL=http://localhost:3000
-PRODUCTION_APP_URL=https://better-do-it.vercel.app
+PRODUCTION_APP_URL=https://better-do-it.com
 ```
 
 ## Email Templates

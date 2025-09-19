@@ -11,7 +11,7 @@ Tip: Copy the exact Cookie header from your browser DevTools → Application/Sto
 BASE=http://localhost:3000
 
 # For production debugging
-BASE=https://better-do-it.vercel.app
+BASE=https://better-do-it.com
 
 # Paste the full cookie string here. Use the better-do-it.session_token cookie.
 # Example (use DevTools as source of truth):

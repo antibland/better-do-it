@@ -150,10 +150,10 @@ Better Auth handles user authentication with:
 # Required
 POSTGRES_URL=postgresql://...
 BETTER_AUTH_SECRET=your-secret-key
-BETTER_AUTH_URL=https://better-do-it.vercel.app
+BETTER_AUTH_URL=https://better-do-it.com
 
 # Optional
-NEXT_PUBLIC_BETTER_AUTH_URL=https://better-do-it.vercel.app
+NEXT_PUBLIC_BETTER_AUTH_URL=https://better-do-it.com
 ```
 
 ## Contributing

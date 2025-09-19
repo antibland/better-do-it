@@ -136,24 +136,35 @@ export async function POST(req: Request) {
           `;
           const listTasks = listTasksResult.rows || [];
 
-          // Calculate new sort order for the moved task
+          // Calculate new sort order for the moved task using integer-based approach
           let newSortOrder: number;
 
           if (destinationIndex === 0) {
             // Moving to the beginning
             newSortOrder =
-              listTasks.length > 0 ? listTasks[0].sort_order - 1 : 0;
+              listTasks.length > 0 ? listTasks[0].sort_order - 1000 : 1000;
           } else if (destinationIndex >= listTasks.length) {
             // Moving to the end
             newSortOrder =
               listTasks.length > 0
-                ? listTasks[listTasks.length - 1].sort_order + 1
-                : 0;
+                ? listTasks[listTasks.length - 1].sort_order + 1000
+                : 1000;
           } else {
             // Moving to a specific position between two tasks
             const beforeTask = listTasks[destinationIndex - 1];
             const afterTask = listTasks[destinationIndex];
-            newSortOrder = (beforeTask.sort_order + afterTask.sort_order) / 2;
+            // Use integer division with gap to avoid precision issues
+            newSortOrder = Math.floor(
+              (beforeTask.sort_order + afterTask.sort_order) / 2
+            );
+
+            // If we get the same value, add a small offset to ensure proper ordering
+            if (
+              newSortOrder === beforeTask.sort_order ||
+              newSortOrder === afterTask.sort_order
+            ) {
+              newSortOrder = beforeTask.sort_order + 1;
+            }
           }
 
           // Update the moved task's sort order
@@ -174,20 +185,33 @@ export async function POST(req: Request) {
             `;
             const activeTasks = activeTasksResult.rows || [];
 
-            // Calculate the new sort order based on destination index
+            // Calculate the new sort order based on destination index using integer-based approach
             let newSortOrder: number;
             if (destinationIndex === 0) {
               newSortOrder =
-                activeTasks.length > 0 ? activeTasks[0].sort_order - 1 : 0;
+                activeTasks.length > 0
+                  ? activeTasks[0].sort_order - 1000
+                  : 1000;
             } else if (destinationIndex >= activeTasks.length) {
               newSortOrder =
                 activeTasks.length > 0
-                  ? activeTasks[activeTasks.length - 1].sort_order + 1
-                  : 0;
+                  ? activeTasks[activeTasks.length - 1].sort_order + 1000
+                  : 1000;
             } else {
               const beforeTask = activeTasks[destinationIndex - 1];
               const afterTask = activeTasks[destinationIndex];
-              newSortOrder = (beforeTask.sort_order + afterTask.sort_order) / 2;
+              // Use integer division with gap to avoid precision issues
+              newSortOrder = Math.floor(
+                (beforeTask.sort_order + afterTask.sort_order) / 2
+              );
+
+              // If we get the same value, add a small offset to ensure proper ordering
+              if (
+                newSortOrder === beforeTask.sort_order ||
+                newSortOrder === afterTask.sort_order
+              ) {
+                newSortOrder = beforeTask.sort_order + 1;
+              }
             }
 
             await sql`
@@ -205,26 +229,78 @@ export async function POST(req: Request) {
             `;
             const masterTasks = masterTasksResult.rows || [];
 
-            // Calculate the new sort order based on destination index
+            // Calculate the new sort order based on destination index using integer-based approach
             let newSortOrder: number;
             if (destinationIndex === 0) {
               newSortOrder =
-                masterTasks.length > 0 ? masterTasks[0].sort_order - 1 : 0;
+                masterTasks.length > 0
+                  ? masterTasks[0].sort_order - 1000
+                  : 1000;
             } else if (destinationIndex >= masterTasks.length) {
               newSortOrder =
                 masterTasks.length > 0
-                  ? masterTasks[masterTasks.length - 1].sort_order + 1
-                  : 0;
+                  ? masterTasks[masterTasks.length - 1].sort_order + 1000
+                  : 1000;
             } else {
               const beforeTask = masterTasks[destinationIndex - 1];
               const afterTask = masterTasks[destinationIndex];
-              newSortOrder = (beforeTask.sort_order + afterTask.sort_order) / 2;
+              // Use integer division with gap to avoid precision issues
+              newSortOrder = Math.floor(
+                (beforeTask.sort_order + afterTask.sort_order) / 2
+              );
+
+              // If we get the same value, add a small offset to ensure proper ordering
+              if (
+                newSortOrder === beforeTask.sort_order ||
+                newSortOrder === afterTask.sort_order
+              ) {
+                newSortOrder = beforeTask.sort_order + 1;
+              }
             }
 
             await sql`
               UPDATE task
               SET sort_order = ${newSortOrder}
               WHERE id = ${draggableId} AND userid = ${userId}
+            `;
+          }
+        }
+
+        // Optional: Rebalance sort orders if they're getting too close together
+        // This prevents precision issues and maintains good performance
+        const rebalanceThreshold = 10; // Rebalance if gap is less than 10
+        const currentListTasksResult = await sql`
+          SELECT id, sort_order
+          FROM task
+          WHERE userid = ${userId} 
+            AND isactive = ${destinationDroppableId === "active-tasks" ? 1 : 0}
+            AND iscompleted = 0
+          ORDER BY sort_order ASC
+        `;
+        const currentListTasks = currentListTasksResult.rows || [];
+
+        // Check if we need to rebalance (gap between consecutive tasks is too small)
+        let needsRebalance = false;
+        for (let i = 1; i < currentListTasks.length; i++) {
+          const gap =
+            currentListTasks[i].sort_order - currentListTasks[i - 1].sort_order;
+          if (gap < rebalanceThreshold) {
+            needsRebalance = true;
+            break;
+          }
+        }
+
+        if (needsRebalance) {
+          console.log(
+            `Reorder API: Rebalancing sort orders for user ${userId}`
+          );
+          // Rebalance by assigning new sort orders with gaps of 1000
+          for (let i = 0; i < currentListTasks.length; i++) {
+            const newSortOrder = (i + 1) * 1000;
+            await sql`
+              UPDATE task
+              SET sort_order = ${newSortOrder}
+              WHERE id = ${currentListTasks[i].id} AND userid = ${userId}
             `;
           }
         }

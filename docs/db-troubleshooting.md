@@ -255,14 +255,14 @@ Error: BETTER_AUTH_URL not configured
 
    ```
    BETTER_AUTH_SECRET=your-secret-key
-   BETTER_AUTH_URL=https://better-do-it.vercel.app
-   NEXT_PUBLIC_BETTER_AUTH_URL=https://better-do-it.vercel.app
+   BETTER_AUTH_URL=https://better-do-it.com
+   NEXT_PUBLIC_BETTER_AUTH_URL=https://better-do-it.com
    POSTGRES_URL=postgresql://user:pass@host:port/db
    ```
 
 2. **Verify configuration**:
    ```bash
-   curl -s https://better-do-it.vercel.app/api/test-auth | jq
+   curl -s https://better-do-it.com/api/test-auth | jq
    ```
 
 **Prevention:**

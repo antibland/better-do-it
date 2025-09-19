@@ -67,11 +67,6 @@ export default function Dashboard() {
   );
 
   const loadTasks = useCallback(async () => {
-    // Don't load tasks if we're currently dragging
-    if (isDragging) {
-      return;
-    }
-
     try {
       const response = await fetch("/api/tasks");
       if (response.ok) {
@@ -83,7 +78,7 @@ export default function Dashboard() {
     } catch {
       setError("Failed to load tasks");
     }
-  }, [isDragging]);
+  }, []);
 
   const loadPartners = useCallback(async () => {
     try {

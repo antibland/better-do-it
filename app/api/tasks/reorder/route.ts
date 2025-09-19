@@ -153,7 +153,9 @@ export async function POST(req: Request) {
             // Moving to a specific position between two tasks
             const beforeTask = listTasks[destinationIndex - 1];
             const afterTask = listTasks[destinationIndex];
-            newSortOrder = (beforeTask.sort_order + afterTask.sort_order) / 2;
+            newSortOrder = Math.floor(
+              (beforeTask.sort_order + afterTask.sort_order) / 2
+            );
           }
 
           // Update the moved task's sort order
@@ -187,7 +189,9 @@ export async function POST(req: Request) {
             } else {
               const beforeTask = activeTasks[destinationIndex - 1];
               const afterTask = activeTasks[destinationIndex];
-              newSortOrder = (beforeTask.sort_order + afterTask.sort_order) / 2;
+              newSortOrder = Math.floor(
+                (beforeTask.sort_order + afterTask.sort_order) / 2
+              );
             }
 
             await sql`
@@ -218,7 +222,9 @@ export async function POST(req: Request) {
             } else {
               const beforeTask = masterTasks[destinationIndex - 1];
               const afterTask = masterTasks[destinationIndex];
-              newSortOrder = (beforeTask.sort_order + afterTask.sort_order) / 2;
+              newSortOrder = Math.floor(
+                (beforeTask.sort_order + afterTask.sort_order) / 2
+              );
             }
 
             await sql`
@@ -338,7 +344,9 @@ export async function POST(req: Request) {
             // Moving to a specific position between two tasks
             const beforeTask = listTasks[destinationIndex - 1];
             const afterTask = listTasks[destinationIndex];
-            newSortOrder = (beforeTask.sortOrder + afterTask.sortOrder) / 2;
+            newSortOrder = Math.floor(
+              (beforeTask.sortOrder + afterTask.sortOrder) / 2
+            );
           }
 
           // Update the moved task's sort order
@@ -373,7 +381,9 @@ export async function POST(req: Request) {
             } else {
               const beforeTask = activeTasks[destinationIndex - 1];
               const afterTask = activeTasks[destinationIndex];
-              newSortOrder = (beforeTask.sortOrder + afterTask.sortOrder) / 2;
+              newSortOrder = Math.floor(
+                (beforeTask.sortOrder + afterTask.sortOrder) / 2
+              );
             }
 
             appDb
@@ -405,7 +415,9 @@ export async function POST(req: Request) {
             } else {
               const beforeTask = masterTasks[destinationIndex - 1];
               const afterTask = masterTasks[destinationIndex];
-              newSortOrder = (beforeTask.sortOrder + afterTask.sortOrder) / 2;
+              newSortOrder = Math.floor(
+                (beforeTask.sortOrder + afterTask.sortOrder) / 2
+              );
             }
 
             appDb

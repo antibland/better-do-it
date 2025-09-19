@@ -545,6 +545,8 @@ export default function Dashboard() {
 
         if (response.ok) {
           setError("");
+          // Reload tasks from server to show the updated order
+          await loadTasks();
         } else {
           // Server update failed - show error and reload tasks to get correct state
           const errorData = await response.json();

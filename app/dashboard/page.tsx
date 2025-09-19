@@ -544,9 +544,9 @@ export default function Dashboard() {
         });
 
         if (response.ok) {
-          setError("");
-          // Reload tasks from server to show the updated order
-          await loadTasks();
+          // Server update succeeded - update the UI state immediately
+          setTasks(originalTasks);
+          setError(""); // Clear any previous errors
         } else {
           // Server update failed - show error and reload tasks to get correct state
           const errorData = await response.json();

@@ -230,8 +230,14 @@ export async function POST(req: Request) {
         }
 
         await sql`COMMIT`;
+
+        // Verify the update was committed by reading the task back
+        const verifyResult = await sql`
+          SELECT sort_order FROM task WHERE id = ${draggableId} AND userid = ${userId}
+        `;
+
         console.log(
-          `Reorder API: Successfully reordered task ${draggableId} for user ${userId}`
+          `Reorder API: Successfully reordered task ${draggableId} for user ${userId}, new sort_order: ${verifyResult.rows?.[0]?.sort_order}`
         );
         return Response.json({ success: true });
       } catch (error) {

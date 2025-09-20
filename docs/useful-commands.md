@@ -8,7 +8,7 @@ This file contains the most important commands for development, debugging, and p
 
 ```bash
 # Check current schema (production)
-curl -s https://better-do-it.vercel.app/api/check-schema | jq
+curl -s https://better-do-it.com/api/health-check-public | jq
 
 # Check local schema
 sqlite3 sqlite.db ".schema task"
@@ -18,7 +18,7 @@ sqlite3 sqlite.db ".schema task"
 
 ```bash
 # Run migration (production)
-curl -X POST https://better-do-it.vercel.app/api/migrate-sort-order | jq
+curl -X POST https://better-do-it.com/api/migrate-sort-order | jq
 
 # Run migration (local)
 curl -X POST http://localhost:3000/api/migrate-sort-order | jq
@@ -28,7 +28,7 @@ curl -X POST http://localhost:3000/api/migrate-sort-order | jq
 
 ```bash
 # Test production database
-curl -s https://better-do-it.vercel.app/api/test-db | jq
+curl -s https://better-do-it.com/api/health-check-public | jq
 
 # Test local database
 curl -s http://localhost:3000/api/test-db | jq
@@ -66,15 +66,15 @@ COMMIT;
 
 ```bash
 # Get all tasks (requires authentication)
-curl -s https://better-do-it.vercel.app/api/tasks | jq
+curl -s https://better-do-it.com/api/tasks | jq
 
 # Create a task (requires authentication)
-curl -X POST https://better-do-it.vercel.app/api/tasks \
+curl -X POST https://better-do-it.com/api/tasks \
   -H "Content-Type: application/json" \
   -d '{"title": "Test task"}' | jq
 
 # Reorder tasks (requires authentication)
-curl -X POST https://better-do-it.vercel.app/api/tasks/reorder \
+curl -X POST https://better-do-it.com/api/tasks/reorder \
   -H "Content-Type: application/json" \
   -d '{"draggableId": "task-id", "source": {"droppableId": "master-tasks", "index": 0}, "destination": {"droppableId": "active-tasks", "index": 0}}' | jq
 ```
@@ -83,10 +83,10 @@ curl -X POST https://better-do-it.vercel.app/api/tasks/reorder \
 
 ```bash
 # Get partner info
-curl -s https://better-do-it.vercel.app/api/partner | jq
+curl -s https://better-do-it.com/api/partner | jq
 
 # Get partner tasks
-curl -s https://better-do-it.vercel.app/api/partner/tasks | jq
+curl -s https://better-do-it.com/api/partner/tasks | jq
 ```
 
 ## 🔧 **Development Commands**
@@ -97,10 +97,10 @@ curl -s https://better-do-it.vercel.app/api/partner/tasks | jq
 npm run dev
 ```
 
-### Run Migration Safety Check
+### Test Production Invite Flow
 
 ```bash
-node scripts/migration-safety.js
+npx tsx test-invite-flow.ts
 ```
 
 ### Check Build Status
@@ -115,7 +115,7 @@ npm run build
 
 ```bash
 # Production health check
-curl -s https://better-do-it.vercel.app/api/test-db | jq
+curl -s https://better-do-it.com/api/health-check-public | jq
 
 # Check for errors in Vercel logs
 # Go to Vercel Dashboard → Functions → Logs
@@ -140,13 +140,13 @@ sqlite3 sqlite.db "SELECT COUNT(*) as total_users FROM user;"
 
 ```bash
 # 1. Check current schema
-curl -s https://better-do-it.vercel.app/api/check-schema | jq
+curl -s https://better-do-it.com/api/health-check-public | jq
 
 # 2. Run migration if needed
-curl -X POST https://better-do-it.vercel.app/api/migrate-sort-order | jq
+curl -X POST https://better-do-it.com/api/migrate-sort-order | jq
 
 # 3. Test database connectivity
-curl -s https://better-do-it.vercel.app/api/test-db | jq
+curl -s https://better-do-it.com/api/health-check-public | jq
 
 # 4. If still broken, check Vercel logs
 # Vercel Dashboard → Functions → Logs

@@ -1,0 +1,44 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+# Run health checks before commit
+echo "🔍 Running health checks before commit..."
+
+# Check if dev server is running
+if ! curl -s -f http://localhost:3000 > /dev/null 2>&1; then
+  echo "❌ Development server is not running. Please start with: npm run dev"
+  echo "   Or skip health checks with: git commit --no-verify"
+  exit 1
+fi
+
+# Check if jq is available
+if ! command -v jq &> /dev/null; then
+  echo "❌ jq is required for health check parsing. Install with: brew install jq"
+  echo "   Or skip health checks with: git commit --no-verify"
+  exit 1
+fi
+
+# Run health check
+HEALTH_RESPONSE=$(curl -s http://localhost:3000/api/health-check-public)
+
+# Check if curl succeeded
+if [ $? -ne 0 ]; then
+  echo "❌ Failed to reach health check endpoint"
+  echo "   Or skip health checks with: git commit --no-verify"
+  exit 1
+fi
+
+HEALTH_STATUS=$(echo "$HEALTH_RESPONSE" | jq -r '.overall // "unknown"')
+
+if [ "$HEALTH_STATUS" = "unhealthy" ]; then
+  echo "❌ Health checks failed! Cannot commit with unhealthy system."
+  echo ""
+  echo "Failed checks:"
+  echo "$HEALTH_RESPONSE" | jq -r '.checks[] | select(.status == "fail") | "- " + .name + ": " + .message'
+  echo ""
+  echo "Visit http://localhost:3000/health for detailed information"
+  echo "Or skip health checks with: git commit --no-verify"
+  exit 1
+fi
+
+echo "✅ Health checks passed. Proceeding with commit."

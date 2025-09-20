@@ -1,4 +1,4 @@
-import { NextRequest } from "next/server";
+// Health check endpoint - no imports needed
 
 /**
  * Public Health Check API Endpoint
@@ -6,7 +6,7 @@ import { NextRequest } from "next/server";
  * This endpoint provides comprehensive health monitoring without requiring authentication.
  * It tests all critical system components that should be accessible publicly.
  */
-export async function GET(req: NextRequest) {
+export async function GET() {
   const checks: Array<{
     name: string;
     status: "pass" | "fail";
@@ -24,7 +24,7 @@ export async function GET(req: NextRequest) {
     const checkStart = Date.now();
     const check = {
       name,
-      status: "pass" as const,
+      status: "pass" as "pass" | "fail",
       message: "Running...",
       duration: 0,
     };
@@ -83,18 +83,19 @@ export async function GET(req: NextRequest) {
 
       // Check that all required tables exist
       const requiredTables = ["user", "task", "partnership", "invite"];
-      const existingTables = await appDb
+      const existingTables = (await appDb
         .prepare(
           `
         SELECT name FROM sqlite_master 
         WHERE type='table' AND name IN (${requiredTables.map(() => "?").join(",")})
       `
         )
-        .all(requiredTables);
+        .all(requiredTables)) as Array<{ name: string }>;
 
       if (existingTables.length !== requiredTables.length) {
         const missingTables = requiredTables.filter(
-          (table) => !existingTables.some((t: any) => t.name === table)
+          (table) =>
+            !existingTables.some((t: { name: string }) => t.name === table)
         );
         throw new Error(`Missing tables: ${missingTables.join(", ")}`);
       }
@@ -125,13 +126,13 @@ export async function GET(req: NextRequest) {
       for (const endpoint of endpoints) {
         try {
           const response = await fetch(`${baseUrl}${endpoint}`, {
-            signal: AbortSignal.timeout(5000) // 5 second timeout
+            signal: AbortSignal.timeout(5000), // 5 second timeout
           });
           // Accept 200 (OK) or 401 (Unauthorized) as accessible
           if (response.ok || response.status === 401) {
             accessibleCount++;
           }
-        } catch (error) {
+        } catch {
           // Endpoint not accessible
         }
       }

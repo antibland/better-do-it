@@ -49,10 +49,12 @@ export default function HealthPage() {
       console.log("Health check data received:", data);
 
       // Convert any "warning" status to "pass" - we only want pass/fail
-      const simplifiedChecks = data.checks.map((check: any) => ({
-        ...check,
-        status: check.status === "warning" ? "pass" : check.status,
-      }));
+      const simplifiedChecks = data.checks.map(
+        (check: { status: string; [key: string]: unknown }) => ({
+          ...check,
+          status: check.status === "warning" ? "pass" : check.status,
+        })
+      );
 
       setReport({
         overall: data.overall === "degraded" ? "healthy" : data.overall,
@@ -97,7 +99,7 @@ export default function HealthPage() {
     }, 30000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [isRunning]);
 
   /**
    * Get status color classes

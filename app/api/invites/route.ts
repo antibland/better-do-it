@@ -185,6 +185,14 @@ export async function POST(req: Request) {
     );
   }
 
+  // Prevent self-invites
+  if (inviteeEmail === session.user.email?.toLowerCase()) {
+    return Response.json(
+      { error: "You cannot invite yourself as a partner" },
+      { status: 400 }
+    );
+  }
+
   // Check if partnership already exists between these users
   const isProduction = process.env.NODE_ENV === "production";
   let existingPartnership;

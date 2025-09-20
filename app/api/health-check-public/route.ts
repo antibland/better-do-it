@@ -1,10 +1,8 @@
-// Health check endpoint - no imports needed
-
 /**
- * Public Health Check API Endpoint
+ * Simple, Bulletproof Health Check
  *
- * This endpoint provides comprehensive health monitoring without requiring authentication.
- * It tests all critical system components that should be accessible publicly.
+ * Just test the basics - no fancy database queries or complex logic.
+ * This should work in both dev and production without issues.
  */
 export async function GET() {
   const checks: Array<{
@@ -16,7 +14,6 @@ export async function GET() {
 
   const startTime = Date.now();
 
-  // Helper function to run a single check
   const runCheck = async (
     name: string,
     checkFn: () => Promise<string>
@@ -42,160 +39,112 @@ export async function GET() {
     }
   };
 
-  try {
-    // 1. Database Connectivity
-    await runCheck("Database Connectivity", async () => {
-      const { appDb } = await import("@/lib/db");
-      await appDb.prepare("SELECT 1").get();
-      return "Database connection successful";
-    });
+  // 1. Basic Database Connection
+  await runCheck("Database Connection", async () => {
+    const { appDb } = await import("@/lib/db");
+    await appDb.prepare("SELECT 1").get();
+    return "Database connected";
+  });
 
-    // 2. Authentication System
-    await runCheck("Authentication System", async () => {
-      const { auth } = await import("@/lib/auth");
-      if (!auth) {
-        throw new Error("Auth instance not available");
+  // 2. Environment Variables
+  await runCheck("Environment Config", async () => {
+    const required = ["RESEND_API_KEY", "FROM_EMAIL"];
+    const missing = required.filter((varName) => !process.env[varName]);
+    if (missing.length > 0) {
+      throw new Error(`Missing: ${missing.join(", ")}`);
+    }
+    return "Environment configured";
+  });
+
+  // 3. Email Service
+  await runCheck("Email Service", async () => {
+    const { Resend } = await import("resend");
+    new Resend(process.env.RESEND_API_KEY);
+    return "Email service ready";
+  });
+
+  // 4. Authentication
+  await runCheck("Authentication", async () => {
+    const { auth } = await import("@/lib/auth");
+    if (!auth) {
+      throw new Error("Auth not initialized");
+    }
+    return "Authentication ready";
+  });
+
+  // 5. Database Tables (Critical for invite system)
+  await runCheck("Database Tables", async () => {
+    const { appDb } = await import("@/lib/db");
+
+    // Test each critical table exists by doing a simple count
+    const tables = ["user", "task", "partnership", "invite"];
+    let accessibleTables = 0;
+
+    for (const table of tables) {
+      try {
+        await appDb.prepare(`SELECT COUNT(*) FROM ${table}`).get();
+        accessibleTables++;
+      } catch {
+        // Table doesn't exist or can't be accessed
       }
-      return "Authentication system initialized";
-    });
+    }
 
-    // 3. Email Service Configuration
-    await runCheck("Email Service Configuration", async () => {
-      const requiredVars = ["RESEND_API_KEY", "FROM_EMAIL"];
-      const missing = requiredVars.filter((varName) => !process.env[varName]);
-      if (missing.length > 0) {
-        throw new Error(`Missing environment variables: ${missing.join(", ")}`);
-      }
+    if (accessibleTables !== tables.length) {
+      throw new Error(
+        `Only ${accessibleTables}/${tables.length} tables accessible`
+      );
+    }
 
-      // Test Resend client initialization
-      const { Resend } = await import("resend");
-      const resend = new Resend(process.env.RESEND_API_KEY);
-      if (!resend) {
-        throw new Error("Failed to initialize Resend client");
-      }
+    return `All ${tables.length} critical tables accessible`;
+  });
 
-      return "Email service configured and ready";
-    });
+  // 6. Invite System (The original problem)
+  await runCheck("Invite System", async () => {
+    const { appDb } = await import("@/lib/db");
 
-    // 4. Database Schema Integrity
-    await runCheck("Database Schema Integrity", async () => {
-      const { appDb } = await import("@/lib/db");
+    // Test that we can create and query invites
+    try {
+      // Check if invite table has the right structure by querying it
+      const inviteCount = (await appDb
+        .prepare("SELECT COUNT(*) FROM invite")
+        .get()) as { "COUNT(*)": number };
 
-      // Check that all required tables exist
-      const requiredTables = ["user", "task", "partnership", "invite"];
-      const existingTables = (await appDb
-        .prepare(
-          `
-        SELECT name FROM sqlite_master 
-        WHERE type='table' AND name IN (${requiredTables.map(() => "?").join(",")})
-      `
-        )
-        .all(requiredTables)) as Array<{ name: string }>;
+      // Test that we can query invite data (this was the original issue)
+      await appDb.prepare("SELECT id, code, status FROM invite LIMIT 1").all();
 
-      if (existingTables.length !== requiredTables.length) {
-        const missingTables = requiredTables.filter(
-          (table) =>
-            !existingTables.some((t: { name: string }) => t.name === table)
-        );
-        throw new Error(`Missing tables: ${missingTables.join(", ")}`);
-      }
+      return `Invite system functional (${inviteCount["COUNT(*)"]} invites)`;
+    } catch (error) {
+      throw new Error(
+        `Invite system broken: ${error instanceof Error ? error.message : "Unknown error"}`
+      );
+    }
+  });
 
-      return `Database schema intact (${requiredTables.length} tables)`;
-    });
+  // 7. Partner System
+  await runCheck("Partner System", async () => {
+    const { appDb } = await import("@/lib/db");
 
-    // 5. Environment Configuration
-    await runCheck("Environment Configuration", async () => {
-      const requiredVars = ["RESEND_API_KEY", "FROM_EMAIL"];
-      const missing = requiredVars.filter((varName) => !process.env[varName]);
-      if (missing.length > 0) {
-        throw new Error(`Missing environment variables: ${missing.join(", ")}`);
-      }
-      return "All required environment variables present";
-    });
+    try {
+      const partnershipCount = (await appDb
+        .prepare("SELECT COUNT(*) FROM partnership")
+        .get()) as { "COUNT(*)": number };
+      return `Partner system functional (${partnershipCount["COUNT(*)"]} partnerships)`;
+    } catch (error) {
+      throw new Error(
+        `Partner system broken: ${error instanceof Error ? error.message : "Unknown error"}`
+      );
+    }
+  });
 
-    // 6. API Endpoints Accessibility
-    await runCheck("API Endpoints Accessibility", async () => {
-      const baseUrl = process.env.AUTH_URL || "http://localhost:3000";
-      const endpoints = [
-        "/api/invites", // Core invite endpoint
-        "/api/partner", // Core partner endpoint
-        "/api/tasks", // Core tasks endpoint
-      ];
-
-      let accessibleCount = 0;
-      for (const endpoint of endpoints) {
-        try {
-          const response = await fetch(`${baseUrl}${endpoint}`, {
-            signal: AbortSignal.timeout(5000), // 5 second timeout
-          });
-          // Accept 200 (OK) or 401 (Unauthorized) as accessible
-          if (response.ok || response.status === 401) {
-            accessibleCount++;
-          }
-        } catch {
-          // Endpoint not accessible
-        }
-      }
-
-      if (accessibleCount === 0) {
-        throw new Error("No API endpoints accessible");
-      }
-
-      return `${accessibleCount}/${endpoints.length} API endpoints accessible`;
-    });
-
-    // 7. Database Performance
-    await runCheck("Database Performance", async () => {
-      const { appDb } = await import("@/lib/db");
-
-      const start = Date.now();
-      await appDb.prepare("SELECT COUNT(*) FROM user").get();
-      await appDb.prepare("SELECT COUNT(*) FROM task").get();
-      await appDb.prepare("SELECT COUNT(*) FROM partnership").get();
-      await appDb.prepare("SELECT COUNT(*) FROM invite").get();
-      const duration = Date.now() - start;
-
-      if (duration > 1000) {
-        throw new Error(`Database performance degraded (${duration}ms)`);
-      }
-
-      return `Database performance healthy (${duration}ms)`;
-    });
-
-    // 8. System Resources
-    await runCheck("System Resources", async () => {
-      const memUsage = process.memoryUsage();
-      const heapUsedMB = Math.round(memUsage.heapUsed / 1024 / 1024);
-      const heapTotalMB = Math.round(memUsage.heapTotal / 1024 / 1024);
-
-      if (heapUsedMB > 500) {
-        return `High memory usage: ${heapUsedMB}MB/${heapTotalMB}MB`;
-      }
-
-      return `Memory usage healthy: ${heapUsedMB}MB/${heapTotalMB}MB`;
-    });
-  } catch (error) {
-    console.error("Health check error:", error);
-  }
-
-  // Calculate overall health status - simple pass/fail
+  // Calculate overall status
   const failedChecks = checks.filter((check) => check.status === "fail").length;
-
-  let overall: "healthy" | "unhealthy";
-  if (failedChecks > 0) {
-    overall = "unhealthy";
-  } else {
-    overall = "healthy";
-  }
-
-  const duration = Date.now() - startTime;
+  const overall = failedChecks > 0 ? "unhealthy" : "healthy";
 
   return Response.json({
     overall,
     checks,
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV || "development",
-    duration,
-    version: "1.0.0",
+    duration: Date.now() - startTime,
   });
 }

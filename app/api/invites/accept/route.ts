@@ -230,14 +230,14 @@ export async function POST(req: Request) {
     );
   }
 
-  // Check if current user is already in a partnership
+  // Check if partnership already exists between these specific users
   const isProduction = process.env.NODE_ENV === "production";
   let existingPartnership;
 
   if (isProduction) {
     try {
       const result = await sql`
-        SELECT id FROM partnership WHERE usera = ${userId} OR userb = ${userId}
+        SELECT id FROM partnership WHERE (usera = ${userId} AND userb = ${invite.inviterid}) OR (usera = ${invite.inviterid} AND userb = ${userId})
       `;
       existingPartnership = result.rows[0];
     } catch (error) {
@@ -246,43 +246,23 @@ export async function POST(req: Request) {
     }
   } else {
     existingPartnership = appDb
-      .prepare(`SELECT id FROM partnership WHERE userA = ? OR userB = ?`)
-      .get(userId, userId);
+      .prepare(
+        `SELECT id FROM partnership WHERE (userA = ? AND userB = ?) OR (userA = ? AND userB = ?)`
+      )
+      .get(userId, invite.inviterid, invite.inviterid, userId);
   }
 
   if (existingPartnership) {
     return Response.json(
-      { error: "You are already in a partnership" },
+      { error: "Partnership already exists with this user" },
       { status: 400 }
     );
   }
 
-  // Check if inviter is still available (not in another partnership)
-  let inviterPartnership;
-  if (isProduction) {
-    try {
-      const result = await sql`
-        SELECT id FROM partnership WHERE usera = ${invite.inviterid} OR userb = ${invite.inviterid}
-      `;
-      inviterPartnership = result.rows[0];
-    } catch (error) {
-      console.error("PostgreSQL inviter partnership check error:", error);
-      return Response.json({ error: "Database error" }, { status: 500 });
-    }
-  } else {
-    inviterPartnership = appDb
-      .prepare(`SELECT id FROM partnership WHERE userA = ? OR userB = ?`)
-      .get(invite.inviterid, invite.inviterid);
-  }
-
-  if (inviterPartnership) {
-    // Mark invite as expired since inviter is no longer available
-    await updateInviteStatus(invite.id, "expired");
-    return Response.json(
-      { error: "Inviter is no longer available for partnership" },
-      { status: 400 }
-    );
-  }
+  // Note: We don't check if inviter is still available because:
+  // 1. The invite was valid when sent
+  // 2. The invitee should be able to accept it regardless of inviter's current status
+  // 3. This prevents race conditions where inviter gets partnered between sending and accepting
 
   // Create the partnership
   const partnershipId = await createPartnership(invite.inviterid, userId);

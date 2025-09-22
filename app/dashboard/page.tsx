@@ -3,6 +3,7 @@
 import { useSession, signOut } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useCallback } from "react";
+import { usePageVisibility } from "@/lib/hooks/usePageVisibility";
 import { DragDropContext, DropResult } from "@hello-pangea/dnd";
 import { DashboardSkeleton } from "@/app/components/DashboardSkeleton";
 import { DashboardHeader } from "@/app/components/DashboardHeader";
@@ -23,6 +24,7 @@ import {
 export default function Dashboard() {
   const { data: session, isPending } = useSession();
   const router = useRouter();
+  const isVisible = usePageVisibility();
 
   // State for tasks and partner data
   const [tasks, setTasks] = useState<TasksResponse | null>(null);
@@ -211,6 +213,16 @@ export default function Dashboard() {
       }
     },
     [partners, loadAllPartnerTasks]
+  );
+
+  useEffect(
+    function refreshDataWhenTabBecomesVisible() {
+      if (!session) return;
+      if (!isVisible) return;
+
+      loadTasks();
+    },
+    [isVisible, session, loadTasks]
   );
 
   const createTask = async (e: React.FormEvent) => {

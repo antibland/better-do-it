@@ -2,9 +2,6 @@
 
 import { useState, useEffect } from "react";
 
-/**
- * Simple Health Check Types
- */
 interface HealthCheck {
   name: string;
   status: "pass" | "fail";
@@ -19,19 +16,10 @@ interface HealthReport {
   environment: string;
 }
 
-/**
- * Simple System Health Check Page
- *
- * Clean, simple health monitoring - just success or failure.
- * Auto-refreshes every 30 seconds.
- */
 export default function HealthPage() {
   const [report, setReport] = useState<HealthReport | null>(null);
   const [isRunning, setIsRunning] = useState(false);
 
-  /**
-   * Run all health checks using the public health check endpoint
-   */
   const runHealthChecks = async (): Promise<void> => {
     setIsRunning(true);
     console.log("Starting health checks...");
@@ -48,7 +36,6 @@ export default function HealthPage() {
       const data = await response.json();
       console.log("Health check data received:", data);
 
-      // Convert any "warning" status to "pass" - we only want pass/fail
       const simplifiedChecks = data.checks.map(
         (check: { status: string; [key: string]: unknown }) => ({
           ...check,

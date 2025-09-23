@@ -1,0 +1,2 @@
+- Remove all comments you've added across all changed files
+- Read over all ".md" docs and ensure all code follows standards

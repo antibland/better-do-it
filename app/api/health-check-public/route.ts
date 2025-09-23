@@ -46,24 +46,14 @@ export async function GET() {
     return "Database connected";
   });
 
-  // 2. Environment Variables
-  await runCheck("Environment Config", async () => {
-    const required = ["RESEND_API_KEY", "FROM_EMAIL"];
-    const missing = required.filter((varName) => !process.env[varName]);
-    if (missing.length > 0) {
-      throw new Error(`Missing: ${missing.join(", ")}`);
-    }
-    return "Environment configured";
-  });
-
-  // 3. Email Service
+  // 2. Email Service
   await runCheck("Email Service", async () => {
     const { Resend } = await import("resend");
     new Resend(process.env.RESEND_API_KEY);
     return "Email service ready";
   });
 
-  // 4. Authentication
+  // 3. Authentication
   await runCheck("Authentication", async () => {
     const { auth } = await import("@/lib/auth");
     if (!auth) {
@@ -72,7 +62,7 @@ export async function GET() {
     return "Authentication ready";
   });
 
-  // 5. Database Tables (Critical for invite system)
+  // 4. Database Tables (Critical for invite system)
   await runCheck("Database Tables", async () => {
     const { appDb } = await import("@/lib/db");
 
@@ -98,7 +88,7 @@ export async function GET() {
     return `All ${tables.length} critical tables accessible`;
   });
 
-  // 6. Invite System (The original problem)
+  // 5. Invite System (The original problem)
   await runCheck("Invite System", async () => {
     const { appDb } = await import("@/lib/db");
 
@@ -120,7 +110,7 @@ export async function GET() {
     }
   });
 
-  // 7. Partner System
+  // 6. Partner System
   await runCheck("Partner System", async () => {
     const { appDb } = await import("@/lib/db");
 

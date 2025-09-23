@@ -183,36 +183,14 @@ export default function HealthPage() {
                     key={index}
                     className={`p-4 rounded-lg border ${getStatusColor(check.status)}`}
                   >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-2 h-2 rounded-full bg-current"></div>
-                        <div>
-                          <h3 className="font-medium">{check.name}</h3>
-                          <p className="text-sm opacity-75">{check.message}</p>
-                        </div>
-                      </div>
-                      <div className="text-sm font-mono">
-                        {check.duration}ms
+                    <div className="flex items-center space-x-3">
+                      <div className="w-2 h-2 rounded-full bg-current"></div>
+                      <div>
+                        <p className="font-medium">{check.message}</p>
                       </div>
                     </div>
                   </div>
                 ))}
-              </div>
-
-              {/* Summary */}
-              <div className="mt-8 grid grid-cols-2 gap-4">
-                <div className="bg-green-50 p-4 rounded-lg border border-green-200">
-                  <div className="text-2xl font-bold text-green-600">
-                    {report.checks.filter((c) => c.status === "pass").length}
-                  </div>
-                  <div className="text-sm text-green-600">Passed</div>
-                </div>
-                <div className="bg-red-50 p-4 rounded-lg border border-red-200">
-                  <div className="text-2xl font-bold text-red-600">
-                    {report.checks.filter((c) => c.status === "fail").length}
-                  </div>
-                  <div className="text-sm text-red-600">Failed</div>
-                </div>
               </div>
             </div>
           )}

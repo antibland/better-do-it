@@ -1,7 +1,8 @@
-import { Trash2, CheckCircle2 } from "lucide-react";
+import { Trash2, CheckCircle2, GripVertical } from "lucide-react";
 import { Draggable } from "@hello-pangea/dnd";
 import { Task } from "@/types";
 import { TaskCompletionProgress } from "./TaskCompletionProgress";
+import { TaskAgeIcon } from "./TaskAgeIcon";
 
 interface TaskItemProps {
   task: Task;
@@ -71,6 +72,21 @@ export function TaskItem({
                 : "border-gray-200 dark:border-gray-700"
             }`}
           >
+            <div
+              className="flex items-center justify-center w-6 h-6 text-gray-400 dark:text-gray-500 mr-3 flex-shrink-0"
+              aria-label="Drag to reorder"
+              title="Drag to reorder"
+            >
+              <GripVertical className="w-5 h-5" />
+            </div>
+
+            <div className="flex items-center justify-center w-5 h-5 mr-2 flex-shrink-0">
+              <TaskAgeIcon
+                addedToActiveAt={task.addedToActiveAt}
+                createdAt={task.createdAt}
+              />
+            </div>
+
             <div
               data-task-id={task.id}
               contentEditable={

@@ -1,4 +1,5 @@
 import { Partner, PartnerTasksResponse } from "@/types";
+import { TaskAgeIcon } from "./TaskAgeIcon";
 
 interface PartnerSectionProps {
   partner: Partner | null;
@@ -61,11 +62,14 @@ export function PartnerSection({
                       task.isCompleted === 1 ? "bg-green-50" : "bg-gray-50"
                     }`}
                   >
-                    <div className="w-5 h-5 border-2 border-gray-300 rounded bg-gray-200 flex items-center justify-center">
+                    <div className="w-5 h-5 flex items-center justify-center">
                       {task.isCompleted === 1 ? (
                         <span className="text-green-600 text-xs">✓</span>
                       ) : (
-                        <span className="text-gray-400 text-xs">👁</span>
+                        <TaskAgeIcon
+                          addedToActiveAt={task.addedToActiveAt}
+                          createdAt={task.createdAt}
+                        />
                       )}
                     </div>
                     <span

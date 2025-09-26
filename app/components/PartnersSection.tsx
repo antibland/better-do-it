@@ -5,6 +5,7 @@ import * as Accordion from "@radix-ui/react-accordion";
 import { ChevronDownIcon } from "lucide-react";
 import { Partner, PartnerTasksResponse, Invite } from "@/types";
 import { PendingInvitesSection } from "./PendingInvitesSection";
+import { TaskAgeIcon } from "./TaskAgeIcon";
 
 function PartnersAccordion({
   partners,
@@ -98,15 +99,16 @@ function PartnersAccordion({
                                 : "bg-gray-50 dark:bg-gray-800"
                             }`}
                           >
-                            <div className="w-5 h-5 border-2 border-gray-300 dark:border-gray-600 rounded bg-gray-200 dark:bg-gray-600 flex items-center justify-center">
+                            <div className="w-5 h-5 flex items-center justify-center">
                               {task.isCompleted === 1 ? (
                                 <span className="text-green-600 dark:text-green-400 text-xs">
                                   ✓
                                 </span>
                               ) : (
-                                <span className="text-gray-400 dark:text-gray-500 text-xs">
-                                  👁
-                                </span>
+                                <TaskAgeIcon
+                                  addedToActiveAt={task.addedToActiveAt}
+                                  createdAt={task.createdAt}
+                                />
                               )}
                             </div>
                             <span

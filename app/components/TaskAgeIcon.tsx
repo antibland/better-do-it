@@ -15,7 +15,7 @@ export function TaskAgeIcon({
   const dateToUse = addedToActiveAt || createdAt || null;
   const ageInfo: TaskAgeInfo = getTaskAge(dateToUse);
 
-  if (ageInfo.daysOld === 0) {
+  if (!dateToUse) {
     return null;
   }
 

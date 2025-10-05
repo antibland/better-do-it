@@ -7,33 +7,33 @@ export default function Home() {
   const { data: session, isPending } = useSession();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-gray-900 dark:to-gray-800">
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-secondary/40 dark:from-background dark:via-background dark:to-secondary/40">
       {/* Header */}
-      <header className="bg-white dark:bg-gray-950 shadow-sm">
+      <header className="bg-card shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-6">
             <div className="flex items-center">
               <Link
                 href="/"
-                className="text-3xl font-bold text-gray-900 dark:text-gray-100 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors duration-200"
+                className="text-3xl font-bold text-card-foreground hover:text-primary transition-colors duration-200"
               >
                 Better Do It
               </Link>
             </div>
             <div className="flex items-center space-x-4">
               {isPending ? (
-                <div className="animate-pulse bg-gray-200 h-8 w-16 rounded"></div>
+                <div className="animate-pulse bg-muted h-8 w-16 rounded"></div>
               ) : session ? (
                 <Link
                   href="/dashboard"
-                  className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md text-sm font-medium"
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground px-4 py-2 rounded-md text-sm font-medium"
                 >
                   Dashboard
                 </Link>
               ) : (
                 <Link
                   href="/auth"
-                  className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md text-sm font-medium"
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground px-4 py-2 rounded-md text-sm font-medium"
                 >
                   Sign In
                 </Link>
@@ -46,13 +46,11 @@ export default function Home() {
       {/* Hero Section */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="text-center">
-          <h1 className="text-4xl font-extrabold text-gray-900 dark:text-gray-100 sm:text-5xl md:text-6xl">
+          <h1 className="text-4xl font-extrabold text-card-foreground sm:text-5xl md:text-6xl">
             <span className="block">Better Do It</span>
-            <span className="block text-indigo-600 dark:text-indigo-400">
-              Together
-            </span>
+            <span className="block text-primary">Together</span>
           </h1>
-          <p className="mt-3 max-w-md mx-auto text-base text-gray-500 dark:text-gray-300 sm:text-lg md:mt-5 md:text-xl md:max-w-3xl">
+          <p className="mt-3 max-w-md mx-auto text-base text-muted-foreground sm:text-lg md:mt-5 md:text-xl md:max-w-3xl">
             Encouraging accountability by sharing progress among friends.
           </p>
 
@@ -61,7 +59,7 @@ export default function Home() {
               <div className="rounded-md shadow">
                 <Link
                   href="/auth"
-                  className="w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 md:py-4 md:text-lg md:px-10"
+                  className="w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-primary-foreground bg-primary hover:bg-primary/90 md:py-4 md:text-lg md:px-10"
                 >
                   Get Started
                 </Link>
@@ -74,7 +72,7 @@ export default function Home() {
               <div className="rounded-md shadow">
                 <Link
                   href="/dashboard"
-                  className="w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 md:py-4 md:text-lg md:px-10"
+                  className="w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-primary-foreground bg-primary hover:bg-primary/90 md:py-4 md:text-lg md:px-10"
                 >
                   Go to Dashboard
                 </Link>
@@ -87,10 +85,10 @@ export default function Home() {
         <div className="mt-16">
           <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
             <div className="pt-6">
-              <div className="flow-root bg-white dark:bg-gray-900 rounded-lg px-6 pb-8 shadow-lg">
+              <div className="flow-root bg-card rounded-lg px-6 pb-8 shadow-lg">
                 <div className="-mt-6">
                   <div>
-                    <span className="inline-flex items-center justify-center p-3 bg-indigo-500 rounded-md shadow-lg">
+                    <span className="inline-flex items-center justify-center p-3 bg-secondary rounded-md shadow-lg">
                       <svg
                         className="h-6 w-6 text-white"
                         fill="none"
@@ -106,10 +104,10 @@ export default function Home() {
                       </svg>
                     </span>
                   </div>
-                  <h3 className="mt-8 text-lg font-medium text-gray-900 dark:text-gray-100 tracking-tight">
+                  <h3 className="mt-8 text-lg font-medium text-card-foreground tracking-tight">
                     Shared Todo Lists
                   </h3>
-                  <p className="mt-5 text-base text-gray-500 dark:text-gray-300">
+                  <p className="mt-5 text-base text-muted-foreground">
                     Create and share todo lists with your partner. See updates
                     in real-time as you both work toward your goals.
                   </p>
@@ -118,10 +116,10 @@ export default function Home() {
             </div>
 
             <div className="pt-6">
-              <div className="flow-root bg-white dark:bg-gray-900 rounded-lg px-6 pb-8 shadow-lg">
+              <div className="flow-root bg-card rounded-lg px-6 pb-8 shadow-lg">
                 <div className="-mt-6">
                   <div>
-                    <span className="inline-flex items-center justify-center p-3 bg-indigo-500 rounded-md shadow-lg">
+                    <span className="inline-flex items-center justify-center p-3 bg-secondary rounded-md shadow-lg">
                       <svg
                         className="h-6 w-6 text-white"
                         fill="none"
@@ -137,10 +135,10 @@ export default function Home() {
                       </svg>
                     </span>
                   </div>
-                  <h3 className="mt-8 text-lg font-medium text-gray-900 dark:text-gray-100 tracking-tight">
+                  <h3 className="mt-8 text-lg font-medium text-card-foreground tracking-tight">
                     Partner Collaboration
                   </h3>
-                  <p className="mt-5 text-base text-gray-500 dark:text-gray-300">
+                  <p className="mt-5 text-base text-muted-foreground">
                     Work together seamlessly. Assign tasks, add comments, and
                     celebrate completions together.
                   </p>
@@ -149,10 +147,10 @@ export default function Home() {
             </div>
 
             <div className="pt-6">
-              <div className="flow-root bg-white dark:bg-gray-900 rounded-lg px-6 pb-8 shadow-lg">
+              <div className="flow-root bg-card rounded-lg px-6 pb-8 shadow-lg">
                 <div className="-mt-6">
                   <div>
-                    <span className="inline-flex items-center justify-center p-3 bg-indigo-500 rounded-md shadow-lg">
+                    <span className="inline-flex items-center justify-center p-3 bg-secondary rounded-md shadow-lg">
                       <svg
                         className="h-6 w-6 text-white"
                         fill="none"
@@ -168,10 +166,10 @@ export default function Home() {
                       </svg>
                     </span>
                   </div>
-                  <h3 className="mt-8 text-lg font-medium text-gray-900 dark:text-gray-100 tracking-tight">
+                  <h3 className="mt-8 text-lg font-medium text-card-foreground tracking-tight">
                     Progress Tracking
                   </h3>
-                  <p className="mt-5 text-base text-gray-500 dark:text-gray-300">
+                  <p className="mt-5 text-base text-muted-foreground">
                     Track your progress together with visual charts and
                     completion statistics. Stay motivated as a team.
                   </p>

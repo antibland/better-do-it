@@ -41,10 +41,10 @@ function PartnersAccordion({
               className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden"
             >
               <Accordion.Header className="w-full">
-                <Accordion.Trigger className="flex items-center justify-between w-full p-4 text-left hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-inset">
+                <Accordion.Trigger className="flex items-center justify-between w-full p-4 text-left hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-inset">
                   <div className="flex items-center space-x-3">
-                    <div className="w-8 h-8 bg-indigo-100 dark:bg-indigo-900 rounded-full flex items-center justify-center">
-                      <span className="text-indigo-600 dark:text-indigo-400 font-medium text-sm">
+                    <div className="w-8 h-8 bg-primary/20 dark:bg-primary/20 rounded-full flex items-center justify-center">
+                      <span className="text-primary font-medium text-sm">
                         {partner.name.charAt(0).toUpperCase()}
                       </span>
                     </div>
@@ -67,8 +67,8 @@ function PartnersAccordion({
 
               <Accordion.Content className="AccordionContent px-4 pb-4">
                 <div className="space-y-4">
-                  <div className="p-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg">
-                    <p className="text-sm text-indigo-700 dark:text-indigo-300">
+                  <div className="p-3 bg-primary/10 dark:bg-primary/10 rounded-lg">
+                    <p className="text-sm text-primary/80">
                       <span className="font-medium">Partnered since:</span>{" "}
                       {new Date(partner.createdAt).toLocaleDateString()}
                     </p>
@@ -191,14 +191,14 @@ function InvitePartnerForm({
             value={partnerEmail}
             onChange={(e) => onPartnerEmailChange(e.target.value)}
             placeholder="Enter partner's email address..."
-            className="w-full border border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+            className="w-full border border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
             disabled={loading}
           />
         </div>
         <button
           type="submit"
           disabled={loading || !partnerEmail.trim()}
-          className="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+          className="w-full bg-primary text-primary-foreground py-2 px-4 rounded-md hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
         >
           {loading ? "Sending..." : "Send Invitation"}
         </button>

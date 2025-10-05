@@ -116,7 +116,7 @@ export function TasksSection({
       <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-600">
         <Link
           href="/completed-tasks"
-          className="inline-flex items-center text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300 font-medium"
+          className="inline-flex items-center text-primary hover:text-primary/80 font-medium"
         >
           View completed tasks
         </Link>

@@ -13,7 +13,7 @@ export function getTaskAge(addedToActiveAt: string | null): TaskAgeInfo {
       daysOld: 0,
       category: "fresh",
       iconName: "flame",
-      color: "text-orange-500",
+      color: "text-fresh", // Uses theme color defined in globals.css
     };
   }
 
@@ -27,21 +27,21 @@ export function getTaskAge(addedToActiveAt: string | null): TaskAgeInfo {
       daysOld,
       category: "fresh",
       iconName: "flame",
-      color: "text-orange-500",
+      color: "text-fresh", // Uses theme color defined in globals.css
     };
   } else if (daysOld <= 15) {
     return {
       daysOld,
       category: "aging",
       iconName: "clock",
-      color: "text-yellow-600",
+      color: "text-aging", // Uses theme color defined in globals.css
     };
   } else {
     return {
       daysOld,
       category: "stale",
       iconName: "skull",
-      color: "text-red-600",
+      color: "text-stale", // Uses theme color defined in globals.css
     };
   }
 }

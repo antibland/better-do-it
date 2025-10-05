@@ -9,13 +9,13 @@ interface DashboardHeaderProps {
 export function DashboardHeader({ onSignOut }: DashboardHeaderProps) {
   const { data: session } = useSession();
   return (
-    <header className="bg-white dark:bg-gray-950 shadow">
+    <header className="bg-card shadow">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center py-6">
           <div className="flex items-center">
             <Link
               href="/"
-              className="text-3xl font-bold text-gray-900 dark:text-gray-100 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors duration-200"
+              className="text-3xl font-bold text-card-foreground hover:text-primary transition-colors duration-200"
             >
               Better Do It
             </Link>
@@ -34,7 +34,7 @@ export function DashboardHeader({ onSignOut }: DashboardHeaderProps) {
             </div>
             <button
               onClick={onSignOut}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md text-sm font-medium"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground px-4 py-2 rounded-md text-sm font-medium"
             >
               Sign Out
             </button>

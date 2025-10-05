@@ -80,7 +80,7 @@ export const InviteExistingUserEmail = ({
 export default InviteExistingUserEmail;
 
 const main = {
-  backgroundColor: "#ffffff",
+  backgroundColor: "#FFFFFF", // Using clean white background
   fontFamily:
     '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen-Sans,Ubuntu,Cantarell,"Helvetica Neue",sans-serif',
 };
@@ -92,7 +92,7 @@ const container = {
 };
 
 const h1 = {
-  color: "#333",
+  color: "#000000", // Using pure black for maximum contrast
   fontSize: "24px",
   fontWeight: "bold",
   margin: "40px 0",
@@ -101,7 +101,7 @@ const h1 = {
 };
 
 const h2 = {
-  color: "#333",
+  color: "#000000", // Using pure black for maximum contrast
   fontSize: "20px",
   fontWeight: "bold",
   margin: "24px 0",
@@ -110,20 +110,20 @@ const h2 = {
 
 const section = {
   padding: "24px",
-  backgroundColor: "#ffffff",
+  backgroundColor: "#FFFFFF", // Pure white for cards
   borderRadius: "8px",
-  border: "1px solid #e1e5e9",
+  border: "1px solid #E2E8F0", // Using semantic border color
 };
 
 const text = {
-  color: "#333",
+  color: "#000000", // Using pure black for maximum contrast
   fontSize: "16px",
   lineHeight: "24px",
   margin: "16px 0",
 };
 
 const button = {
-  backgroundColor: "#0070f3",
+  backgroundColor: "#5682B1", // Using steel blue from Color Hunt palette as primary
   borderRadius: "6px",
   color: "#fff",
   fontSize: "16px",
@@ -136,7 +136,7 @@ const button = {
 };
 
 const link = {
-  color: "#0070f3",
+  color: "#5682B1", // Using steel blue for links
   fontSize: "14px",
   textDecoration: "underline",
   wordBreak: "break-all" as const,

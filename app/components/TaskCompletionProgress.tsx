@@ -66,7 +66,7 @@ export function TaskCompletionProgress({
       animate={{ opacity: isAnimating ? 0.7 : 1 }}
       className="flex items-stretch space-x-2"
     >
-      <div className="flex-1 flex items-center justify-between p-3 border border-indigo-200 rounded-lg bg-indigo-50 relative overflow-hidden">
+      <div className="flex-1 flex items-center justify-between p-3 border border-primary/30 rounded-lg bg-primary/10 relative overflow-hidden">
         {/* Task title with reduced opacity */}
         <div className="min-w-0 flex-1 text-gray-500 line-through px-2 py-1 rounded">
           {taskTitle}

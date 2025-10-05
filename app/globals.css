@@ -1,29 +1,96 @@
 @import "tailwindcss";
 
+/* Color Hunt Palette Theme System */
+/* Palette: #000000 (black), #5682B1 (steel blue), #739EC9 (light blue), #FFE8DB (light peach) */
+
+/* Define semantic color variables for light mode */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-  --card: #ffffff;
-  --card-foreground: #171717;
+  /* Core brand colors from palette */
+  --color-black: #000000;
+  --color-steel-blue: #5682b1;
+  --color-light-blue: #739ec9;
+  --color-light-peach: #ffe8db;
+
+  /* Typography - Satoshi font family */
+  --font-sans:
+    var(--font-satoshi), ui-sans-serif, system-ui, sans-serif,
+    "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  --font-display: var(--font-satoshi), ui-sans-serif, system-ui, sans-serif;
+
+  /* Semantic color mappings */
+  --background: #ffffff; /* clean white */
+  --foreground: #000000; /* pure black for maximum contrast */
+  --card: #ffffff; /* pure white for cards */
+  --card-foreground: #000000;
   --popover: #ffffff;
-  --popover-foreground: #171717;
-  --primary: #6366f1;
+  --popover-foreground: #000000;
+  --primary: #5682b1; /* steel blue as primary */
   --primary-foreground: #ffffff;
-  --secondary: #f1f5f9;
-  --secondary-foreground: #0f172a;
-  --muted: #f1f5f9;
-  --muted-foreground: #64748b;
-  --accent: #f1f5f9;
-  --accent-foreground: #0f172a;
-  --destructive: #ef4444;
+  --secondary: #739ec9; /* light blue as secondary */
+  --secondary-foreground: #ffffff;
+  --muted: #f8fafc; /* very light gray */
+  --muted-foreground: #64748b; /* medium gray */
+  --accent: #739ec9; /* light blue as accent */
+  --accent-foreground: #ffffff;
+  --destructive: #dc2626; /* red for destructive actions */
   --destructive-foreground: #ffffff;
-  --border: #e2e8f0;
-  --input: #e2e8f0;
-  --ring: #6366f1;
+  --border: #e2e8f0; /* light border */
+  --input: #ffffff; /* white input background */
+  --ring: #5682b1; /* focus ring matches primary */
   --radius: 0.5rem;
 }
 
+/* Define semantic color variables for dark mode */
+.dark {
+  --background: #000000; /* pure black background */
+  --foreground: #ffffff; /* white text */
+  --card: #1a1a1a; /* very dark card */
+  --card-foreground: #ffffff;
+  --popover: #1a1a1a;
+  --popover-foreground: #ffffff;
+  --primary: #739ec9; /* lighter blue for dark mode */
+  --primary-foreground: #000000;
+  --secondary: #5682b1; /* steel blue for dark mode */
+  --secondary-foreground: #ffffff;
+  --muted: #2a2a2a;
+  --muted-foreground: #a0aec0; /* lighter muted text */
+  --accent: #5682b1; /* steel blue accent */
+  --accent-foreground: #ffffff;
+  --destructive: #ef4444; /* red for dark mode */
+  --destructive-foreground: #ffffff;
+  --border: #374151; /* dark border */
+  --input: #2a2a2a; /* dark input background */
+  --ring: #739ec9; /* focus ring matches primary */
+}
+
+/* Auto dark mode via system preference */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #000000;
+    --foreground: #ffffff;
+    --card: #1a1a1a;
+    --card-foreground: #ffffff;
+    --popover: #1a1a1a;
+    --popover-foreground: #ffffff;
+    --primary: #739ec9;
+    --primary-foreground: #000000;
+    --secondary: #5682b1;
+    --secondary-foreground: #ffffff;
+    --muted: #2a2a2a;
+    --muted-foreground: #a0aec0;
+    --accent: #5682b1;
+    --accent-foreground: #ffffff;
+    --destructive: #ef4444;
+    --destructive-foreground: #ffffff;
+    --border: #374151;
+    --input: #2a2a2a;
+    --ring: #739ec9;
+  }
+}
+
+/* Tailwind CSS 4 @theme directive for utility class generation */
 @theme inline {
+  /* Semantic colors - these will generate utility classes like bg-primary, text-secondary, etc. */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -43,60 +110,42 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
 
-.dark {
-  --background: #0f0f0f;
-  --foreground: #f5f5f5;
-  --card: #1a1a1a;
-  --card-foreground: #f5f5f5;
-  --popover: #1a1a1a;
-  --popover-foreground: #f5f5f5;
-  --primary: #6366f1;
-  --primary-foreground: #ffffff;
-  --secondary: #262626;
-  --secondary-foreground: #e5e5e5;
-  --muted: #262626;
-  --muted-foreground: #a3a3a3;
-  --accent: #262626;
-  --accent-foreground: #e5e5e5;
-  --destructive: #ef4444;
-  --destructive-foreground: #ffffff;
-  --border: #333333;
-  --input: #262626;
-  --ring: #6366f1;
-}
+  /* Brand colors - these will generate utility classes like bg-steel-blue, text-light-blue, etc. */
+  --color-black: var(--color-black);
+  --color-steel-blue: var(--color-steel-blue);
+  --color-light-blue: var(--color-light-blue);
+  --color-light-peach: var(--color-light-peach);
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0f0f0f;
-    --foreground: #f5f5f5;
-    --card: #1a1a1a;
-    --card-foreground: #f5f5f5;
-    --popover: #1a1a1a;
-    --popover-foreground: #f5f5f5;
-    --primary: #6366f1;
-    --primary-foreground: #ffffff;
-    --secondary: #262626;
-    --secondary-foreground: #e5e5e5;
-    --muted: #262626;
-    --muted-foreground: #a3a3a3;
-    --accent: #262626;
-    --accent-foreground: #e5e5e5;
-    --destructive: #ef4444;
-    --destructive-foreground: #ffffff;
-    --border: #333333;
-    --input: #262626;
-    --ring: #6366f1;
-  }
+  /* Additional semantic colors for better UX */
+  --color-success: #38a169; /* green for success states */
+  --color-success-foreground: #ffffff;
+  --color-warning: #d69e2e; /* amber for warnings */
+  --color-warning-foreground: #ffffff;
+  --color-info: #3182ce; /* blue for info */
+  --color-info-foreground: #ffffff;
+
+  /* Task age colors - semantic colors for task urgency */
+  --color-fresh: #38a169; /* green for fresh tasks */
+  --color-aging: #d69e2e; /* amber for aging tasks */
+  --color-stale: #e53e3e; /* red for stale tasks */
+
+  /* Typography - Satoshi font family */
+  --font-mono:
+    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+    "Courier New", monospace;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family:
+    var(--font-satoshi), ui-sans-serif, system-ui, sans-serif,
+    "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  font-feature-settings:
+    "kern" 1,
+    "liga" 1,
+    "calt" 1; /* Enable font features for better typography */
 }
 
 button {
@@ -129,7 +178,7 @@ input::placeholder {
 input:focus {
   outline: none;
   border-color: var(--ring) !important;
-  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2) !important;
+  box-shadow: 0 0 0 2px rgba(86, 130, 177, 0.2) !important; /* Steel blue with opacity */
 }
 
 /* ContentEditable dark mode fixes */
@@ -162,6 +211,30 @@ input:focus {
     rgba(255, 255, 255, 0.1),
     transparent
   ) !important;
+}
+
+/* Typography utility classes for Resist Sans variants */
+.font-display {
+  font-family: var(--font-display);
+  font-feature-settings:
+    "kern" 1,
+    "liga" 1,
+    "calt" 1;
+}
+
+/* Heading styles with Satoshi Display */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-satoshi), ui-sans-serif, system-ui, sans-serif;
+  font-feature-settings:
+    "kern" 1,
+    "liga" 1,
+    "calt" 1;
+  font-weight: 500; /* Medium weight for better readability */
 }
 
 /* Alternative skeleton dark mode approach */
@@ -268,7 +341,7 @@ input:focus {
 }
 
 .email-preview button:hover {
-  background-color: #4f46e5;
+  background-color: #4a6b8a; /* Darker steel blue for hover state */
 }
 
 /* Radix UI Accordion Animations */

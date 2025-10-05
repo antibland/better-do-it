@@ -68,12 +68,12 @@ export function TaskItem({
           <div
             className={`flex-1 flex items-center justify-between p-3 border rounded-lg ${
               isActiveTask
-                ? "border-indigo-200 dark:border-indigo-800 bg-indigo-50 dark:bg-indigo-950/30"
-                : "border-gray-200 dark:border-gray-700"
+                ? "border-primary/30 dark:border-primary/30 bg-primary/10 dark:bg-primary/10"
+                : "border-border"
             }`}
           >
             <div
-              className="flex items-center justify-center w-6 h-6 text-gray-400 dark:text-gray-500 mr-3 flex-shrink-0"
+              className="flex items-center justify-center w-6 h-6 text-muted-foreground mr-3 flex-shrink-0"
               aria-label="Drag to reorder"
               title="Drag to reorder"
             >
@@ -108,16 +108,16 @@ export function TaskItem({
               }
               className={`min-w-0 flex-1 ${
                 task.isCompleted === 1
-                  ? "text-gray-500 dark:text-gray-400 line-through"
-                  : "text-gray-900 dark:text-gray-100"
+                  ? "text-muted-foreground line-through"
+                  : "text-foreground"
               } ${
                 editingTaskId === task.id
-                  ? "outline-none border-b-2 border-indigo-500 bg-yellow-50 dark:bg-yellow-950/20 px-2 py-1 rounded"
+                  ? "outline-none border-b-2 border-primary bg-yellow-50 dark:bg-yellow-950/20 px-2 py-1 rounded"
                   : task.isCompleted === 0
                     ? `cursor-pointer hover:${
                         isActiveTask
-                          ? "bg-indigo-100 dark:bg-indigo-950/40"
-                          : "bg-gray-50 dark:bg-gray-800"
+                          ? "bg-primary/20 dark:bg-primary/20"
+                          : "bg-muted"
                       } px-2 py-1 rounded`
                     : "px-2 py-1 rounded"
               } bg-transparent dark:bg-transparent`}
@@ -141,7 +141,7 @@ export function TaskItem({
                   <span className="text-green-600 dark:text-green-400 text-lg">
                     ✓
                   </span>
-                  <span className="text-sm text-gray-500 dark:text-gray-400">
+                  <span className="text-sm text-muted-foreground">
                     {new Date(task.completedAt!).toLocaleDateString()}
                   </span>
                 </div>

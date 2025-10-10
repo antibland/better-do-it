@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { satoshi } from "@/lib/fonts";
+import { Toaster } from "react-hot-toast";
 import "./globals.css";
 
 export const viewport: Viewport = {
@@ -42,7 +43,54 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${satoshi.variable} antialiased`}>{children}</body>
+      <body className={`${satoshi.variable} antialiased`}>
+        {children}
+        <Toaster
+          position="top-center"
+          reverseOrder={false}
+          gutter={8}
+          containerClassName=""
+          containerStyle={{}}
+          toastOptions={{
+            // Define default options
+            duration: 4000,
+            style: {
+              background: "var(--card)",
+              color: "var(--card-foreground)",
+              border: "1px solid var(--border)",
+              borderRadius: "8px",
+              padding: "16px",
+              fontSize: "14px",
+              fontWeight: "500",
+            },
+            // Default options for specific types
+            success: {
+              duration: 3000,
+              style: {
+                background: "var(--card)",
+                color: "var(--foreground)",
+                border: "1px solid var(--success)",
+              },
+              iconTheme: {
+                primary: "var(--success)",
+                secondary: "var(--card)",
+              },
+            },
+            error: {
+              duration: 4000,
+              style: {
+                background: "var(--card)",
+                color: "var(--foreground)",
+                border: "1px solid var(--destructive)",
+              },
+              iconTheme: {
+                primary: "var(--destructive)",
+                secondary: "var(--card)",
+              },
+            },
+          }}
+        />
+      </body>
     </html>
   );
 }

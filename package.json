@@ -27,6 +27,7 @@
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "react-email": "^4.2.8",
+    "react-hot-toast": "^2.6.0",
     "react-loading-skeleton": "^3.5.0",
     "react-swipeable": "^7.0.2",
     "resend": "^6.0.2"

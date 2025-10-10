@@ -7,8 +7,7 @@ import { usePageVisibility } from "@/lib/hooks/usePageVisibility";
 import { DragDropContext, DropResult } from "@hello-pangea/dnd";
 import { DashboardSkeleton } from "@/app/components/DashboardSkeleton";
 import { DashboardHeader } from "@/app/components/DashboardHeader";
-import { ErrorDisplay } from "@/app/components/ErrorDisplay";
-import { SuccessDisplay } from "@/app/components/SuccessDisplay";
+import toast from "react-hot-toast";
 import { ConfirmDialog } from "@/app/components/ConfirmDialog";
 import { TasksSection } from "@/app/components/TasksSection";
 import { PartnersSection } from "@/app/components/PartnersSection";
@@ -35,8 +34,7 @@ export default function Dashboard() {
   >({});
   const [invites, setInvites] = useState<Invite[]>([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [successMessage, setSuccessMessage] = useState("");
+  // Removed error and successMessage state - using react-hot-toast instead
 
   // Form states
   const [newTaskTitle, setNewTaskTitle] = useState("");
@@ -75,10 +73,10 @@ export default function Dashboard() {
         const data = await response.json();
         setTasks(data);
       } else {
-        setError("Failed to load tasks");
+        toast.error("Failed to load tasks");
       }
     } catch {
-      setError("Failed to load tasks");
+      toast.error("Failed to load tasks");
     }
   }, []);
 
@@ -121,15 +119,13 @@ export default function Dashboard() {
     if (typeof window !== "undefined") {
       const urlParams = new URLSearchParams(window.location.search);
       if (urlParams.get("inviteAccepted") === "true") {
-        setSuccessMessage(
+        toast.success(
           "Partnership invitation accepted successfully. You're now partnered."
         );
         // Clear the URL parameter
         const newUrl = new URL(window.location.href);
         newUrl.searchParams.delete("inviteAccepted");
         window.history.replaceState({}, "", newUrl.toString());
-        // Clear success message after 5 seconds
-        setTimeout(() => setSuccessMessage(""), 5000);
       }
     }
   }, []);
@@ -144,19 +140,17 @@ export default function Dashboard() {
         });
 
         if (response.ok) {
-          setSuccessMessage(
+          toast.success(
             "Partnership invitation accepted successfully. You're now partnered."
           );
           // Reload partner data
           await loadPartners();
-          // Clear success message after 5 seconds
-          setTimeout(() => setSuccessMessage(""), 5000);
         } else {
           const errorData = await response.json();
-          setError(`Invitation error: ${errorData.error}`);
+          toast.error(`Invitation error: ${errorData.error}`);
         }
       } catch {
-        setError("Failed to accept invitation");
+        toast.error("Failed to accept invitation");
       }
     },
     [loadPartners]
@@ -248,10 +242,10 @@ export default function Dashboard() {
         await loadTasks();
       } else {
         const errorData = await response.json();
-        setError(errorData.error || "Failed to create task");
+        toast.error(errorData.error || "Failed to create task");
       }
     } catch {
-      setError("Failed to create task");
+      toast.error("Failed to create task");
     } finally {
       setLoading(false);
     }
@@ -283,7 +277,7 @@ export default function Dashboard() {
           await loadAllPartnerTasks();
         }
       } else {
-        setError("Failed to complete task");
+        toast.error("Failed to complete task");
         setCompletingTaskId(null);
       }
     } catch {
@@ -308,7 +302,7 @@ export default function Dashboard() {
         await loadTasks();
       }
     } catch {
-      setError("Failed to delete task");
+      toast.error("Failed to delete task");
     } finally {
       setTaskToDelete(null);
     }
@@ -332,10 +326,10 @@ export default function Dashboard() {
         await loadTasks();
       } else {
         const errorData = await response.json();
-        setError(errorData.error || "Failed to update task");
+        toast.error(errorData.error || "Failed to update task");
       }
     } catch {
-      setError("Failed to update task");
+      toast.error("Failed to update task");
     }
   };
 
@@ -397,20 +391,17 @@ export default function Dashboard() {
 
       if (response.ok) {
         const data = await response.json();
-        setError(""); // Clear any previous errors
         setPartnerEmail("");
         // Show success message
-        setSuccessMessage(data.message);
+        toast.success(data.message);
         // Reload invites
         await loadInvites();
-        // Clear success message after 5 seconds
-        setTimeout(() => setSuccessMessage(""), 5000);
       } else {
         const errorData = await response.json();
-        setError(errorData.error || "Failed to send invitation");
+        toast.error(errorData.error || "Failed to send invitation");
       }
     } catch {
-      setError("Failed to send invitation");
+      toast.error("Failed to send invitation");
     } finally {
       setLoading(false);
     }
@@ -440,7 +431,7 @@ export default function Dashboard() {
         await loadPartners();
         await loadAllPartnerTasks();
       } else {
-        setError("Failed to unpair from partner");
+        toast.error("Failed to unpair from partner");
       }
     } catch {
       setError("Failed to unpair from partner");
@@ -464,7 +455,7 @@ export default function Dashboard() {
       if (response.ok) {
         await loadInvites();
       } else {
-        setError("Failed to revoke invitation");
+        toast.error("Failed to revoke invitation");
       }
     } catch {
       setError("Failed to revoke invitation");
@@ -509,7 +500,7 @@ export default function Dashboard() {
         const currentActiveCount = tasks.openActiveTasks.length;
         if (currentActiveCount >= 3) {
           // Reject the move - don't update state
-          setError(
+          toast.error(
             "Active task limit reached: you can only have 3 active tasks at a time"
           );
           return;
@@ -553,11 +544,11 @@ export default function Dashboard() {
         if (response.ok) {
           // Server update succeeded - update the UI state immediately
           setTasks(originalTasks);
-          setError(""); // Clear any previous errors
+          // Clear any previous errors (toast handles this automatically)
         } else {
           // Server update failed - show error and reload tasks to get correct state
           const errorData = await response.json();
-          setError(errorData.error || "Failed to save task order");
+          toast.error(errorData.error || "Failed to save task order");
 
           // Reload tasks from server to ensure UI matches database state
           await loadTasks();
@@ -565,7 +556,7 @@ export default function Dashboard() {
       } catch (error) {
         // Network or other error - show error and reload tasks
         console.error("Failed to update server:", error);
-        setError("Failed to save task order - network error");
+        toast.error("Failed to save task order - network error");
 
         // Reload tasks from server to ensure UI matches database state
         await loadTasks();
@@ -597,11 +588,7 @@ export default function Dashboard() {
       <div className="min-h-screen bg-background">
         <DashboardHeader onSignOut={handleSignOut} />
 
-        <ErrorDisplay error={error} onClear={() => setError("")} />
-        <SuccessDisplay
-          message={successMessage}
-          onClear={() => setSuccessMessage("")}
-        />
+        {/* Using react-hot-toast for notifications instead of custom components */}
 
         <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
           <div className="px-4 py-6 sm:px-0">

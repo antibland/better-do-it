@@ -1,90 +1,94 @@
 @import "tailwindcss";
 
-/* Color Hunt Palette Theme System */
-/* Palette: #000000 (black), #5682B1 (steel blue), #739EC9 (light blue), #FFE8DB (light peach) */
+/* Modern HSL/OKLCH Color System */
+/* Using HSL as fallback with OKLCH for modern browsers - provides better perceptual uniformity */
 
-/* Define semantic color variables for light mode */
+/* Define semantic color variables for LIGHT mode (default) */
 :root {
-  /* Core brand colors from palette */
-  --color-black: #000000;
-  --color-steel-blue: #5682b1;
-  --color-light-blue: #739ec9;
-  --color-light-peach: #ffe8db;
-
   /* Typography - Satoshi font family */
   --font-sans:
     var(--font-satoshi), ui-sans-serif, system-ui, sans-serif,
     "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
   --font-display: var(--font-satoshi), ui-sans-serif, system-ui, sans-serif;
 
-  /* Semantic color mappings */
-  --background: #ffffff; /* clean white */
-  --foreground: #000000; /* pure black for maximum contrast */
-  --card: #ffffff; /* pure white for cards */
-  --card-foreground: #000000;
-  --popover: #ffffff;
-  --popover-foreground: #000000;
-  --primary: #5682b1; /* steel blue as primary */
-  --primary-foreground: #ffffff;
-  --secondary: #739ec9; /* light blue as secondary */
-  --secondary-foreground: #ffffff;
-  --muted: #f8fafc; /* very light gray */
-  --muted-foreground: #64748b; /* medium gray */
-  --accent: #739ec9; /* light blue as accent */
-  --accent-foreground: #ffffff;
-  --destructive: #dc2626; /* red for destructive actions */
-  --destructive-foreground: #ffffff;
-  --border: #e2e8f0; /* light border */
-  --input: #ffffff; /* white input background */
-  --ring: #5682b1; /* focus ring matches primary */
+  /* Base color palette - OKLCH for better perceptual uniformity */
+  --bg-dark: oklch(0.97 0.005 0); /* Very light gray */
+  --bg: oklch(1 0 0); /* Pure white */
+  --bg-light: oklch(1 0 0); /* Pure white */
+  --text: oklch(0.15 0.005 0); /* Very dark gray */
+  --text-muted: oklch(0.45 0.005 0); /* Medium gray */
+  --highlight: oklch(0.99 0.005 0); /* Off-white highlight */
+  --border: oklch(0.85 0.005 0); /* Light gray border */
+  --border-muted: oklch(0.92 0.005 0); /* Very light border */
+  --primary: oklch(0.7 0.15 184); /* Vibrant teal */
+  --secondary: oklch(0.7 0.15 4); /* Vibrant coral */
+  --danger: oklch(0.65 0.15 30); /* Red */
+  --warning: oklch(0.75 0.15 100); /* Amber */
+  --success: oklch(0.65 0.15 160); /* Green */
+  --info: oklch(0.7 0.15 260); /* Blue */
+
+  /* Semantic color mappings for component system */
+  --background: var(--bg);
+  --foreground: var(--text);
+  --card: var(--bg-light);
+  --card-foreground: var(--text);
+  --popover: var(--bg-light);
+  --popover-foreground: var(--text);
+  --primary-foreground: var(--bg-light);
+  --secondary-foreground: var(--bg-light);
+  --muted: var(--bg-light);
+  --muted-foreground: var(--text-muted);
+  --accent: var(--highlight);
+  --accent-foreground: var(--text);
+  --destructive: var(--danger);
+  --destructive-foreground: var(--text);
+  --input: var(--bg-light);
+  --ring: var(--primary);
   --radius: 0.5rem;
 }
 
-/* Define semantic color variables for dark mode */
+/* Define semantic color variables for DARK mode */
+body.dark,
 .dark {
-  --background: #000000; /* pure black background */
-  --foreground: #ffffff; /* white text */
-  --card: #1a1a1a; /* very dark card */
-  --card-foreground: #ffffff;
-  --popover: #1a1a1a;
-  --popover-foreground: #ffffff;
-  --primary: #739ec9; /* lighter blue for dark mode */
-  --primary-foreground: #000000;
-  --secondary: #5682b1; /* steel blue for dark mode */
-  --secondary-foreground: #ffffff;
-  --muted: #2a2a2a;
-  --muted-foreground: #a0aec0; /* lighter muted text */
-  --accent: #5682b1; /* steel blue accent */
-  --accent-foreground: #ffffff;
-  --destructive: #ef4444; /* red for dark mode */
-  --destructive-foreground: #ffffff;
-  --border: #374151; /* dark border */
-  --input: #2a2a2a; /* dark input background */
-  --ring: #739ec9; /* focus ring matches primary */
+  /* Base color palette - OKLCH for better perceptual uniformity */
+  --bg-dark: oklch(0.05 0.005 0); /* Very dark gray */
+  --bg: oklch(0.08 0.005 0); /* Dark gray */
+  --bg-light: oklch(0.12 0.005 0); /* Slightly lighter dark gray */
+  --text: oklch(0.95 0.005 0); /* Very light gray */
+  --text-muted: oklch(0.65 0.005 0); /* Medium light gray */
+  --highlight: oklch(0.2 0.005 0); /* Dark highlight */
+  --border: oklch(0.25 0.005 0); /* Dark border */
+  --border-muted: oklch(0.18 0.005 0); /* Darker border */
+  --primary: oklch(0.75 0.15 184); /* Bright teal */
+  --secondary: oklch(0.8 0.15 4); /* Bright coral */
+  --danger: oklch(0.75 0.15 30); /* Bright red */
+  --warning: oklch(0.8 0.15 100); /* Bright amber */
+  --success: oklch(0.75 0.15 160); /* Bright green */
+  --info: oklch(0.8 0.15 260); /* Bright blue */
+
+  /* Semantic color mappings remain the same - they reference the base palette */
+  --primary-foreground: var(--bg-dark);
+  --secondary-foreground: var(--bg-dark);
 }
 
-/* Auto dark mode via system preference */
+/* Auto dark mode via system preference - applies dark colors when system is set to dark */
 @media (prefers-color-scheme: dark) {
-  :root {
-    --background: #000000;
-    --foreground: #ffffff;
-    --card: #1a1a1a;
-    --card-foreground: #ffffff;
-    --popover: #1a1a1a;
-    --popover-foreground: #ffffff;
-    --primary: #739ec9;
-    --primary-foreground: #000000;
-    --secondary: #5682b1;
-    --secondary-foreground: #ffffff;
-    --muted: #2a2a2a;
-    --muted-foreground: #a0aec0;
-    --accent: #5682b1;
-    --accent-foreground: #ffffff;
-    --destructive: #ef4444;
-    --destructive-foreground: #ffffff;
-    --border: #374151;
-    --input: #2a2a2a;
-    --ring: #739ec9;
+  :root:not(.light) {
+    /* OKLCH colors for better perceptual uniformity */
+    --bg-dark: oklch(0.05 0.005 0); /* Very dark gray */
+    --bg: oklch(0.08 0.005 0); /* Dark gray */
+    --bg-light: oklch(0.12 0.005 0); /* Slightly lighter dark gray */
+    --text: oklch(0.95 0.005 0); /* Very light gray */
+    --text-muted: oklch(0.65 0.005 0); /* Medium light gray */
+    --highlight: oklch(0.2 0.005 0); /* Dark highlight */
+    --border: oklch(0.25 0.005 0); /* Dark border */
+    --border-muted: oklch(0.18 0.005 0); /* Darker border */
+    --primary: oklch(0.75 0.15 184); /* Bright teal */
+    --secondary: oklch(0.8 0.15 4); /* Bright coral */
+    --danger: oklch(0.75 0.15 30); /* Bright red */
+    --warning: oklch(0.8 0.15 100); /* Bright amber */
+    --success: oklch(0.75 0.15 160); /* Bright green */
+    --info: oklch(0.8 0.15 260); /* Bright blue */
   }
 }
 
@@ -111,24 +115,25 @@
   --color-input: var(--input);
   --color-ring: var(--ring);
 
-  /* Brand colors - these will generate utility classes like bg-steel-blue, text-light-blue, etc. */
-  --color-black: var(--color-black);
-  --color-steel-blue: var(--color-steel-blue);
-  --color-light-blue: var(--color-light-blue);
-  --color-light-peach: var(--color-light-peach);
+  /* Base color palette - accessible via utility classes like bg-bg, text-text-muted, etc. */
+  --color-bg-dark: var(--bg-dark);
+  --color-bg: var(--bg);
+  --color-bg-light: var(--bg-light);
+  --color-text: var(--text);
+  --color-text-muted: var(--text-muted);
+  --color-highlight: var(--highlight);
+  --color-border-muted: var(--border-muted);
 
-  /* Additional semantic colors for better UX */
-  --color-success: #38a169; /* green for success states */
-  --color-success-foreground: #ffffff;
-  --color-warning: #d69e2e; /* amber for warnings */
-  --color-warning-foreground: #ffffff;
-  --color-info: #3182ce; /* blue for info */
-  --color-info-foreground: #ffffff;
+  /* State colors - accessible via utility classes like bg-success, text-warning, etc. */
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+  --color-info: var(--info);
 
   /* Task age colors - semantic colors for task urgency */
-  --color-fresh: #38a169; /* green for fresh tasks */
-  --color-aging: #d69e2e; /* amber for aging tasks */
-  --color-stale: #e53e3e; /* red for stale tasks */
+  --color-fresh: var(--success); /* maps to success color */
+  --color-aging: var(--warning); /* maps to warning color */
+  --color-stale: var(--danger); /* maps to danger color */
 
   /* Typography - Satoshi font family */
   --font-mono:
@@ -178,7 +183,7 @@ input::placeholder {
 input:focus {
   outline: none;
   border-color: var(--ring) !important;
-  box-shadow: 0 0 0 2px rgba(86, 130, 177, 0.2) !important; /* Steel blue with opacity */
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 20%, transparent) !important;
 }
 
 /* ContentEditable dark mode fixes */
@@ -191,29 +196,50 @@ input:focus {
   background-color: transparent !important;
 }
 
-/* Skeleton dark mode fixes - multiple approaches */
-.dark .react-loading-skeleton,
-.dark .react-loading-skeleton::after,
-.dark .react-loading-skeleton::before {
-  background-color: #374151 !important; /* gray-700 */
+/* Skeleton loading state styles - uses new color system for consistency */
+.react-loading-skeleton,
+.react-loading-skeleton::after,
+.react-loading-skeleton::before,
+[class*="react-loading-skeleton"] {
+  background-color: var(--bg-light) !important;
   background-image: linear-gradient(
     90deg,
-    #374151 0px,
-    #4b5563 40px,
-    #374151 80px
+    var(--bg-light) 0px,
+    var(--highlight) 40px,
+    var(--bg-light) 80px
   ) !important;
 }
 
-.dark .react-loading-skeleton::after {
+.react-loading-skeleton::after,
+[class*="react-loading-skeleton"]::after {
   background-image: linear-gradient(
     90deg,
     transparent,
-    rgba(255, 255, 255, 0.1),
+    var(--highlight),
     transparent
+  ) !important;
+  opacity: 0.3;
+}
+
+/* Light mode skeleton adjustments */
+body.light .react-loading-skeleton,
+.light .react-loading-skeleton,
+body.light .react-loading-skeleton::after,
+.light .react-loading-skeleton::after,
+body.light .react-loading-skeleton::before,
+.light .react-loading-skeleton::before,
+body.light [class*="react-loading-skeleton"],
+.light [class*="react-loading-skeleton"] {
+  background-color: var(--bg-dark) !important;
+  background-image: linear-gradient(
+    90deg,
+    var(--bg-dark) 0px,
+    var(--border) 40px,
+    var(--bg-dark) 80px
   ) !important;
 }
 
-/* Typography utility classes for Resist Sans variants */
+/* Typography utility classes for Satoshi variants */
 .font-display {
   font-family: var(--font-display);
   font-feature-settings:
@@ -235,50 +261,6 @@ h6 {
     "liga" 1,
     "calt" 1;
   font-weight: 500; /* Medium weight for better readability */
-}
-
-/* Alternative skeleton dark mode approach */
-@media (prefers-color-scheme: dark) {
-  .react-loading-skeleton,
-  .react-loading-skeleton::after,
-  .react-loading-skeleton::before {
-    background-color: #374151 !important; /* gray-700 */
-    background-image: linear-gradient(
-      90deg,
-      #374151 0px,
-      #4b5563 40px,
-      #374151 80px
-    ) !important;
-  }
-
-  .react-loading-skeleton::after {
-    background-image: linear-gradient(
-      90deg,
-      transparent,
-      rgba(255, 255, 255, 0.1),
-      transparent
-    ) !important;
-  }
-}
-
-/* More specific overrides for react-loading-skeleton */
-.dark [class*="react-loading-skeleton"] {
-  background-color: #374151 !important;
-  background-image: linear-gradient(
-    90deg,
-    #374151 0px,
-    #4b5563 40px,
-    #374151 80px
-  ) !important;
-}
-
-.dark [class*="react-loading-skeleton"]::after {
-  background-image: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255, 255, 255, 0.1),
-    transparent
-  ) !important;
 }
 
 /* iOS Safari specific fixes */
@@ -341,7 +323,11 @@ h6 {
 }
 
 .email-preview button:hover {
-  background-color: #4a6b8a; /* Darker steel blue for hover state */
+  background-color: color-mix(
+    in srgb,
+    var(--primary) 80%,
+    black
+  ); /* Slightly darker primary for hover state */
 }
 
 /* Radix UI Accordion Animations */

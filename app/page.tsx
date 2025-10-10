@@ -83,10 +83,10 @@ export default function Home() {
 
         {/* Features */}
         <div className="mt-16">
-          <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
-            <div className="pt-6">
-              <div className="flow-root bg-card rounded-lg px-6 pb-8 shadow-lg">
-                <div className="-mt-6">
+          <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3 items-stretch">
+            <div className="pt-6 grid grid-rows-subgrid">
+              <div className="bg-card rounded-lg px-6 pb-8 shadow-lg h-full flex flex-col">
+                <div className="-mt-6 flex-1">
                   <div>
                     <span className="inline-flex items-center justify-center p-3 bg-secondary rounded-md shadow-lg">
                       <svg
@@ -115,9 +115,9 @@ export default function Home() {
               </div>
             </div>
 
-            <div className="pt-6">
-              <div className="flow-root bg-card rounded-lg px-6 pb-8 shadow-lg">
-                <div className="-mt-6">
+            <div className="pt-6 grid grid-rows-subgrid">
+              <div className="bg-card rounded-lg px-6 pb-8 shadow-lg h-full flex flex-col">
+                <div className="-mt-6 flex-1">
                   <div>
                     <span className="inline-flex items-center justify-center p-3 bg-secondary rounded-md shadow-lg">
                       <svg
@@ -146,9 +146,9 @@ export default function Home() {
               </div>
             </div>
 
-            <div className="pt-6">
-              <div className="flow-root bg-card rounded-lg px-6 pb-8 shadow-lg">
-                <div className="-mt-6">
+            <div className="pt-6 grid grid-rows-subgrid">
+              <div className="bg-card rounded-lg px-6 pb-8 shadow-lg h-full flex flex-col">
+                <div className="-mt-6 flex-1">
                   <div>
                     <span className="inline-flex items-center justify-center p-3 bg-secondary rounded-md shadow-lg">
                       <svg

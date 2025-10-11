@@ -85,12 +85,35 @@ export default function Home() {
         <div className="mt-16">
           <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3 items-stretch">
             <div className="pt-6 grid grid-rows-subgrid">
-              <div className="bg-card rounded-lg px-6 pb-8 shadow-lg h-full flex flex-col">
-                <div className="-mt-6 flex-1">
-                  <div>
-                    <span className="inline-flex items-center justify-center p-3 bg-secondary rounded-md shadow-lg">
+              <div className="bg-card rounded-lg px-6 pb-8 shadow-lg h-full flex flex-col relative overflow-hidden">
+                {/* Light source effect - subtle top highlight */}
+                <div
+                  className="absolute inset-0 rounded-lg pointer-events-none"
+                  style={{
+                    background:
+                      "linear-gradient(135deg, rgba(255,255,255,0.08) 0%, transparent 50%, transparent 100%)",
+                    border: "1px solid transparent",
+                    borderImage:
+                      "linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.05) 50%, transparent 100%) 1",
+                  }}
+                ></div>
+                {/* Dark mode light source effect */}
+                <div
+                  className="absolute inset-0 rounded-lg pointer-events-none dark:block hidden"
+                  style={{
+                    background:
+                      "linear-gradient(135deg, rgba(255,255,255,0.03) 0%, transparent 50%, transparent 100%)",
+                    border: "1px solid transparent",
+                    borderImage:
+                      "linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.02) 50%, transparent 100%) 1",
+                  }}
+                ></div>
+
+                <div className="flex-1 relative z-10 pt-6">
+                  <div className="flex items-start gap-4">
+                    <span className="inline-flex items-center justify-center p-1 bg-secondary rounded-md shadow-lg flex-shrink-0">
                       <svg
-                        className="h-6 w-6 text-white"
+                        className="h-4 w-4 text-white dark:text-black/85"
                         fill="none"
                         viewBox="0 0 24 24"
                         stroke="currentColor"
@@ -103,25 +126,50 @@ export default function Home() {
                         />
                       </svg>
                     </span>
+                    <div className="flex-1">
+                      <h3 className="text-lg font-medium text-card-foreground tracking-tight">
+                        Shared Todo Lists
+                      </h3>
+                      <p className="mt-3 text-base text-muted-foreground">
+                        Create and share todo lists with your partner. See
+                        updates in real-time as you both work toward your goals.
+                      </p>
+                    </div>
                   </div>
-                  <h3 className="mt-8 text-lg font-medium text-card-foreground tracking-tight">
-                    Shared Todo Lists
-                  </h3>
-                  <p className="mt-5 text-base text-muted-foreground">
-                    Create and share todo lists with your partner. See updates
-                    in real-time as you both work toward your goals.
-                  </p>
                 </div>
               </div>
             </div>
 
             <div className="pt-6 grid grid-rows-subgrid">
-              <div className="bg-card rounded-lg px-6 pb-8 shadow-lg h-full flex flex-col">
-                <div className="-mt-6 flex-1">
-                  <div>
-                    <span className="inline-flex items-center justify-center p-3 bg-secondary rounded-md shadow-lg">
+              <div className="bg-card rounded-lg px-6 pb-8 shadow-lg h-full flex flex-col relative overflow-hidden">
+                {/* Light source effect - subtle top highlight */}
+                <div
+                  className="absolute inset-0 rounded-lg pointer-events-none"
+                  style={{
+                    background:
+                      "linear-gradient(135deg, rgba(255,255,255,0.08) 0%, transparent 50%, transparent 100%)",
+                    border: "1px solid transparent",
+                    borderImage:
+                      "linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.05) 50%, transparent 100%) 1",
+                  }}
+                ></div>
+                {/* Dark mode light source effect */}
+                <div
+                  className="absolute inset-0 rounded-lg pointer-events-none dark:block hidden"
+                  style={{
+                    background:
+                      "linear-gradient(135deg, rgba(255,255,255,0.03) 0%, transparent 50%, transparent 100%)",
+                    border: "1px solid transparent",
+                    borderImage:
+                      "linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.02) 50%, transparent 100%) 1",
+                  }}
+                ></div>
+
+                <div className="flex-1 relative z-10 pt-6">
+                  <div className="flex items-start gap-4">
+                    <span className="inline-flex items-center justify-center p-1 bg-secondary rounded-md shadow-lg flex-shrink-0">
                       <svg
-                        className="h-6 w-6 text-white"
+                        className="h-4 w-4 text-white dark:text-black/85"
                         fill="none"
                         viewBox="0 0 24 24"
                         stroke="currentColor"
@@ -134,25 +182,50 @@ export default function Home() {
                         />
                       </svg>
                     </span>
+                    <div className="flex-1">
+                      <h3 className="text-lg font-medium text-card-foreground tracking-tight">
+                        Partner Collaboration
+                      </h3>
+                      <p className="mt-3 text-base text-muted-foreground">
+                        Work together seamlessly. Assign tasks, add comments,
+                        and celebrate completions together.
+                      </p>
+                    </div>
                   </div>
-                  <h3 className="mt-8 text-lg font-medium text-card-foreground tracking-tight">
-                    Partner Collaboration
-                  </h3>
-                  <p className="mt-5 text-base text-muted-foreground">
-                    Work together seamlessly. Assign tasks, add comments, and
-                    celebrate completions together.
-                  </p>
                 </div>
               </div>
             </div>
 
             <div className="pt-6 grid grid-rows-subgrid">
-              <div className="bg-card rounded-lg px-6 pb-8 shadow-lg h-full flex flex-col">
-                <div className="-mt-6 flex-1">
-                  <div>
-                    <span className="inline-flex items-center justify-center p-3 bg-secondary rounded-md shadow-lg">
+              <div className="bg-card rounded-lg px-6 pb-8 shadow-lg h-full flex flex-col relative overflow-hidden">
+                {/* Light source effect - subtle top highlight */}
+                <div
+                  className="absolute inset-0 rounded-lg pointer-events-none"
+                  style={{
+                    background:
+                      "linear-gradient(135deg, rgba(255,255,255,0.08) 0%, transparent 50%, transparent 100%)",
+                    border: "1px solid transparent",
+                    borderImage:
+                      "linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.05) 50%, transparent 100%) 1",
+                  }}
+                ></div>
+                {/* Dark mode light source effect */}
+                <div
+                  className="absolute inset-0 rounded-lg pointer-events-none dark:block hidden"
+                  style={{
+                    background:
+                      "linear-gradient(135deg, rgba(255,255,255,0.03) 0%, transparent 50%, transparent 100%)",
+                    border: "1px solid transparent",
+                    borderImage:
+                      "linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.02) 50%, transparent 100%) 1",
+                  }}
+                ></div>
+
+                <div className="flex-1 relative z-10 pt-6">
+                  <div className="flex items-start gap-4">
+                    <span className="inline-flex items-center justify-center p-1 bg-secondary rounded-md shadow-lg flex-shrink-0">
                       <svg
-                        className="h-6 w-6 text-white"
+                        className="h-4 w-4 text-white dark:text-black/85"
                         fill="none"
                         viewBox="0 0 24 24"
                         stroke="currentColor"
@@ -165,14 +238,16 @@ export default function Home() {
                         />
                       </svg>
                     </span>
+                    <div className="flex-1">
+                      <h3 className="text-lg font-medium text-card-foreground tracking-tight">
+                        Progress Tracking
+                      </h3>
+                      <p className="mt-3 text-base text-muted-foreground">
+                        Track your progress together with visual charts and
+                        completion statistics. Stay motivated as a team.
+                      </p>
+                    </div>
                   </div>
-                  <h3 className="mt-8 text-lg font-medium text-card-foreground tracking-tight">
-                    Progress Tracking
-                  </h3>
-                  <p className="mt-5 text-base text-muted-foreground">
-                    Track your progress together with visual charts and
-                    completion statistics. Stay motivated as a team.
-                  </p>
                 </div>
               </div>
             </div>

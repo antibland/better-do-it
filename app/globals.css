@@ -5,6 +5,8 @@
 
 /* Define semantic color variables for LIGHT mode (default) */
 :root {
+  font-size: 1.2rem;
+
   /* Typography - Satoshi font family */
   --font-sans:
     var(--font-satoshi), ui-sans-serif, system-ui, sans-serif,

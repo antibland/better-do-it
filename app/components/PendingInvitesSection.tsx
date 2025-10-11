@@ -60,7 +60,7 @@ export function PendingInvitesSection({
 
   return (
     <>
-      <div className="bg-white dark:bg-gray-900 rounded-lg shadow p-6 mt-6">
+      <div className="bg-white dark:bg-gray-900 rounded-lg shadow px-2 py-6 md:px-6 mt-6">
         <div className="flex items-center space-x-2 mb-4">
           <ClockIcon className="w-5 h-5 text-gray-500 dark:text-gray-400" />
           <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">

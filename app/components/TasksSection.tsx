@@ -46,7 +46,7 @@ export function TasksSection({
   onCompleteTask,
 }: TasksSectionProps) {
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-lg shadow p-6">
+    <div className="bg-white dark:bg-gray-900 rounded-lg shadow px-2 py-6 md:px-6">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
           My Tasks

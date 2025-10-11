@@ -67,7 +67,7 @@ function PartnersAccordion({
 
               <Accordion.Content className="AccordionContent px-4 pb-4">
                 <div className="space-y-4">
-                  <div className="p-3 bg-primary/10 dark:bg-primary/10 rounded-lg">
+                  <div className="mt-3 p-3 bg-primary/10 dark:bg-primary/10 rounded-lg">
                     <p className="text-sm text-primary/80">
                       <span className="font-medium">Partnered since:</span>{" "}
                       {new Date(partner.createdAt).toLocaleDateString()}

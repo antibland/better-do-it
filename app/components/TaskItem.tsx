@@ -73,7 +73,7 @@ export function TaskItem({
             }`}
           >
             <div
-              className="flex items-center justify-center w-6 h-6 text-muted-foreground mr-3 flex-shrink-0"
+              className="hidden md:flex items-center justify-center w-6 h-6 text-muted-foreground mr-3 flex-shrink-0"
               aria-label="Drag to reorder"
               title="Drag to reorder"
             >

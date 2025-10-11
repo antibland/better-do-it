@@ -9,7 +9,7 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-secondary/40 dark:from-background dark:via-background dark:to-secondary/40">
       {/* Header */}
-      <header className="bg-card shadow-sm">
+      <header className="bg-card">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-6">
             <div className="flex items-center">

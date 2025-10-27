@@ -7,6 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "auth:generate": "npx @better-auth/cli generate",
+    "auth:migrate": "npx @better-auth/cli migrate",
     "health-check": "curl -s http://localhost:3000/api/health-check-public | jq -r '.overall'",
     "health-check-fail": "npm run health-check | grep -q 'unhealthy' && exit 1 || exit 0",
     "pre-deploy": "npm run health-check-fail && npx tsx test-invite-flow.ts"
@@ -20,6 +22,7 @@
     "@vercel/postgres": "^0.10.0",
     "better-auth": "^1.3.4",
     "better-sqlite3": "^12.2.0",
+    "date-fns": "^4.1.0",
     "lucide-react": "^0.539.0",
     "motion": "^12.23.12",
     "next": "15.4.6",
@@ -30,9 +33,11 @@
     "react-hot-toast": "^2.6.0",
     "react-loading-skeleton": "^3.5.0",
     "react-swipeable": "^7.0.2",
-    "resend": "^6.0.2"
+    "resend": "^6.0.2",
+    "tailwind-merge": "^3.3.1"
   },
   "devDependencies": {
+    "@better-auth/cli": "^1.3.32",
     "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4",
     "@types/better-sqlite3": "^7.6.13",

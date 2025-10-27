@@ -1,0 +1,9 @@
+# Better Auth CLI ignore patterns
+# Files and directories to ignore during migration generation
+
+node_modules/
+.next/
+.vercel/
+dist/
+build/
+

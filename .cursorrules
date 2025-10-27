@@ -1,0 +1,36 @@
+# Fundamental Principles
+
+- Pay close attention to all stated constraints (e.g., language choice, performance goals, coding style). Do not ignore any requirement or best practice stated.
+- Write clean, simple, readable code
+- Implement features in the simplest possible way
+- Keep files small and focused (<200 lines)
+- Test after every meaningful change
+- Focus on core functionality before optimization
+- Use clear, consistent naming
+- Think thoroughly before coding. Don't assume ANYTHING.
+- ALWAYS write simple, clean and modular code.
+
+# Comments
+
+- NEVER add comments to the code unless I instruct it
+- Code should be self-documenting through clear naming and structure
+- Only add comments when the user specifically asks for documentation
+
+# Error Fixing
+
+- DO NOT JUMP TO CONCLUSIONS! Consider multiple possible causes before deciding.
+- Explain the problem in plain English
+- Make minimal necessary changes, changing as few lines of code as possible
+- In case of strange errors, ask the user to perform a Perplexity web search to find the latest up-to-date information
+
+# Building Process
+
+- Verify each new feature works by telling the user how to test it
+- DO NOT write complicated and confusing code. Opt for the simple & modular approach.
+- When not sure what to do, tell the user to perform a web search
+
+# Codebase Search
+
+1. Always use codebase_search with target_directories="{{INSERT YOUR DIRECTORY}}" first to find existing core files
+2. Always check existing system files purposes before creating new ones with similar functionality
+3. Always list the cursor rules you're using

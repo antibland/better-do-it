@@ -70,6 +70,24 @@ async function initializeSchema(): Promise<void> {
       CREATE INDEX IF NOT EXISTS idx_invite_inviteeEmail ON invite(inviteeEmail);
       CREATE INDEX IF NOT EXISTS idx_invite_status ON invite(status);
       CREATE INDEX IF NOT EXISTS idx_invite_expiresAt ON invite(expiresAt);
+
+      CREATE TABLE IF NOT EXISTS comment (
+        id TEXT PRIMARY KEY,
+        taskId TEXT NOT NULL,
+        authorId TEXT NOT NULL,
+        content TEXT NOT NULL,
+        createdAt TEXT NOT NULL DEFAULT (datetime('now')),
+        updatedAt TEXT NOT NULL DEFAULT (datetime('now')),
+        readAt TEXT NULL,
+        isRead INTEGER NOT NULL DEFAULT 0 CHECK (isRead IN (0,1)),
+        FOREIGN KEY (taskId) REFERENCES task(id) ON DELETE CASCADE,
+        FOREIGN KEY (authorId) REFERENCES user(id) ON DELETE CASCADE,
+        UNIQUE(taskId, authorId)
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_comment_taskId ON comment(taskId);
+      CREATE INDEX IF NOT EXISTS idx_comment_authorId ON comment(authorId);
+      CREATE INDEX IF NOT EXISTS idx_comment_isRead ON comment(isRead);
     `);
 
     // Check if isActive column exists, if not add it
@@ -261,6 +279,41 @@ async function initializeSchema(): Promise<void> {
       await sql`CREATE INDEX IF NOT EXISTS idx_invite_expiresat ON invite(expiresat)`;
     } catch (error) {
       console.log("Invite expiresat index creation:", error);
+    }
+
+    // Comment table for partner task collaboration
+    try {
+      await sql`CREATE TABLE IF NOT EXISTS comment (
+        id TEXT PRIMARY KEY,
+        taskid TEXT NOT NULL,
+        authorid TEXT NOT NULL,
+        content TEXT NOT NULL,
+        createdat TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+        updatedat TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+        readat TIMESTAMP WITH TIME ZONE NULL,
+        isread INTEGER NOT NULL DEFAULT 0 CHECK (isread IN (0,1)),
+        UNIQUE(taskid, authorid)
+      )`;
+    } catch (error) {
+      console.log("Comment table creation:", error);
+    }
+
+    try {
+      await sql`CREATE INDEX IF NOT EXISTS idx_comment_taskid ON comment(taskid)`;
+    } catch (error) {
+      console.log("Comment taskid index creation:", error);
+    }
+
+    try {
+      await sql`CREATE INDEX IF NOT EXISTS idx_comment_authorid ON comment(authorid)`;
+    } catch (error) {
+      console.log("Comment authorid index creation:", error);
+    }
+
+    try {
+      await sql`CREATE INDEX IF NOT EXISTS idx_comment_isread ON comment(isread)`;
+    } catch (error) {
+      console.log("Comment isread index creation:", error);
     }
   }
 }

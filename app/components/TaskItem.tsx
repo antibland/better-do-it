@@ -3,6 +3,8 @@ import { Draggable } from "@hello-pangea/dnd";
 import { Task } from "@/types";
 import { TaskCompletionProgress } from "./TaskCompletionProgress";
 import { TaskAgeIcon } from "./TaskAgeIcon";
+import { CommentBadge } from "./CommentBadge";
+import { twMerge } from "tailwind-merge";
 
 interface TaskItemProps {
   task: Task;
@@ -25,6 +27,8 @@ interface TaskItemProps {
   ) => string;
   onUndoCompletion: (taskId: string) => void;
   onCompleteTask: (taskId: string) => void;
+  commentCount?: number;
+  onCommentClick?: (taskId: string, taskTitle: string) => void;
 }
 
 export function TaskItem({
@@ -41,6 +45,8 @@ export function TaskItem({
   getTaskItemStyles,
   onUndoCompletion,
   onCompleteTask,
+  commentCount,
+  onCommentClick,
 }: TaskItemProps) {
   if (completingTaskId === task.id) {
     return (
@@ -60,17 +66,18 @@ export function TaskItem({
           ref={provided.innerRef}
           {...provided.draggableProps}
           {...provided.dragHandleProps}
-          className={`${getTaskItemStyles(
-            snapshot.isDragging,
-            snapshot.draggingOver
-          )} ${snapshot.isDragging ? "shadow-lg" : ""}`}
+          className={twMerge(
+            getTaskItemStyles(snapshot.isDragging, snapshot.draggingOver),
+            snapshot.isDragging && "shadow-lg"
+          )}
         >
           <div
-            className={`flex-1 flex items-center justify-between p-3 border rounded-lg ${
+            className={twMerge(
+              "flex-1 flex items-center justify-between p-3 border rounded-lg",
               isActiveTask
                 ? "border-primary/30 dark:border-primary/30 bg-primary/10 dark:bg-primary/10"
                 : "border-border"
-            }`}
+            )}
           >
             <div
               className="hidden md:flex items-center justify-center w-6 h-6 text-muted-foreground mr-3 flex-shrink-0"
@@ -80,7 +87,7 @@ export function TaskItem({
               <GripVertical className="w-5 h-5" />
             </div>
 
-            <div className="flex items-center justify-center w-5 h-5 mr-2 flex-shrink-0">
+            <div className="flex items-center justify-center w-5 h-5 flex-shrink-0">
               <TaskAgeIcon
                 addedToActiveAt={task.addedToActiveAt}
                 createdAt={task.createdAt}
@@ -106,11 +113,11 @@ export function TaskItem({
                   e.currentTarget.textContent || task.title
                 )
               }
-              className={`min-w-0 flex-1 ${
+              className={twMerge(
+                "min-w-0 flex-1",
                 task.isCompleted === 1
                   ? "text-muted-foreground line-through"
-                  : "text-foreground"
-              } ${
+                  : "text-foreground",
                 editingTaskId === task.id
                   ? "outline-none border-b-2 border-primary bg-yellow-50 dark:bg-yellow-950/20 px-2 py-1 rounded"
                   : task.isCompleted === 0
@@ -119,23 +126,34 @@ export function TaskItem({
                           ? "bg-primary/20 dark:bg-primary/20"
                           : "bg-muted"
                       } px-2 py-1 rounded`
-                    : "px-2 py-1 rounded"
-              } bg-transparent dark:bg-transparent`}
+                    : "px-2 py-1 rounded",
+                "bg-transparent dark:bg-transparent"
+              )}
             >
               {task.title}
             </div>
             <div className="flex items-center space-x-2 ml-4">
               {task.isCompleted === 0 ? (
-                isActiveTask && (
-                  <button
-                    onClick={() => onStartCompletion(task.id)}
-                    className="flex items-center justify-center w-10 h-10 text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300 rounded-lg"
-                    aria-label={`Complete task: ${task.title}`}
-                    title={`Complete task: ${task.title}`}
-                  >
-                    <CheckCircle2 className="w-6 h-6" />
-                  </button>
-                )
+                <>
+                  {commentCount !== undefined &&
+                    commentCount > 0 &&
+                    onCommentClick && (
+                      <CommentBadge
+                        commentCount={commentCount}
+                        onClick={() => onCommentClick(task.id, task.title)}
+                      />
+                    )}
+                  {isActiveTask && (
+                    <button
+                      onClick={() => onStartCompletion(task.id)}
+                      className="flex items-center justify-center w-10 h-10 text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300 rounded-lg"
+                      aria-label={`Complete task: ${task.title}`}
+                      title={`Complete task: ${task.title}`}
+                    >
+                      <CheckCircle2 className="w-6 h-6" />
+                    </button>
+                  )}
+                </>
               ) : (
                 <div className="flex items-center space-x-2">
                   <span className="text-green-600 dark:text-green-400 text-lg">

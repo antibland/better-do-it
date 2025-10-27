@@ -24,6 +24,8 @@ interface TaskListProps {
   ) => string;
   onUndoCompletion: (taskId: string) => void;
   onCompleteTask: (taskId: string) => void;
+  commentCounts?: Record<string, number>;
+  onCommentClick?: (taskId: string, taskTitle: string) => void;
 }
 
 export function TaskList({
@@ -41,6 +43,8 @@ export function TaskList({
   getTaskItemStyles,
   onUndoCompletion,
   onCompleteTask,
+  commentCounts,
+  onCommentClick,
 }: TaskListProps) {
   return (
     <div>
@@ -82,6 +86,8 @@ export function TaskList({
                     getTaskItemStyles={getTaskItemStyles}
                     onUndoCompletion={onUndoCompletion}
                     onCompleteTask={onCompleteTask}
+                    commentCount={commentCounts?.[task.id]}
+                    onCommentClick={onCommentClick}
                   />
                 ))}
               </div>

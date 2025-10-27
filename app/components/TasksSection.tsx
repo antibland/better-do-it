@@ -1,7 +1,11 @@
+"use client";
+
 import Link from "next/link";
 import { TasksResponse } from "@/types";
 import { AddTaskForm } from "./AddTaskForm";
 import { TaskList } from "./TaskList";
+import { CommentDialog } from "./CommentDialog";
+import { useState, useEffect } from "react";
 
 interface TasksSectionProps {
   tasks: TasksResponse | null;
@@ -26,6 +30,7 @@ interface TasksSectionProps {
   ) => string;
   onUndoCompletion: (taskId: string) => void;
   onCompleteTask: (taskId: string) => void;
+  onRefreshTasks?: () => void;
 }
 
 export function TasksSection({
@@ -44,7 +49,58 @@ export function TasksSection({
   getTaskItemStyles,
   onUndoCompletion,
   onCompleteTask,
+  onRefreshTasks,
 }: TasksSectionProps) {
+  const [commentDialogOpen, setCommentDialogOpen] = useState(false);
+  const [selectedTask, setSelectedTask] = useState<{
+    id: string;
+    title: string;
+  } | null>(null);
+  const [taskCommentCounts, setTaskCommentCounts] = useState<
+    Record<string, number>
+  >({});
+
+  const fetchCommentCounts = async () => {
+    if (!tasks || !tasks.openActiveTasks) return;
+
+    const counts: Record<string, number> = {};
+
+    for (const task of tasks.openActiveTasks) {
+      try {
+        const response = await fetch(`/api/comments?taskId=${task.id}`);
+        if (response.ok) {
+          const data = await response.json();
+          counts[task.id] = data.comments?.length || 0;
+        }
+      } catch (error) {
+        console.error("Error fetching comment count:", error);
+      }
+    }
+
+    setTaskCommentCounts(counts);
+  };
+
+  useEffect(() => {
+    fetchCommentCounts();
+  }, [tasks]);
+
+  const handleCommentClick = (taskId: string, taskTitle: string) => {
+    setSelectedTask({ id: taskId, title: taskTitle });
+    setCommentDialogOpen(true);
+  };
+
+  const handleCommentDialogClose = () => {
+    setCommentDialogOpen(false);
+    setSelectedTask(null);
+  };
+
+  const handleCommentRefresh = () => {
+    fetchCommentCounts();
+    if (onRefreshTasks) {
+      onRefreshTasks();
+    }
+  };
+
   return (
     <div className="bg-white dark:bg-gray-900 rounded-lg shadow px-2 py-6 md:px-6">
       <div className="flex items-center justify-between mb-6">
@@ -84,6 +140,8 @@ export function TasksSection({
           getTaskItemStyles={getTaskItemStyles}
           onUndoCompletion={onUndoCompletion}
           onCompleteTask={onCompleteTask}
+          commentCounts={taskCommentCounts}
+          onCommentClick={handleCommentClick}
         />
 
         {/* Divider between lists */}
@@ -121,6 +179,17 @@ export function TasksSection({
           View completed tasks
         </Link>
       </div>
+
+      {selectedTask && (
+        <CommentDialog
+          taskId={selectedTask.id}
+          taskTitle={selectedTask.title}
+          isOpen={commentDialogOpen}
+          onClose={handleCommentDialogClose}
+          isTaskOwner={true}
+          onRefresh={handleCommentRefresh}
+        />
+      )}
     </div>
   );
 }

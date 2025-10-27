@@ -87,7 +87,9 @@ export async function GET(req: Request) {
 
         // Filter tasks for different views
         const activeTasks = allTasks.filter((task) => task.isActive === 1);
-        const masterTasks = allTasks.filter((task) => task.isActive === 0);
+        const masterTasks = allTasks.filter(
+          (task) => task.isActive === 0 && task.isCompleted === 0
+        );
         const openActiveTasks = activeTasks.filter(
           (task) => task.isCompleted === 0
         );
@@ -142,14 +144,14 @@ export async function GET(req: Request) {
       }
     } else {
       // SQLite implementation for development
-              const allTasks = appDb
-          .prepare(
-            `SELECT id, userId, title, isCompleted, isActive, sortOrder, createdAt, completedAt, addedToActiveAt
+      const allTasks = appDb
+        .prepare(
+          `SELECT id, userId, title, isCompleted, isActive, sortOrder, createdAt, completedAt, addedToActiveAt
              FROM task
              WHERE userId = ?
              ORDER BY isActive DESC, isCompleted ASC, sortOrder ASC, createdAt DESC`
-          )
-          .all(userId) as Task[];
+        )
+        .all(userId) as Task[];
 
       // PROPER FIX: Use the correct week boundary calculation
       const weekStart = toSqliteUtc(getCurrentWeekStartEt());
@@ -164,7 +166,9 @@ export async function GET(req: Request) {
 
       // Filter tasks for different views
       const activeTasks = allTasks.filter((task) => task.isActive === 1);
-      const masterTasks = allTasks.filter((task) => task.isActive === 0);
+      const masterTasks = allTasks.filter(
+        (task) => task.isActive === 0 && task.isCompleted === 0
+      );
       const openActiveTasks = activeTasks.filter(
         (task) => task.isCompleted === 0
       );
@@ -262,8 +266,8 @@ export async function POST(req: Request) {
     await sql`
       INSERT INTO task (id, userid, title, iscompleted, isactive, sort_order, createdat, completedat, addedtoactiveat)
       VALUES (${id}, ${userId}, ${title}, 0, ${
-      isActive ? 1 : 0
-    }, ${nextSortOrder}, ${now}, NULL, ${addedToActiveAt})
+        isActive ? 1 : 0
+      }, ${nextSortOrder}, ${now}, NULL, ${addedToActiveAt})
     `;
 
     const createdResult = await sql`

@@ -155,7 +155,7 @@ body {
     "calt" 1; /* Enable font features for better typography */
 }
 
-button {
+button:not([disabled]) {
   cursor: pointer;
 }
 

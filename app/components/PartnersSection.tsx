@@ -1,11 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import * as Accordion from "@radix-ui/react-accordion";
 import { ChevronDownIcon } from "lucide-react";
 import { Partner, PartnerTasksResponse, Invite } from "@/types";
 import { PendingInvitesSection } from "./PendingInvitesSection";
 import { TaskAgeIcon } from "./TaskAgeIcon";
+import { CommentButton } from "./CommentButton";
+import { CommentDialog } from "./CommentDialog";
+import { twMerge } from "tailwind-merge";
 
 function PartnersAccordion({
   partners,
@@ -17,9 +20,56 @@ function PartnersAccordion({
   onUnpairPartner: (partnershipId: string) => void;
 }) {
   const [openAccordionItems, setOpenAccordionItems] = useState<string[]>([]);
+  const [commentDialogOpen, setCommentDialogOpen] = useState(false);
+  const [selectedTask, setSelectedTask] = useState<{
+    id: string;
+    title: string;
+  } | null>(null);
+  const [taskComments, setTaskComments] = useState<Record<string, boolean>>({});
 
   const handleAccordionChange = (value: string | string[]) => {
     setOpenAccordionItems(Array.isArray(value) ? value : [value]);
+  };
+
+  const fetchCommentStatus = async () => {
+    const commentStatus: Record<string, boolean> = {};
+
+    for (const partner of partners) {
+      const partnerTasks = partnerTasksMap[partner.id];
+      if (!partnerTasks) continue;
+
+      for (const task of partnerTasks.tasks) {
+        try {
+          const response = await fetch(`/api/comments?taskId=${task.id}`);
+          if (response.ok) {
+            const data = await response.json();
+            commentStatus[task.id] = data.comments && data.comments.length > 0;
+          }
+        } catch (error) {
+          console.error("Error fetching comment status:", error);
+        }
+      }
+    }
+
+    setTaskComments(commentStatus);
+  };
+
+  useEffect(() => {
+    fetchCommentStatus();
+  }, [partners, partnerTasksMap]);
+
+  const handleCommentClick = (taskId: string, taskTitle: string) => {
+    setSelectedTask({ id: taskId, title: taskTitle });
+    setCommentDialogOpen(true);
+  };
+
+  const handleCommentDialogClose = () => {
+    setCommentDialogOpen(false);
+    setSelectedTask(null);
+  };
+
+  const handleCommentRefresh = () => {
+    fetchCommentStatus();
   };
 
   return (
@@ -58,9 +108,10 @@ function PartnersAccordion({
                     </div>
                   </div>
                   <ChevronDownIcon
-                    className={`w-5 h-5 text-gray-400 dark:text-gray-500 transition-transform duration-200 ${
-                      isOpen ? "rotate-180" : ""
-                    }`}
+                    className={twMerge(
+                      "w-5 h-5 text-gray-400 dark:text-gray-500 transition-transform duration-200",
+                      isOpen && "rotate-180"
+                    )}
                   />
                 </Accordion.Trigger>
               </Accordion.Header>
@@ -93,11 +144,12 @@ function PartnersAccordion({
                         .map((task) => (
                           <div
                             key={task.id}
-                            className={`flex items-center space-x-3 p-3 border border-gray-200 dark:border-gray-700 rounded-lg ${
+                            className={twMerge(
+                              "flex items-center space-x-3 p-3 border border-gray-200 dark:border-gray-700 rounded-lg",
                               task.isCompleted === 1
                                 ? "bg-green-50 dark:bg-green-950/20"
                                 : "bg-gray-50 dark:bg-gray-800"
-                            }`}
+                            )}
                           >
                             <div className="w-5 h-5 flex items-center justify-center">
                               {task.isCompleted === 1 ? (
@@ -112,20 +164,29 @@ function PartnersAccordion({
                               )}
                             </div>
                             <span
-                              className={`${
+                              className={twMerge(
+                                "flex-1",
                                 task.isCompleted === 1
                                   ? "text-gray-500 dark:text-gray-400 line-through"
                                   : "text-gray-700 dark:text-gray-300"
-                              }`}
+                              )}
                             >
                               {task.title}
                             </span>
-                            {task.isCompleted === 1 && (
-                              <span className="text-xs text-gray-500 dark:text-gray-400 ml-auto">
+                            {task.isCompleted === 1 ? (
+                              <span className="text-xs text-gray-500 dark:text-gray-400">
                                 {new Date(
                                   task.completedAt!
                                 ).toLocaleDateString()}
                               </span>
+                            ) : (
+                              <CommentButton
+                                taskId={task.id}
+                                hasComment={taskComments[task.id] || false}
+                                onClick={() =>
+                                  handleCommentClick(task.id, task.title)
+                                }
+                              />
                             )}
                           </div>
                         ))}
@@ -154,6 +215,17 @@ function PartnersAccordion({
           );
         })}
       </Accordion.Root>
+
+      {selectedTask && (
+        <CommentDialog
+          taskId={selectedTask.id}
+          taskTitle={selectedTask.title}
+          isOpen={commentDialogOpen}
+          onClose={handleCommentDialogClose}
+          isTaskOwner={false}
+          onRefresh={handleCommentRefresh}
+        />
+      )}
     </div>
   );
 }

@@ -1,13 +1,22 @@
 "use client";
 
 import Link from "next/link";
-import { useSession } from "@/lib/auth-client";
+import { useRouter } from "next/navigation";
+import Skeleton from "react-loading-skeleton";
+import "react-loading-skeleton/dist/skeleton.css";
+import { useSession, signOut } from "@/lib/auth-client";
 
 export default function Home() {
   const { data: session, isPending } = useSession();
+  const router = useRouter();
+
+  const handleSignOut = async () => {
+    await signOut();
+    router.replace("/");
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-secondary/40 dark:from-background dark:via-background dark:to-secondary/40">
+    <div className="min-h-screen bg-linear-to-br from-background via-background to-secondary/40 dark:from-background dark:via-background dark:to-secondary/40">
       {/* Header */}
       <header className="bg-card">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -22,14 +31,14 @@ export default function Home() {
             </div>
             <div className="flex items-center space-x-4">
               {isPending ? (
-                <div className="animate-pulse bg-muted h-8 w-16 rounded"></div>
+                <Skeleton width={80} height={38} />
               ) : session ? (
-                <Link
-                  href="/dashboard"
+                <button
+                  onClick={handleSignOut}
                   className="bg-primary hover:bg-primary/90 text-primary-foreground px-4 py-2 rounded-md text-sm font-medium"
                 >
-                  Dashboard
-                </Link>
+                  Sign Out
+                </button>
               ) : (
                 <Link
                   href="/auth"
@@ -54,8 +63,16 @@ export default function Home() {
             Encouraging accountability by sharing progress among friends.
           </p>
 
-          {!isPending && !session && (
-            <div className="mt-5 max-w-md mx-auto sm:flex sm:justify-center md:mt-8">
+          <div className="mt-5 max-w-md mx-auto sm:flex sm:justify-center md:mt-8">
+            {isPending ? (
+              <div className="rounded-md shadow w-full">
+                <Skeleton
+                  height={54}
+                  className="rounded-md md:h-[56px]"
+                  containerClassName="w-full"
+                />
+              </div>
+            ) : !session ? (
               <div className="rounded-md shadow">
                 <Link
                   href="/auth"
@@ -64,11 +81,7 @@ export default function Home() {
                   Get Started
                 </Link>
               </div>
-            </div>
-          )}
-
-          {session && (
-            <div className="mt-5 max-w-md mx-auto sm:flex sm:justify-center md:mt-8">
+            ) : (
               <div className="rounded-md shadow">
                 <Link
                   href="/dashboard"
@@ -77,8 +90,8 @@ export default function Home() {
                   Go to Dashboard
                 </Link>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
 
         {/* Features */}

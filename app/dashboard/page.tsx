@@ -11,6 +11,7 @@ import toast from "react-hot-toast";
 import { ConfirmDialog } from "@/app/components/ConfirmDialog";
 import { TasksSection } from "@/app/components/TasksSection";
 import { PartnersSection } from "@/app/components/PartnersSection";
+import { WeatherSuggestions } from "@/app/components/WeatherSuggestions";
 import {
   TasksResponse,
   Partner,
@@ -589,6 +590,13 @@ export default function Dashboard() {
         <DashboardHeader onSignOut={handleSignOut} />
 
         {/* Using react-hot-toast for notifications instead of custom components */}
+
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
+          <WeatherSuggestions
+            tasks={tasks}
+            onTaskActivated={loadTasks}
+          />
+        </div>
 
         <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
           <div className="px-4 py-6 sm:px-0">

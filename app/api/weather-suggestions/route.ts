@@ -36,12 +36,22 @@ function getUserIp(req: Request): string {
   return "auto";
 }
 
+function isIpAddress(str: string): boolean {
+  const ipv4Regex = /^(\d{1,3}\.){3}\d{1,3}$/;
+  const ipv6Regex = /^([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$/;
+  return ipv4Regex.test(str) || ipv6Regex.test(str);
+}
+
 async function geocodeLocation(location: string): Promise<{
   latitude: number;
   longitude: number;
   name: string;
 } | null> {
   try {
+    if (isIpAddress(location)) {
+      return null;
+    }
+
     const coordMatch = location.match(/^(-?\d+\.?\d*),(-?\d+\.?\d*)$/);
     if (coordMatch) {
       return {
@@ -463,7 +473,7 @@ export async function GET(req: Request) {
     let locationToUse = testLocation || userIp;
     if (
       !testLocation &&
-      (userIp === "auto" || userIp === "::1" || userIp === "127.0.0.1")
+      (userIp === "auto" || userIp === "::1" || userIp === "127.0.0.1" || isIpAddress(userIp))
     ) {
       locationToUse = process.env.WEATHER_DEFAULT_LOCATION || "Hamden,CT";
       console.log(`Weather suggestions API: Using default location: ${locationToUse}`);

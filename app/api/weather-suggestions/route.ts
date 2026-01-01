@@ -101,16 +101,15 @@ async function getCurrentWeather(location: string): Promise<{
   try {
     let geocoded = await geocodeLocation(location);
 
-    if (
-      !geocoded &&
-      (location === "auto" || location === "::1" || location === "127.0.0.1")
-    ) {
+    if (!geocoded) {
       const defaultLocation =
         process.env.WEATHER_DEFAULT_LOCATION || "Hamden,CT";
+      console.log(`Geocoding failed for ${location}, trying default: ${defaultLocation}`);
       geocoded = await geocodeLocation(defaultLocation);
     }
 
     if (!geocoded) {
+      console.error(`Failed to geocode location: ${location}`);
       return null;
     }
 
@@ -120,6 +119,7 @@ async function getCurrentWeather(location: string): Promise<{
     const response = await fetch(url);
 
     if (!response.ok) {
+      console.error(`Weather API error: ${response.status} ${response.statusText}`);
       return null;
     }
 
@@ -127,6 +127,7 @@ async function getCurrentWeather(location: string): Promise<{
     const current = data.current;
 
     if (!current) {
+      console.error("Weather API response missing current data");
       return null;
     }
 
@@ -141,6 +142,7 @@ async function getCurrentWeather(location: string): Promise<{
       isSnow,
     };
   } catch (error) {
+    console.error("getCurrentWeather error:", error);
     return null;
   }
 }
@@ -168,27 +170,33 @@ function categorizeWeather(
 async function getUserTasks(
   userId: string
 ): Promise<Array<{ id: string; title: string; isActive: number }>> {
-  const isProduction = process.env.NODE_ENV === "production";
+  try {
+    const isProduction = process.env.NODE_ENV === "production";
 
-  if (isProduction) {
-    const result = await sql`
-      SELECT id, title, isactive
-      FROM task
-      WHERE userid = ${userId} AND iscompleted = 0
-      ORDER BY isactive DESC, createdat DESC
-    `;
-    return (result.rows || []).map((task) => ({
-      id: task.id as string,
-      title: task.title as string,
-      isActive: task.isactive as number,
-    }));
-  } else {
-    const tasks = appDb
-      .prepare(
-        `SELECT id, title, isActive FROM task WHERE userId = ? AND isCompleted = 0 ORDER BY isActive DESC, createdAt DESC`
-      )
-      .all(userId) as Array<{ id: string; title: string; isActive: number }>;
-    return tasks;
+    if (isProduction) {
+      const result = await sql`
+        SELECT id, title, isactive
+        FROM task
+        WHERE userid = ${userId} AND iscompleted = 0
+        ORDER BY isactive DESC, createdat DESC
+      `;
+      return (result.rows || []).map((task) => ({
+        id: task.id as string,
+        title: task.title as string,
+        isActive: task.isactive as number,
+      }));
+    } else {
+      const tasks = appDb
+        .prepare(
+          `SELECT id, title, isActive FROM task WHERE userId = ? AND isCompleted = 0 ORDER BY isActive DESC, createdAt DESC`
+        )
+        .all(userId) as Array<{ id: string; title: string; isActive: number }>;
+      return tasks;
+    }
+  } catch (error) {
+    console.error("Error fetching user tasks:", error);
+    console.error("Error stack:", error instanceof Error ? error.stack : "No stack");
+    return [];
   }
 }
 
@@ -449,17 +457,19 @@ export async function GET(req: Request) {
     const url = new URL(req.url);
     const testLocation = url.searchParams.get("testLocation");
 
+    console.log(`Weather suggestions API: Processing for user ${userId}`);
+    console.log(`Weather suggestions API: IP detected: ${userIp}`);
+
     let locationToUse = testLocation || userIp;
     if (
       !testLocation &&
       (userIp === "auto" || userIp === "::1" || userIp === "127.0.0.1")
     ) {
-      const devLocation = process.env.WEATHER_DEFAULT_LOCATION;
-      if (devLocation) {
-        locationToUse = devLocation;
-      }
+      locationToUse = process.env.WEATHER_DEFAULT_LOCATION || "Hamden,CT";
+      console.log(`Weather suggestions API: Using default location: ${locationToUse}`);
     }
 
+    console.log(`Weather suggestions API: Fetching weather for: ${locationToUse}`);
     const weather = await getCurrentWeather(locationToUse);
     if (!weather) {
       return Response.json(
@@ -542,6 +552,14 @@ export async function GET(req: Request) {
       isNewTask: tasks.length === 0,
     });
   } catch (error) {
-    return Response.json({ error: "Internal server error" }, { status: 500 });
+    console.error("Weather suggestions API error:", error);
+    console.error("Error stack:", error instanceof Error ? error.stack : "No stack");
+    return Response.json(
+      {
+        error: "Internal server error",
+        details: error instanceof Error ? error.message : "Unknown error",
+      },
+      { status: 500 }
+    );
   }
 }

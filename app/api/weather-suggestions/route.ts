@@ -12,6 +12,21 @@ async function requireSession(req: Request) {
   return session;
 }
 
+function getLocationFromVercelHeaders(req: Request): string | null {
+  const city = req.headers.get("x-vercel-ip-city");
+  const country = req.headers.get("x-vercel-ip-country");
+  const region = req.headers.get("x-vercel-ip-country-region");
+
+  if (city && country) {
+    if (region) {
+      return `${city}, ${region}, ${country}`;
+    }
+    return `${city}, ${country}`;
+  }
+
+  return null;
+}
+
 function getUserIp(req: Request): string {
   const forwarded = req.headers.get("x-forwarded-for");
   const realIp = req.headers.get("x-real-ip");
@@ -65,12 +80,19 @@ async function geocodeLocation(location: string): Promise<{
     const response = await fetch(url);
 
     if (!response.ok) {
+      console.error(
+        `Geocoding API error: ${response.status} ${response.statusText}`
+      );
       return null;
     }
 
     const data = await response.json();
 
     if (!data.results || data.results.length === 0) {
+      console.error(
+        `Geocoding API returned no results for: ${location}`,
+        JSON.stringify(data)
+      );
       return null;
     }
 
@@ -113,8 +135,10 @@ async function getCurrentWeather(location: string): Promise<{
 
     if (!geocoded) {
       const defaultLocation =
-        process.env.WEATHER_DEFAULT_LOCATION || "Hamden,CT";
-      console.log(`Geocoding failed for ${location}, trying default: ${defaultLocation}`);
+        process.env.WEATHER_DEFAULT_LOCATION || "41.39593,-72.89677";
+      console.log(
+        `Geocoding failed for ${location}, trying default: ${defaultLocation}`
+      );
       geocoded = await geocodeLocation(defaultLocation);
     }
 
@@ -129,7 +153,9 @@ async function getCurrentWeather(location: string): Promise<{
     const response = await fetch(url);
 
     if (!response.ok) {
-      console.error(`Weather API error: ${response.status} ${response.statusText}`);
+      console.error(
+        `Weather API error: ${response.status} ${response.statusText}`
+      );
       return null;
     }
 
@@ -205,7 +231,10 @@ async function getUserTasks(
     }
   } catch (error) {
     console.error("Error fetching user tasks:", error);
-    console.error("Error stack:", error instanceof Error ? error.stack : "No stack");
+    console.error(
+      "Error stack:",
+      error instanceof Error ? error.stack : "No stack"
+    );
     return [];
   }
 }
@@ -470,16 +499,37 @@ export async function GET(req: Request) {
     console.log(`Weather suggestions API: Processing for user ${userId}`);
     console.log(`Weather suggestions API: IP detected: ${userIp}`);
 
-    let locationToUse = testLocation || userIp;
-    if (
-      !testLocation &&
-      (userIp === "auto" || userIp === "::1" || userIp === "127.0.0.1" || isIpAddress(userIp))
-    ) {
-      locationToUse = process.env.WEATHER_DEFAULT_LOCATION || "Hamden,CT";
-      console.log(`Weather suggestions API: Using default location: ${locationToUse}`);
+    let locationToUse: string | null = testLocation;
+
+    if (!locationToUse) {
+      locationToUse = getLocationFromVercelHeaders(req);
+      if (locationToUse) {
+        console.log(
+          `Weather suggestions API: Using Vercel geolocation: ${locationToUse}`
+        );
+      }
     }
 
-    console.log(`Weather suggestions API: Fetching weather for: ${locationToUse}`);
+    if (!locationToUse) {
+      if (
+        userIp === "auto" ||
+        userIp === "::1" ||
+        userIp === "127.0.0.1" ||
+        isIpAddress(userIp)
+      ) {
+        locationToUse =
+          process.env.WEATHER_DEFAULT_LOCATION || "41.39593,-72.89677";
+        console.log(
+          `Weather suggestions API: Using default location: ${locationToUse}`
+        );
+      } else {
+        locationToUse = userIp;
+      }
+    }
+
+    console.log(
+      `Weather suggestions API: Fetching weather for: ${locationToUse}`
+    );
     const weather = await getCurrentWeather(locationToUse);
     if (!weather) {
       return Response.json(
@@ -563,7 +613,10 @@ export async function GET(req: Request) {
     });
   } catch (error) {
     console.error("Weather suggestions API error:", error);
-    console.error("Error stack:", error instanceof Error ? error.stack : "No stack");
+    console.error(
+      "Error stack:",
+      error instanceof Error ? error.stack : "No stack"
+    );
     return Response.json(
       {
         error: "Internal server error",

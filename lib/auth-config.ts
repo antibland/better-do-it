@@ -31,6 +31,14 @@ export const auth = betterAuth({
     requireEmailVerification: false, // Set to true in production
   },
 
+  // Social authentication providers
+  socialProviders: {
+    google: {
+      clientId: process.env.GOOGLE_CLIENT_ID as string,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
+    },
+  },
+
   // Configure user and session settings
   user: {
     additionalFields: {
